@@ -1,5 +1,6 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import { User, Trophy, Target, Clock, Home, Search, Bell } from "lucide-react"
 
@@ -15,6 +16,17 @@ interface ProfileProps {
   onNavigate?: (screen: "topics" | "matchmaking" | "game" | "profile") => void
 }
 
+interface UserStats {
+  overall: {
+    total_matches: number
+    total_wins: number
+    total_losses: number
+    win_rate: string
+    accuracy: string
+    avg_response_time_s: string
+  }
+}
+
 const MENU_ITEMS = [
   { icon: Home, label: "Home", screen: "topics" as const },
   { icon: Search, label: "Discover", screen: "topics" as const },
@@ -24,6 +36,39 @@ const MENU_ITEMS = [
 ]
 
 export default function Profile({ user, onNavigate }: ProfileProps) {
+  const [stats, setStats] = useState<UserStats | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      if (!user?.fid) {
+        setLoading(false)
+        return
+      }
+
+      try {
+        const response = await fetch(`/api/stats/${user.fid}`)
+        const data = await response.json()
+        setStats(data)
+      } catch (error) {
+        console.error('Failed to fetch stats:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchStats()
+  }, [user?.fid])
+
+  const displayStats = stats?.overall || {
+    total_matches: 0,
+    total_wins: 0,
+    total_losses: 0,
+    win_rate: '0',
+    accuracy: '0',
+    avg_response_time_s: '0'
+  }
+
   return (
     <div className="w-full max-w-2xl mx-auto h-screen flex flex-col bg-card">
       <motion.div
@@ -83,7 +128,9 @@ export default function Profile({ user, onNavigate }: ProfileProps) {
               <Trophy className="w-5 h-5 text-foreground" />
               <p className="text-xs font-bold uppercase tracking-wide text-foreground">Matches Played</p>
             </div>
-            <p className="text-4xl font-bold text-foreground">0</p>
+            <p className="text-4xl font-bold text-foreground">
+              {loading ? '...' : displayStats.total_matches}
+            </p>
             <p className="text-[10px] text-foreground/60 font-semibold uppercase tracking-wider mt-1">
               Total Games
             </p>
@@ -100,7 +147,9 @@ export default function Profile({ user, onNavigate }: ProfileProps) {
                 <Target className="w-4 h-4 text-foreground" />
                 <p className="text-[10px] font-bold uppercase tracking-wide text-foreground">Accuracy</p>
               </div>
-              <p className="text-3xl font-bold text-foreground">0%</p>
+              <p className="text-3xl font-bold text-foreground">
+                {loading ? '...' : `${displayStats.accuracy}%`}
+              </p>
             </motion.div>
 
             <motion.div
@@ -113,7 +162,9 @@ export default function Profile({ user, onNavigate }: ProfileProps) {
                 <Clock className="w-4 h-4 text-foreground" />
                 <p className="text-[10px] font-bold uppercase tracking-wide text-foreground">Avg. Time</p>
               </div>
-              <p className="text-3xl font-bold text-foreground">0s</p>
+              <p className="text-3xl font-bold text-foreground">
+                {loading ? '...' : `${displayStats.avg_response_time_s}s`}
+              </p>
             </motion.div>
           </div>
 
@@ -128,15 +179,21 @@ export default function Profile({ user, onNavigate }: ProfileProps) {
             <div className="space-y-3">
               <div className="flex justify-between items-center">
                 <span className="text-foreground/70 text-xs uppercase tracking-wide font-semibold">Wins</span>
-                <span className="font-bold text-foreground text-sm">0</span>
+                <span className="font-bold text-foreground text-sm">
+                  {loading ? '...' : displayStats.total_wins}
+                </span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-foreground/70 text-xs uppercase tracking-wide font-semibold">Losses</span>
-                <span className="font-bold text-foreground text-sm">0</span>
+                <span className="font-bold text-foreground text-sm">
+                  {loading ? '...' : displayStats.total_losses}
+                </span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-foreground/70 text-xs uppercase tracking-wide font-semibold">Win Rate</span>
-                <span className="font-bold text-foreground text-sm">0%</span>
+                <span className="font-bold text-foreground text-sm">
+                  {loading ? '...' : `${displayStats.win_rate}%`}
+                </span>
               </div>
             </div>
           </motion.div>

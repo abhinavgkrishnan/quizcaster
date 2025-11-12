@@ -1,24 +1,22 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
-import { Microscope, BookOpen, Trophy, Film, Globe2, Cpu, Home, Search, User, Bell } from "lucide-react"
+import * as Icons from "lucide-react"
+import { Home, Search, User, Bell, Trophy } from "lucide-react"
 
 interface TopicSelectionProps {
   onSelectTopic: (topic: string) => void
   onNavigate: (screen: "topics" | "matchmaking" | "game" | "profile") => void
 }
 
-const TOPICS = [
-  { id: 1, name: "Science", icon: Microscope, color: "brutal-violet" },
-  { id: 2, name: "History", icon: BookOpen, color: "brutal-beige" },
-  { id: 3, name: "Sports", icon: Trophy, color: "brutal-violet" },
-  { id: 4, name: "Movies", icon: Film, color: "brutal-beige" },
-  { id: 5, name: "Geography", icon: Globe2, color: "brutal-violet" },
-  { id: 6, name: "Technology", icon: Cpu, color: "brutal-beige" },
-  { id: 7, name: "Music", icon: Microscope, color: "brutal-beige" },
-  { id: 8, name: "Art", icon: BookOpen, color: "brutal-violet" },
-  { id: 9, name: "Food", icon: Trophy, color: "brutal-beige" },
-]
+interface Topic {
+  slug: string
+  display_name: string
+  icon_name: string | null
+  color_class: string | null
+  question_count: number
+}
 
 const MENU_ITEMS = [
   { icon: Home, label: "Home", screen: "topics" as const },
@@ -29,6 +27,25 @@ const MENU_ITEMS = [
 ]
 
 export default function TopicSelection({ onSelectTopic, onNavigate }: TopicSelectionProps) {
+  const [topics, setTopics] = useState<Topic[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchTopics = async () => {
+      try {
+        const response = await fetch('/api/topics')
+        const data = await response.json()
+        setTopics(data.topics)
+      } catch (error) {
+        console.error('Failed to fetch topics:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchTopics()
+  }, [])
+
   return (
     <div className="w-full max-w-2xl mx-auto h-screen flex flex-col bg-card">
       {/* Header */}
@@ -51,42 +68,57 @@ export default function TopicSelection({ onSelectTopic, onNavigate }: TopicSelec
 
       {/* Topics Grid - Scrollable */}
       <div className="flex-1 overflow-y-auto px-4 pb-4">
-        <div className="grid grid-cols-3 gap-3">
-          {TOPICS.map((topic, index) => {
-            const Icon = topic.icon
-            return (
-              <motion.button
-                key={topic.id}
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{
-                  type: "spring",
-                  stiffness: 300,
-                  damping: 25,
-                  delay: index * 0.03
-                }}
-                whileHover={{
-                  scale: 1.03,
-                  transition: { type: "spring", stiffness: 500, damping: 15 }
-                }}
-                whileTap={{
-                  scale: 0.97,
-                  transition: { type: "spring", stiffness: 500, damping: 15 }
-                }}
-                onClick={() => onSelectTopic(topic.name)}
-                className={`relative aspect-square rounded-2xl ${topic.color} brutal-border font-bold shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:shadow-none transition-shadow`}
-              >
-                {/* Content */}
-                <div className="relative z-10 flex flex-col items-center justify-center h-full gap-2 p-3">
-                  <Icon className="w-10 h-10 stroke-[2.5] text-foreground" />
-                  <div className="text-xs font-bold tracking-wide text-center leading-tight uppercase text-foreground">
-                    {topic.name}
+        {loading ? (
+          <div className="flex items-center justify-center h-full">
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+              className="w-12 h-12 rounded-full brutal-violet brutal-border flex items-center justify-center shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
+            >
+              <div className="w-2 h-2 rounded-full bg-foreground" />
+            </motion.div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-3 gap-3">
+            {topics.map((topic, index) => {
+              // Get icon from lucide-react by name
+              const IconComponent = topic.icon_name ? (Icons as any)[topic.icon_name] : Icons.HelpCircle
+              const colorClass = topic.color_class || 'brutal-violet'
+
+              return (
+                <motion.button
+                  key={topic.slug}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{
+                    type: "spring",
+                    stiffness: 300,
+                    damping: 25,
+                    delay: index * 0.03
+                  }}
+                  whileHover={{
+                    scale: 1.03,
+                    transition: { type: "spring", stiffness: 500, damping: 15 }
+                  }}
+                  whileTap={{
+                    scale: 0.97,
+                    transition: { type: "spring", stiffness: 500, damping: 15 }
+                  }}
+                  onClick={() => onSelectTopic(topic.slug)}
+                  className={`relative aspect-square rounded-2xl ${colorClass} brutal-border font-bold shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:shadow-none transition-shadow`}
+                >
+                  {/* Content */}
+                  <div className="relative z-10 flex flex-col items-center justify-center h-full gap-2 p-3">
+                    <IconComponent className="w-10 h-10 stroke-[2.5] text-foreground" />
+                    <div className="text-xs font-bold tracking-wide text-center leading-tight uppercase text-foreground">
+                      {topic.display_name}
+                    </div>
                   </div>
-                </div>
-              </motion.button>
-            )
-          })}
-        </div>
+                </motion.button>
+              )
+            })}
+          </div>
+        )}
       </div>
 
       {/* Bottom Navigation Menu */}

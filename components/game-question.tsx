@@ -8,13 +8,12 @@ import { Check, X } from "lucide-react"
 
 interface GameQuestionProps {
   question: {
-    id: number
+    id: string
     question: string
     options: string[]
-    correct: string
-    image?: string
+    image?: string | null
   }
-  onAnswer: (isCorrect: boolean, timeToAnswer: number) => void
+  onAnswer: (answer: string, timeToAnswer: number) => Promise<void> | void
   answered: boolean
 }
 
@@ -22,12 +21,16 @@ export default function GameQuestion({ question, onAnswer, answered }: GameQuest
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null)
   const [startTime, setStartTime] = useState<number | null>(null)
   const [showOptions, setShowOptions] = useState(false)
+  const [isCorrect, setIsCorrect] = useState<boolean | null>(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   // Reset and show options with delay
   useEffect(() => {
     setShowOptions(false)
     setStartTime(null)
     setSelectedAnswer(null)
+    setIsCorrect(null)
+    setIsSubmitting(false)
 
     const timer = setTimeout(() => {
       setShowOptions(true)
@@ -37,26 +40,27 @@ export default function GameQuestion({ question, onAnswer, answered }: GameQuest
     return () => clearTimeout(timer)
   }, [question.id])
 
-  const handleSelectAnswer = (option: string) => {
-    if (answered || !startTime) return
+  const handleSelectAnswer = async (option: string) => {
+    if (answered || !startTime || isSubmitting) return
 
     const timeToAnswer = Date.now() - startTime
-    const isCorrect = option === question.correct
 
     setSelectedAnswer(option)
+    setIsSubmitting(true)
 
-    // Less confetti - only 30 particles
-    if (isCorrect) {
-      confetti({
-        particleCount: 30,
-        spread: 50,
-        origin: { y: 0.7 },
-        colors: ['#CFB8FF', '#FEFFDD', '#000000']
-      })
-    }
+    // Call parent to submit answer (async - calls API)
+    await onAnswer(option, timeToAnswer)
 
-    onAnswer(isCorrect, timeToAnswer)
+    setIsSubmitting(false)
   }
+
+  // Show confetti when correct answer is revealed
+  useEffect(() => {
+    if (answered && selectedAnswer && isCorrect === null) {
+      // Check if we got feedback (parent should have updated via re-render or we infer from score change)
+      // For now, we'll add confetti trigger from parent
+    }
+  }, [answered, selectedAnswer, isCorrect])
 
   const hasImage = !!question.image
 
@@ -65,7 +69,7 @@ export default function GameQuestion({ question, onAnswer, answered }: GameQuest
       {/* Timer */}
       <div className="flex justify-center pt-1">
         <Timer
-          onTimeout={() => onAnswer(false, 10000)}
+          onTimeout={() => onAnswer("", 10000)}
           isPaused={!showOptions}
         />
       </div>
@@ -103,13 +107,11 @@ export default function GameQuestion({ question, onAnswer, answered }: GameQuest
         <div className={hasImage ? 'grid grid-cols-2 grid-rows-2 gap-2.5' : 'flex flex-col gap-2.5'}>
           {question.options.map((option, index) => {
             const isSelected = selectedAnswer === option
-            const isCorrect = option === question.correct
-            const showCorrect = answered && isCorrect
-            const showWrong = answered && isSelected && !isCorrect
+            const showAsAnswered = answered && isSelected
 
             return (
               <motion.button
-                key={option}
+                key={`${question.id}-${option}-${index}`}
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={showOptions ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.95 }}
                 transition={{
@@ -118,50 +120,37 @@ export default function GameQuestion({ question, onAnswer, answered }: GameQuest
                   damping: 25,
                   delay: showOptions ? index * 0.04 : 0
                 }}
-                whileHover={!answered ? {
+                whileHover={!answered && !isSubmitting ? {
                   y: -2,
                   transition: { type: "spring", stiffness: 500, damping: 15 }
                 } : {}}
-                whileTap={!answered ? {
+                whileTap={!answered && !isSubmitting ? {
                   y: 2,
                   transition: { type: "spring", stiffness: 500, damping: 15 }
                 } : {}}
                 onClick={() => handleSelectAnswer(option)}
-                disabled={answered || !showOptions}
+                disabled={answered || !showOptions || isSubmitting}
                 className={`relative ${hasImage ? 'h-full' : ''}`}
               >
                 <motion.div
-                  animate={showWrong ? {
-                    x: [-4, 4, -4, 4, 0],
-                  } : {}}
-                  transition={{ duration: 0.4 }}
                   className={`
                     relative ${hasImage ? 'h-full min-h-[60px]' : ''} w-full ${hasImage ? 'p-3' : 'p-4'} rounded-2xl font-bold ${hasImage ? 'text-xs' : 'text-sm'} brutal-border transition-shadow uppercase tracking-wide
-                    ${!answered && 'bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:shadow-none'}
-                    ${showCorrect && 'bg-[#FEFFDD] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]'}
-                    ${showWrong && 'bg-[#ffcccc] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]'}
-                    ${answered && !isSelected && !isCorrect && 'opacity-40 bg-gray-200'}
+                    ${!answered && !isSubmitting && 'bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:shadow-none'}
+                    ${answered && isSelected && 'bg-[#FEFFDD] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]'}
+                    ${answered && !isSelected && 'opacity-40 bg-gray-200'}
+                    ${isSubmitting && isSelected && 'bg-gray-100 animate-pulse'}
                     disabled:cursor-default text-foreground
                   `}
                 >
                   {/* Content */}
                   <div className="relative z-10 flex items-center justify-center gap-2">
-                    {showCorrect && (
+                    {answered && isSelected && (
                       <motion.div
                         initial={{ scale: 0 }}
                         animate={{ scale: 1 }}
                         transition={{ type: "spring", stiffness: 500, damping: 20 }}
                       >
                         <Check className="w-5 h-5 stroke-[3]" />
-                      </motion.div>
-                    )}
-                    {showWrong && (
-                      <motion.div
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        transition={{ type: "spring", stiffness: 500, damping: 20 }}
-                      >
-                        <X className="w-5 h-5 stroke-[3]" />
                       </motion.div>
                     )}
                     <span className="text-center leading-tight">{option}</span>

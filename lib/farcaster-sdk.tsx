@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useEffect, useState, ReactNode } from "react"
 import { sdk } from "@farcaster/miniapp-sdk"
+import { supabase } from "@/lib/db/supabase"
 
 interface FarcasterUser {
   fid: number
@@ -37,12 +38,23 @@ export function FarcasterProvider({ children }: { children: ReactNode }) {
         const context = await sdk.context
 
         // If user is already authenticated via context
-        if (context.user) {
-          setUser({
+        if (context?.user) {
+          const userData = {
             fid: context.user.fid,
             username: context.user.username || `user${context.user.fid}`,
             displayName: context.user.displayName || "Farcaster User",
             pfpUrl: context.user.pfpUrl || "",
+          }
+
+          setUser(userData)
+
+          // Upsert user to database
+          await supabase.from('users').upsert({
+            fid: userData.fid,
+            username: userData.username,
+            display_name: userData.displayName,
+            pfp_url: userData.pfpUrl,
+            last_active: new Date().toISOString()
           })
         }
 
@@ -77,12 +89,23 @@ export function FarcasterProvider({ children }: { children: ReactNode }) {
       if (result) {
         // Get updated context after sign in
         const context = await sdk.context
-        if (context.user) {
-          setUser({
+        if (context?.user) {
+          const userData = {
             fid: context.user.fid,
             username: context.user.username || `user${context.user.fid}`,
             displayName: context.user.displayName || "Farcaster User",
             pfpUrl: context.user.pfpUrl || "",
+          }
+
+          setUser(userData)
+
+          // Upsert user to database
+          await supabase.from('users').upsert({
+            fid: userData.fid,
+            username: userData.username,
+            display_name: userData.displayName,
+            pfp_url: userData.pfpUrl,
+            last_active: new Date().toISOString()
           })
         }
       }

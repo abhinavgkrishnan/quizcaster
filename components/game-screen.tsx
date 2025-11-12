@@ -1,11 +1,13 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
+import confetti from "canvas-confetti"
 import GameQuestion from "./game-question"
 import GameOver from "./game-over"
 import PlayerHeader from "./player-header"
 import ScoreBars from "./score-bars"
+import { useGame } from "@/lib/hooks/useGame"
 
 interface FarcasterUser {
   fid: number
@@ -20,41 +22,12 @@ interface GameScreenProps {
   user: FarcasterUser | null
 }
 
-const QUESTIONS = [
-  {
-    id: 1,
-    question: "Who painted the Mona Lisa?",
-    options: ["Leonardo da Vinci", "Van Gogh", "Gauguin", "Matisse"],
-    correct: "Leonardo da Vinci",
-    image: "/mona-lisa-painting.jpg",
-  },
-  {
-    id: 2,
-    question: "Which of these would be most likely to use a metronome?",
-    options: ["Musician", "Carpenter", "Architect", "Surgeon"],
-    correct: "Musician",
-  },
-  {
-    id: 3,
-    question: "What is the capital of France?",
-    options: ["London", "Berlin", "Paris", "Madrid"],
-    correct: "Paris",
-    image: "/eiffel-tower-paris.jpg",
-  },
-  {
-    id: 4,
-    question: "In what year did the Titanic sink?",
-    options: ["1912", "1920", "1905", "1915"],
-    correct: "1912",
-  },
-  {
-    id: 5,
-    question: "What is the fastest land animal?",
-    options: ["Lion", "Greyhound", "Cheetah", "Pronghorn"],
-    correct: "Cheetah",
-    image: "/cheetah-running.jpg",
-  },
-]
+interface Question {
+  id: string
+  question: string
+  options: string[]
+  imageUrl?: string | null
+}
 
 export default function GameScreen({ topic, onGameEnd, user }: GameScreenProps) {
   const [currentQuestion, setCurrentQuestion] = useState(0)
@@ -62,39 +35,131 @@ export default function GameScreen({ topic, onGameEnd, user }: GameScreenProps) 
   const [opponentScore, setOpponentScore] = useState(0)
   const [gameOver, setGameOver] = useState(false)
   const [answered, setAnswered] = useState(false)
+  const [questions, setQuestions] = useState<Question[]>([])
+  const [matchId, setMatchId] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
 
-  const handleAnswer = (isCorrect: boolean, timeToAnswer: number) => {
-    if (answered) return
+  const { createMatch, submitAnswer, completeMatch } = useGame()
+
+  // Create match and fetch questions on mount
+  useEffect(() => {
+    const initGame = async () => {
+      // Use mock FID in dev mode if user is null
+      const playerFid = user?.fid || 999999
+
+      try {
+        const matchData = await createMatch('bot', topic, playerFid)
+
+        if (matchData) {
+          setMatchId(matchData.match_id)
+          setQuestions(matchData.questions)
+          setLoading(false)
+        }
+      } catch (error) {
+        console.error('Failed to initialize game:', error)
+        setLoading(false)
+      }
+    }
+
+    initGame()
+  }, [topic, user?.fid])
+
+  const handleAnswer = async (answer: string, timeToAnswer: number) => {
+    if (answered || !matchId) return
+
+    const playerFid = user?.fid || 999999
 
     setAnswered(true)
 
-    if (isCorrect) {
-      const points = calculatePoints(timeToAnswer)
-      setPlayerScore((prev) => prev + points)
+    try {
+      const question = questions[currentQuestion]
 
-      const opponentPoints = Math.floor(Math.random() * 20)
-      setOpponentScore((prev) => prev + opponentPoints)
-    }
+      // Submit answer to API
+      const result = await submitAnswer(
+        matchId,
+        playerFid,
+        question.id,
+        currentQuestion + 1,
+        answer,
+        timeToAnswer
+      )
 
-    setTimeout(() => {
-      if (currentQuestion < QUESTIONS.length - 1) {
-        setCurrentQuestion((prev) => prev + 1)
-        setAnswered(false)
-      } else {
-        setGameOver(true)
+      // Update scores from API response
+      setPlayerScore(result.player_score)
+      setOpponentScore(result.opponent_score)
+
+      // Show confetti if correct
+      if (result.is_correct) {
+        confetti({
+          particleCount: 30,
+          spread: 50,
+          origin: { y: 0.7 },
+          colors: ['#CFB8FF', '#FEFFDD', '#000000']
+        })
       }
-    }, 1500)
+
+      // Move to next question or end game
+      setTimeout(() => {
+        if (currentQuestion < questions.length - 1) {
+          setCurrentQuestion((prev) => prev + 1)
+          setAnswered(false)
+        } else {
+          // Complete match
+          completeMatchAndEnd()
+        }
+      }, 1500)
+    } catch (error) {
+      console.error('Error handling answer:', error)
+    }
   }
 
-  const calculatePoints = (timeMs: number) => {
-    const timeSec = timeMs / 1000
-    if (timeSec < 1) return 20
-    if (timeSec < 2) return 18
-    if (timeSec < 3) return 16
-    if (timeSec < 4) return 14
-    if (timeSec < 5) return 12
-    if (timeSec < 10) return 10
-    return 0
+  const completeMatchAndEnd = async () => {
+    if (!matchId) return
+
+    const playerFid = user?.fid || 999999
+
+    try {
+      await completeMatch(matchId, playerFid)
+      setGameOver(true)
+    } catch (error) {
+      console.error('Error completing match:', error)
+      setGameOver(true)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="relative w-full h-screen flex items-center justify-center bg-muted">
+        <div className="text-center">
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+            className="w-16 h-16 rounded-full brutal-violet brutal-border flex items-center justify-center mx-auto mb-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
+          >
+            <div className="w-3 h-3 rounded-full bg-foreground" />
+          </motion.div>
+          <p className="text-sm text-muted-foreground font-semibold uppercase tracking-wide">
+            Loading game...
+          </p>
+        </div>
+      </div>
+    )
+  }
+
+  if (!questions.length || !matchId) {
+    return (
+      <div className="relative w-full h-screen flex items-center justify-center bg-muted">
+        <div className="text-center px-6">
+          <p className="text-foreground font-bold text-lg mb-4">Failed to load game</p>
+          <button
+            onClick={onGameEnd}
+            className="brutal-violet brutal-border px-6 py-3 rounded-2xl font-bold uppercase shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
+          >
+            Back to Topics
+          </button>
+        </div>
+      </div>
+    )
   }
 
   if (gameOver) {
@@ -109,7 +174,7 @@ export default function GameScreen({ topic, onGameEnd, user }: GameScreenProps) 
     )
   }
 
-  const question = QUESTIONS[currentQuestion]
+  const question = questions[currentQuestion]
 
   return (
     <div className="relative w-full max-w-md mx-auto px-3 py-3 flex flex-col h-screen overflow-hidden bg-muted">
@@ -127,7 +192,7 @@ export default function GameScreen({ topic, onGameEnd, user }: GameScreenProps) 
           opponentScore={opponentScore}
           opponentLevel="Beginner"
           opponentAvatar=""
-          timer={Math.ceil((QUESTIONS.length - currentQuestion) / 2)}
+          timer={Math.ceil((questions.length - currentQuestion) / 2)}
         />
       </div>
 
@@ -140,7 +205,7 @@ export default function GameScreen({ topic, onGameEnd, user }: GameScreenProps) 
           className="inline-block brutal-white brutal-border px-4 py-2 rounded-full shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
         >
           <p className="text-[10px] font-bold text-foreground uppercase tracking-wider">
-            Question {currentQuestion + 1} of {QUESTIONS.length}
+            Question {currentQuestion + 1} of {questions.length}
           </p>
         </motion.div>
       </div>
@@ -160,7 +225,12 @@ export default function GameScreen({ topic, onGameEnd, user }: GameScreenProps) 
           className="relative z-10 flex-1 flex flex-col justify-center pb-4"
         >
           <GameQuestion
-            question={question}
+            question={{
+              id: question.id,
+              question: question.question,
+              options: question.options,
+              image: question.imageUrl
+            }}
             onAnswer={handleAnswer}
             answered={answered}
           />

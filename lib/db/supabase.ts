@@ -1,13 +1,14 @@
 import { createClient } from '@supabase/supabase-js'
+import type { Database } from './database.types'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
-// Client-side Supabase client (for Realtime, etc.)
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+// Client-side Supabase client (for Realtime, etc.) with TypeScript types
+export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey)
 
 // Server-side Supabase client with service role key (for admin operations)
-export const supabaseAdmin = createClient(
+export const supabaseAdmin = createClient<Database>(
   supabaseUrl,
   process.env.SUPABASE_SERVICE_ROLE_KEY || supabaseAnonKey
 )
