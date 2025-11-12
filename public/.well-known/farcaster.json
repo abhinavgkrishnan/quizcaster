@@ -1,0 +1,18 @@
+{
+  "accountAssociation": {
+    "header": "eyJmaWQiOjg2MDc4MywidHlwZSI6ImF1dGgiLCJrZXkiOiIweGEyMjg1OTNFNjgwNzJGQzY2ZGViNDM1QTc1MEE3QjQ4MUQwZENGMzIifQ",
+    "payload": "eyJkb21haW4iOiJiOGM3OGE5OTllYmMubmdyb2stZnJlZS5hcHAifQ",
+    "signature": "9zR0Wcld9DCDxyBcIzxCQcBL3wXTJQsyq+ugLzrNXB5NqRnp7rm/eDsuTIj6g2t95vhvDZwQvBzbJG02OHdHcRw="
+  },
+  "miniapp": {
+    "version": "1",
+    "name": "QuizCaster",
+    "iconUrl": "https://b8c78a999ebc.ngrok-free.app/icon.png",
+    "homeUrl": "https://b8c78a999ebc.ngrok-free.app",
+    "imageUrl": "https://b8c78a999ebc.ngrok-free.app/og-image.png",
+    "buttonTitle": "Play Quiz",
+    "description": "Battle opponents worldwide in fast-paced trivia challenges. Answer questions quickly to earn more points!",
+    "splashImageUrl": "https://b8c78a999ebc.ngrok-free.app/splash.png",
+    "splashBackgroundColor": "#CFB8FF"
+  }
+}

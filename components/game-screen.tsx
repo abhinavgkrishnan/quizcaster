@@ -7,9 +7,17 @@ import GameOver from "./game-over"
 import PlayerHeader from "./player-header"
 import ScoreBars from "./score-bars"
 
+interface FarcasterUser {
+  fid: number
+  username: string
+  displayName: string
+  pfpUrl: string
+}
+
 interface GameScreenProps {
   topic: string
   onGameEnd: () => void
+  user: FarcasterUser | null
 }
 
 const QUESTIONS = [
@@ -48,7 +56,7 @@ const QUESTIONS = [
   },
 ]
 
-export default function GameScreen({ topic, onGameEnd }: GameScreenProps) {
+export default function GameScreen({ topic, onGameEnd, user }: GameScreenProps) {
   const [currentQuestion, setCurrentQuestion] = useState(0)
   const [playerScore, setPlayerScore] = useState(0)
   const [opponentScore, setOpponentScore] = useState(0)
@@ -111,14 +119,14 @@ export default function GameScreen({ topic, onGameEnd }: GameScreenProps) {
       {/* Player header */}
       <div className="relative z-10 mb-4">
         <PlayerHeader
-          playerName="You"
+          playerName={user?.displayName || user?.username || "You"}
           playerScore={playerScore}
           playerLevel="Novice"
-          playerAvatar="/diverse-user-avatars.png"
+          playerAvatar={user?.pfpUrl || ""}
           opponentName="Opponent"
           opponentScore={opponentScore}
           opponentLevel="Beginner"
-          opponentAvatar="/avatar-opponent.jpg"
+          opponentAvatar=""
           timer={Math.ceil((QUESTIONS.length - currentQuestion) / 2)}
         />
       </div>
