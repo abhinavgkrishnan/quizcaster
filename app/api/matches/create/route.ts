@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/db/supabase'
 import { shuffleArray } from '@/lib/utils/shuffle'
+import type { Tables } from '@/lib/database.types'
+
+type Question = Pick<Tables<'questions'>, 'id' | 'topic' | 'question' | 'options' | 'image_url'>
+type User = Tables<'users'>
+type Match = Tables<'matches'>
 
 export async function POST(request: NextRequest) {
   try {
@@ -43,15 +48,16 @@ export async function POST(request: NextRequest) {
     }
 
     // Randomly select 10 questions
-    const shuffledQuestions = shuffleArray(questionResults).slice(0, 10)
-    const questionIds = shuffledQuestions.map((q: any) => q.id)
+    const shuffledQuestions = shuffleArray(questionResults).slice(0, 10) as Question[]
+    const questionIds = shuffledQuestions.map((q) => q.id)
 
     // Create match record
     const expiresAt = type === 'async'
       ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
       : null
 
-    const { data: matchData, error: matchError } = await (supabase.from('matches') as any)
+    const { data: matchData, error: matchError } = await supabase
+      .from('matches')
       .insert({
         match_type: type,
         topic,
@@ -72,10 +78,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to create match' }, { status: 500 })
     }
 
-    const match = matchData as any
-
     // Get opponent data if provided
-    let opponentData = null
+    let opponentData: User | null = null
     if (opponent_fid && type !== 'bot') {
       const { data: opponent } = await supabase
         .from('users')
@@ -86,19 +90,27 @@ export async function POST(request: NextRequest) {
       opponentData = opponent || null
     }
 
+    // Parse options as string array
+    const parseOptions = (options: unknown): string[] => {
+      if (Array.isArray(options)) {
+        return options.filter((opt): opt is string => typeof opt === 'string')
+      }
+      return []
+    }
+
     // Return match data with questions (shuffle options, no correct answers)
     return NextResponse.json({
-      match_id: match.id,
+      match_id: matchData.id,
       match_type: type,
       topic,
-      questions: shuffledQuestions.map((q: any) => ({
+      questions: shuffledQuestions.map((q) => ({
         id: q.id,
         question: q.question,
-        options: shuffleArray(q.options as string[]),
+        options: shuffleArray(parseOptions(q.options)),
         image_url: q.image_url
       })),
       opponent: opponentData,
-      status: match.status
+      status: matchData.status
     })
   } catch (error) {
     console.error('Error creating match:', error)

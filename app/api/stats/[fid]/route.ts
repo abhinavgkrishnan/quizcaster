@@ -1,5 +1,40 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/db/supabase'
+import type { Tables } from '@/lib/database.types'
+
+type UserStatsOverall = Tables<'user_stats_overall'>
+type UserStatsByTopic = Tables<'user_stats_by_topic'>
+
+interface OverallStatsResponse {
+  total_matches: number
+  total_wins: number
+  total_losses: number
+  total_draws: number
+  win_rate: string
+  total_points: number
+  total_questions: number
+  total_correct: number
+  accuracy: string
+  avg_response_time_ms: number
+  avg_response_time_s: string
+  longest_streak: number
+  global_rank: number | null
+}
+
+interface TopicStatsResponse {
+  matches_played: number
+  matches_won: number
+  matches_lost: number
+  matches_drawn: number
+  win_rate: string
+  total_points: number
+  questions_answered: number
+  questions_correct: number
+  accuracy: string
+  avg_response_time_ms: number
+  avg_response_time_s: string
+  best_streak: number
+}
 
 export async function GET(
   request: NextRequest,
@@ -14,24 +49,20 @@ export async function GET(
     }
 
     // Get overall stats
-    const { data: overallRaw } = await supabase
+    const { data: overall } = await supabase
       .from('user_stats_overall')
       .select('*')
       .eq('fid', fidNumber)
       .single()
 
-    const overall = overallRaw as any
-
     // Get topic stats
-    const { data: topicStatsRaw } = await supabase
+    const { data: topicStats } = await supabase
       .from('user_stats_by_topic')
       .select('*')
       .eq('fid', fidNumber)
 
-    const topicStats = topicStatsRaw as any[]
-
     // Calculate derived metrics
-    const overallData = overall ? {
+    const overallData: OverallStatsResponse = overall ? {
       total_matches: overall.total_matches,
       total_wins: overall.total_wins,
       total_losses: overall.total_losses,
@@ -68,7 +99,7 @@ export async function GET(
     }
 
     // Format topic stats
-    const byTopic: Record<string, any> = {}
+    const byTopic: Record<string, TopicStatsResponse> = {}
     if (topicStats) {
       topicStats.forEach(stat => {
         byTopic[stat.topic] = {

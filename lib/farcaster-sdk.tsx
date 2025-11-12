@@ -3,6 +3,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react"
 import { sdk } from "@farcaster/miniapp-sdk"
 import { supabase } from "@/lib/db/supabase"
+import type { TablesInsert } from "@/lib/database.types"
 
 interface FarcasterUser {
   fid: number
@@ -49,13 +50,14 @@ export function FarcasterProvider({ children }: { children: ReactNode }) {
           setUser(userData)
 
           // Upsert user to database
-          await supabase.from('users').upsert({
+          const userRecord: TablesInsert<'users'> = {
             fid: userData.fid,
             username: userData.username,
             display_name: userData.displayName,
             pfp_url: userData.pfpUrl,
             last_active: new Date().toISOString()
-          })
+          }
+          await supabase.from('users').upsert(userRecord)
         }
 
         setIsSDKLoaded(true)
@@ -100,13 +102,14 @@ export function FarcasterProvider({ children }: { children: ReactNode }) {
           setUser(userData)
 
           // Upsert user to database
-          await supabase.from('users').upsert({
+          const userRecord: TablesInsert<'users'> = {
             fid: userData.fid,
             username: userData.username,
             display_name: userData.displayName,
             pfp_url: userData.pfpUrl,
             last_active: new Date().toISOString()
-          })
+          }
+          await supabase.from('users').upsert(userRecord)
         }
       }
     } catch (error) {

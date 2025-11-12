@@ -1,6 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/db/supabase'
 import { shuffleArray } from '@/lib/utils/shuffle'
+import type { Tables } from '@/lib/database.types'
+
+type Question = Pick<Tables<'questions'>, 'id' | 'question' | 'options' | 'image_url'>
+
+interface QuestionResponse {
+  id: string
+  question: string
+  options: string[]
+  imageUrl: string | null
+}
 
 export async function GET(
   request: NextRequest,
@@ -10,10 +20,6 @@ export async function GET(
     const { topic } = await params
     const searchParams = request.nextUrl.searchParams
     const fid = searchParams.get('fid')
-
-    // Get 10 random questions for this topic
-    // Exclude questions from user's recent matches if fid provided
-    let excludeQuestionIds: string[] = []
 
     // Get 10 random questions for this topic
     const { data: questionResults, error: questionsError } = await supabase
@@ -31,16 +37,26 @@ export async function GET(
     }
 
     // Randomly select 10 and shuffle options
-    const randomQuestions = shuffleArray(questionResults).slice(0, 10)
+    const randomQuestions = shuffleArray(questionResults).slice(0, 10) as Question[]
+
+    // Parse options as string array
+    const parseOptions = (options: unknown): string[] => {
+      if (Array.isArray(options)) {
+        return options.filter((opt): opt is string => typeof opt === 'string')
+      }
+      return []
+    }
+
+    const questions: QuestionResponse[] = randomQuestions.map((q) => ({
+      id: q.id,
+      question: q.question,
+      options: shuffleArray(parseOptions(q.options)),
+      imageUrl: q.image_url
+    }))
 
     return NextResponse.json({
-      questions: randomQuestions.map((q: any) => ({
-        id: q.id,
-        question: q.question,
-        options: shuffleArray(q.options as string[]),
-        imageUrl: q.image_url
-      })),
-      count: randomQuestions.length
+      questions,
+      count: questions.length
     })
   } catch (error) {
     console.error('Error fetching questions:', error)

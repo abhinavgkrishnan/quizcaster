@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/db/supabase'
+import type { Tables } from '@/lib/database.types'
+
+type Match = Tables<'matches'>
 
 export async function POST(
   request: NextRequest,
@@ -15,17 +18,15 @@ export async function POST(
     }
 
     // Get match
-    const { data: matchData, error: matchError } = await supabase
+    const { data: match, error: matchError } = await supabase
       .from('matches')
       .select('*')
       .eq('id', matchId)
       .single()
 
-    if (matchError || !matchData) {
+    if (matchError || !match) {
       return NextResponse.json({ error: 'Match not found' }, { status: 404 })
     }
-
-    const match = matchData as any
 
     // Verify user is part of this match
     if (match.player1_fid !== fid && match.player2_fid !== fid) {
@@ -36,13 +37,13 @@ export async function POST(
 
     // Determine if match is complete
     let matchStatus = match.status
-    let matchCompletedAt = match.completed_at
-    let winnerFid = match.winner_fid
+    let matchCompletedAt: string | null = match.completed_at
+    let winnerFid: number | null = match.winner_fid
 
     if (match.match_type === 'bot' || match.match_type === 'realtime') {
       // For bot/realtime, match completes when either player finishes
       matchStatus = 'completed'
-      matchCompletedAt = new Date()
+      matchCompletedAt = new Date().toISOString()
 
       // Determine winner
       if (match.player1_score > match.player2_score) {
@@ -55,7 +56,7 @@ export async function POST(
     } else if (match.match_type === 'async') {
       // For async, mark this player as completed
       if (isPlayer1) {
-        await (supabase.from('matches') as any)
+        await supabase.from('matches')
           .update({
             player1_completed_at: new Date().toISOString()
           })
@@ -63,7 +64,7 @@ export async function POST(
       } else {
         // Player 2 just finished - match is now complete
         matchStatus = 'completed'
-        matchCompletedAt = new Date()
+        matchCompletedAt = new Date().toISOString()
 
         // Determine winner
         if (match.player1_score > match.player2_score) {
@@ -77,10 +78,10 @@ export async function POST(
     }
 
     // Update match
-    await (supabase.from('matches') as any)
+    await supabase.from('matches')
       .update({
         status: matchStatus,
-        completed_at: matchCompletedAt?.toISOString ? matchCompletedAt.toISOString() : matchCompletedAt,
+        completed_at: matchCompletedAt,
         winner_fid: winnerFid
       })
       .eq('id', matchId)

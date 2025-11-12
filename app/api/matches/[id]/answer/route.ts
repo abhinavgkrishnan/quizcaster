@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/db/supabase'
 import { calculatePoints, isValidAnswerTime } from '@/lib/game/scoring'
+import type { Tables } from '@/lib/database.types'
+
+type Match = Tables<'matches'>
+type Question = Tables<'questions'>
 
 export async function POST(
   request: NextRequest,
@@ -33,34 +37,30 @@ export async function POST(
     }
 
     // Get match to verify it exists and user is part of it
-    const { data: matchData, error: matchError } = await supabase
+    const { data: match, error: matchError } = await supabase
       .from('matches')
       .select('*')
       .eq('id', matchId)
       .single()
 
-    if (matchError || !matchData) {
+    if (matchError || !match) {
       return NextResponse.json({ error: 'Match not found' }, { status: 404 })
     }
-
-    const match = matchData as any
 
     if (match.player1_fid !== fid && match.player2_fid !== fid) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
     }
 
     // Get question to check correct answer
-    const { data: questionData, error: questionError } = await supabase
+    const { data: question, error: questionError } = await supabase
       .from('questions')
       .select('*')
       .eq('id', question_id)
       .single()
 
-    if (questionError || !questionData) {
+    if (questionError || !question) {
       return NextResponse.json({ error: 'Question not found' }, { status: 404 })
     }
-
-    const question = questionData as any
 
     // Check if answer is correct
     const isCorrect = answer === question.correct_answer
@@ -69,7 +69,7 @@ export async function POST(
     const pointsEarned = isCorrect ? calculatePoints(time_taken_ms) : 0
 
     // Insert answer record
-    await (supabase.from('match_answers') as any).insert({
+    await supabase.from('match_answers').insert({
       match_id: matchId,
       fid,
       question_id: question_id,
@@ -95,14 +95,14 @@ export async function POST(
     }
 
     if (isPlayer1) {
-      await (supabase.from('matches') as any)
+      await supabase.from('matches')
         .update({
           player1_score: match.player1_score + pointsEarned,
           player2_score: match.player2_score + botPoints
         })
         .eq('id', matchId)
     } else {
-      await (supabase.from('matches') as any)
+      await supabase.from('matches')
         .update({
           player2_score: match.player2_score + pointsEarned
         })
@@ -110,13 +110,15 @@ export async function POST(
     }
 
     // Get updated match for response
-    const { data: updatedMatchData } = await supabase
+    const { data: updatedMatch } = await supabase
       .from('matches')
       .select('*')
       .eq('id', matchId)
       .single()
 
-    const updatedMatch = updatedMatchData as any
+    if (!updatedMatch) {
+      return NextResponse.json({ error: 'Failed to get updated match' }, { status: 500 })
+    }
 
     return NextResponse.json({
       is_correct: isCorrect,
