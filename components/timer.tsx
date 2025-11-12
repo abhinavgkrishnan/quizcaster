@@ -6,12 +6,15 @@ import { motion } from "framer-motion"
 interface TimerProps {
   onTimeout: () => void
   duration?: number
+  isPaused?: boolean
 }
 
-export default function Timer({ onTimeout, duration = 10 }: TimerProps) {
+export default function Timer({ onTimeout, duration = 10, isPaused = false }: TimerProps) {
   const [timeLeft, setTimeLeft] = useState(duration)
 
   useEffect(() => {
+    if (isPaused) return
+
     if (timeLeft <= 0) {
       onTimeout()
       return
@@ -22,44 +25,83 @@ export default function Timer({ onTimeout, duration = 10 }: TimerProps) {
     }, 100)
 
     return () => clearInterval(timer)
-  }, [timeLeft, onTimeout])
+  }, [timeLeft, onTimeout, isPaused])
 
   const progress = (timeLeft / duration) * 100
   const isLowTime = timeLeft < 3
 
+  // Simple color based on time
+  const getColor = () => {
+    if (timeLeft > 5) return '#CFB8FF'
+    if (timeLeft > 3) return '#FEFFDD'
+    return '#ffcccc'
+  }
+
+  const color = getColor()
+
   return (
-    <div className="relative w-32 h-32">
-      {/* Background circle */}
-      <svg className="w-full h-full -rotate-90" viewBox="0 0 120 120">
-        <circle cx="60" cy="60" r="56" fill="none" stroke="currentColor" strokeWidth="4" className="text-border" />
+    <motion.div
+      className="relative w-32 h-32"
+      animate={isLowTime ? {
+        x: [-2, 2, -2, 2, 0],
+      } : {}}
+      transition={{
+        duration: 0.3,
+        repeat: isLowTime ? Infinity : 0,
+      }}
+    >
+      {/* Background circle with brutal border */}
+      <div className="absolute inset-0 rounded-full brutal-white brutal-border shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]" />
+
+      {/* SVG Circle */}
+      <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 120 120">
+        {/* Background track */}
+        <circle
+          cx="60"
+          cy="60"
+          r="52"
+          fill="none"
+          stroke="#e5e5e5"
+          strokeWidth="8"
+        />
+
         {/* Progress circle */}
         <motion.circle
           cx="60"
           cy="60"
-          r="56"
+          r="52"
           fill="none"
-          strokeWidth="4"
-          strokeDasharray={`${2 * Math.PI * 56}`}
-          strokeDashoffset={`${2 * Math.PI * 56 * (1 - progress / 100)}`}
-          stroke="currentColor"
-          className={`transition-colors ${isLowTime ? "text-red-500" : "text-primary"}`}
-          strokeLinecap="round"
+          strokeWidth="8"
+          strokeDasharray={`${2 * Math.PI * 52}`}
+          strokeDashoffset={`${2 * Math.PI * 52 * (1 - progress / 100)}`}
+          stroke={color}
+          strokeLinecap="butt"
+          initial={{ strokeDashoffset: 2 * Math.PI * 52 }}
+          animate={{ strokeDashoffset: 2 * Math.PI * 52 * (1 - progress / 100) }}
+          transition={{ duration: 0.1, ease: "linear" }}
         />
       </svg>
 
       {/* Timer text */}
       <div className="absolute inset-0 flex items-center justify-center">
         <motion.div
-          animate={{ scale: isLowTime ? [1, 1.1, 1] : 1 }}
-          transition={{ duration: 0.5, repeat: isLowTime ? Number.POSITIVE_INFINITY : 0 }}
           className="text-center"
+          animate={isLowTime ? {
+            scale: [1, 1.05, 1],
+          } : {}}
+          transition={{
+            duration: 0.5,
+            repeat: isLowTime ? Infinity : 0,
+          }}
         >
-          <div className={`text-3xl font-bold ${isLowTime ? "text-red-500" : "text-primary"}`}>
+          <div className="text-4xl font-bold text-foreground">
             {Math.ceil(timeLeft)}
           </div>
-          <div className="text-xs text-muted-foreground">seconds</div>
+          <div className="text-xs text-muted-foreground font-semibold uppercase tracking-wider mt-1">
+            sec
+          </div>
         </motion.div>
       </div>
-    </div>
+    </motion.div>
   )
 }

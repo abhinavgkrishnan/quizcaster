@@ -1,6 +1,9 @@
 "use client"
 
+import { useEffect } from "react"
 import { motion } from "framer-motion"
+import confetti from "canvas-confetti"
+import { Trophy, Target, Zap, RotateCcw } from "lucide-react"
 
 interface GameOverProps {
   playerScore: number
@@ -10,63 +13,143 @@ interface GameOverProps {
 
 export default function GameOver({ playerScore, opponentScore, onPlayAgain }: GameOverProps) {
   const playerWon = playerScore > opponentScore
+  const isDraw = playerScore === opponentScore
+
+  useEffect(() => {
+    if (playerWon) {
+      // Minimal confetti - just one burst
+      confetti({
+        particleCount: 50,
+        spread: 60,
+        origin: { y: 0.6 },
+        colors: ['#CFB8FF', '#FEFFDD', '#000000']
+      })
+    }
+  }, [playerWon])
 
   return (
-    <div className="w-full max-w-md px-4 py-8 flex flex-col items-center justify-center">
+    <div className="w-full h-full px-6 py-8 flex flex-col items-center justify-center">
       <motion.div
-        initial={{ opacity: 0, scale: 0.8 }}
+        initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.5 }}
-        className="text-center w-full"
+        transition={{ type: "spring", stiffness: 300, damping: 25 }}
+        className="text-center w-full max-w-md"
       >
-        {/* Result */}
-        <div className="mb-8">
-          <motion.div
-            animate={{ scale: [1, 1.1, 1] }}
-            transition={{ duration: 1, repeat: 2 }}
-            className="text-6xl mb-4"
-          >
-            {playerWon ? "🎉" : "⚔️"}
-          </motion.div>
-          <h2 className="text-3xl font-bold text-primary mb-2">{playerWon ? "You Win!" : "You Lost"}</h2>
-          <p className="text-muted-foreground">Great game!</p>
-        </div>
+        {/* Result Icon */}
+        <motion.div
+          initial={{ scale: 0, y: -20 }}
+          animate={{ scale: 1, y: 0 }}
+          transition={{ type: "spring", stiffness: 300, damping: 20, delay: 0.1 }}
+          className="mb-8 flex justify-center"
+        >
+          <div className={`w-28 h-28 rounded-full flex items-center justify-center brutal-border shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] ${
+            playerWon ? 'brutal-beige' : isDraw ? 'brutal-violet' : 'bg-gray-300'
+          }`}>
+            {playerWon ? (
+              <Trophy className="w-14 h-14 text-foreground" />
+            ) : (
+              <Target className="w-14 h-14 text-foreground" />
+            )}
+          </div>
+        </motion.div>
+
+        {/* Result Text */}
+        <motion.h2
+          initial={{ y: 10, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.2 }}
+          className="text-4xl font-bold mb-3 text-foreground uppercase tracking-tight"
+        >
+          {playerWon ? "Victory!" : isDraw ? "Draw!" : "Defeat"}
+        </motion.h2>
+
+        <motion.p
+          initial={{ y: 10, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.3 }}
+          className="text-muted-foreground text-sm mb-10 uppercase tracking-wide font-semibold"
+        >
+          {playerWon ? "Outstanding!" : isDraw ? "Evenly matched!" : "Try again!"}
+        </motion.p>
 
         {/* Scores */}
-        <div className="grid grid-cols-2 gap-4 mb-8 w-full">
-          <div className="bg-card rounded-xl p-6 border border-border">
-            <p className="text-sm text-muted-foreground mb-2">Your Score</p>
-            <p className="text-3xl font-bold text-primary">{playerScore}</p>
+        <motion.div
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.4 }}
+          className="grid grid-cols-2 gap-4 mb-6 w-full"
+        >
+          <div className="brutal-violet brutal-border p-5 rounded-2xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+            <p className="text-[10px] text-foreground/60 mb-2 font-bold uppercase tracking-wider">Your Score</p>
+            <motion.p
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ type: "spring", delay: 0.6 }}
+              className="text-4xl font-bold text-foreground"
+            >
+              {playerScore}
+            </motion.p>
           </div>
-          <div className="bg-card rounded-xl p-6 border border-border">
-            <p className="text-sm text-muted-foreground mb-2">Opponent</p>
-            <p className="text-3xl font-bold text-secondary">{opponentScore}</p>
+          <div className="brutal-beige brutal-border p-5 rounded-2xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+            <p className="text-[10px] text-foreground/60 mb-2 font-bold uppercase tracking-wider">Opponent</p>
+            <motion.p
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ type: "spring", delay: 0.7 }}
+              className="text-4xl font-bold text-foreground"
+            >
+              {opponentScore}
+            </motion.p>
           </div>
-        </div>
+        </motion.div>
 
         {/* Stats */}
-        <div className="bg-card rounded-xl p-4 border border-border mb-8 w-full">
-          <p className="text-sm text-muted-foreground mb-3">Performance</p>
-          <div className="space-y-2 text-sm">
-            <div className="flex justify-between">
-              <span className="text-foreground">Avg. Response Time</span>
-              <span className="font-semibold text-primary">2.4s</span>
+        <motion.div
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.8 }}
+          className="brutal-white brutal-border p-5 rounded-2xl mb-6 w-full shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
+        >
+          <div className="flex items-center gap-2 mb-4">
+            <Zap className="w-5 h-5 text-foreground" />
+            <p className="text-sm text-foreground font-bold uppercase tracking-wide">Stats</p>
+          </div>
+          <div className="space-y-3">
+            <div className="flex justify-between items-center">
+              <span className="text-foreground/70 text-xs uppercase tracking-wide font-semibold">Questions</span>
+              <span className="font-bold text-foreground text-sm">5 / 5</span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-foreground">Accuracy</span>
-              <span className="font-semibold text-primary">80%</span>
+            <div className="flex justify-between items-center">
+              <span className="text-foreground/70 text-xs uppercase tracking-wide font-semibold">Avg. Time</span>
+              <span className="font-bold text-foreground text-sm">2.4s</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-foreground/70 text-xs uppercase tracking-wide font-semibold">Accuracy</span>
+              <span className="font-bold text-foreground text-sm">80%</span>
             </div>
           </div>
-        </div>
+        </motion.div>
 
         {/* Play Again Button */}
         <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 1, type: "spring" }}
+          whileHover={{
+            y: -2,
+            transition: { type: "spring", stiffness: 500, damping: 15 }
+          }}
+          whileTap={{
+            y: 2,
+            transition: { type: "spring", stiffness: 500, damping: 15 }
+          }}
           onClick={onPlayAgain}
-          className="w-full py-4 rounded-xl bg-gradient-to-r from-primary to-accent text-primary-foreground font-bold text-lg shadow-lg hover:shadow-xl transition-all"
+          className="relative w-full py-5 rounded-2xl brutal-violet brutal-border font-bold text-base shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:shadow-none transition-all text-foreground uppercase tracking-wide"
         >
-          Play Again
+          <span className="flex items-center justify-center gap-2">
+            <RotateCcw className="w-5 h-5" />
+            Play Again
+          </span>
         </motion.button>
       </motion.div>
     </div>

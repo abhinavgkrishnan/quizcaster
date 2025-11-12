@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { motion } from "framer-motion"
+import { Swords, User, Zap } from "lucide-react"
 
 interface MatchmakingProps {
   topic: string
@@ -31,53 +32,130 @@ export default function Matchmaking({ topic, onMatchFound }: MatchmakingProps) {
   }, [matchFound, onMatchFound])
 
   return (
-    <div className="w-full max-w-md px-4 py-8 flex flex-col items-center justify-center">
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center mb-12">
-        <h2 className="text-2xl font-bold text-primary mb-2">Finding Match</h2>
-        <p className="text-muted-foreground">{topic}</p>
+    <div className="w-full max-w-md px-6 py-8 flex flex-col items-center justify-center min-h-[500px]">
+      <motion.div
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="text-center mb-16"
+      >
+        <h2 className="text-3xl font-bold text-foreground mb-3 uppercase tracking-tight">
+          {matchFound ? "Match Found!" : "Finding Match"}
+        </h2>
+        <p className="text-muted-foreground text-sm font-semibold uppercase tracking-wider">{topic}</p>
       </motion.div>
 
       {!matchFound ? (
-        <div className="flex flex-col items-center gap-8">
-          <motion.div
-            animate={{ scale: [1, 1.1, 1] }}
-            transition={{ duration: 1.5, repeat: Number.POSITIVE_INFINITY }}
-            className="w-24 h-24 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center"
-          >
-            <div className="w-20 h-20 rounded-full border-4 border-primary-foreground opacity-30" />
-          </motion.div>
+        <div className="flex flex-col items-center gap-12">
+          {/* Simple rotating icon */}
+          <div className="relative w-32 h-32">
+            <motion.div
+              animate={{
+                rotate: 360,
+              }}
+              transition={{
+                duration: 2,
+                repeat: Infinity,
+                ease: "linear"
+              }}
+              className="w-full h-full rounded-full brutal-violet brutal-border flex items-center justify-center shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]"
+            >
+              <Swords className="w-16 h-16 text-foreground" />
+            </motion.div>
+          </div>
 
+          {/* Loading dots */}
           <div className="flex gap-2">
             {[0, 1, 2].map((i) => (
               <motion.div
                 key={i}
-                animate={{ opacity: [0.3, 1, 0.3] }}
-                transition={{ delay: i * 0.2, duration: 1, repeat: Number.POSITIVE_INFINITY }}
-                className="w-2 h-2 rounded-full bg-primary"
+                animate={{
+                  y: [-4, 4, -4],
+                  opacity: [0.4, 1, 0.4]
+                }}
+                transition={{
+                  delay: i * 0.15,
+                  duration: 0.8,
+                  repeat: Infinity
+                }}
+                className="w-3 h-3 rounded-full bg-foreground"
               />
             ))}
           </div>
 
-          <p className="text-sm text-muted-foreground">Searching for a worthy opponent...</p>
+          <motion.p
+            animate={{ opacity: [0.6, 1, 0.6] }}
+            transition={{ duration: 2, repeat: Infinity }}
+            className="text-sm text-muted-foreground font-semibold uppercase tracking-wide"
+          >
+            Searching...
+          </motion.p>
         </div>
       ) : (
         <motion.div
-          initial={{ opacity: 0, scale: 0.8 }}
+          initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5 }}
+          transition={{ type: "spring", stiffness: 300, damping: 25 }}
           className="text-center w-full"
         >
-          <div className="mb-8">
-            <div className="text-6xl mb-4">🎮</div>
-            <h3 className="text-xl font-bold text-primary mb-2">Match Found!</h3>
-            <p className="text-muted-foreground">Playing against</p>
-          </div>
+          {/* Success icon */}
+          <motion.div
+            initial={{ scale: 0, y: -20 }}
+            animate={{ scale: 1, y: 0 }}
+            transition={{ type: "spring", stiffness: 300, damping: 20, delay: 0.1 }}
+            className="mb-8 flex justify-center"
+          >
+            <div className="w-28 h-28 rounded-full brutal-beige brutal-border flex items-center justify-center shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
+              <Zap className="w-14 h-14 text-foreground" />
+            </div>
+          </motion.div>
 
-          <div className="bg-card rounded-xl p-6 border border-border mb-6">
-            <p className="text-2xl font-bold text-foreground">{opponent}</p>
-          </div>
+          <motion.h3
+            initial={{ y: 10, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.2 }}
+            className="text-2xl font-bold text-foreground mb-2 uppercase"
+          >
+            Opponent Found!
+          </motion.h3>
 
-          <p className="text-sm text-muted-foreground">Starting game in a moment...</p>
+          <motion.p
+            initial={{ y: 10, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.3 }}
+            className="text-muted-foreground text-sm mb-8 uppercase tracking-wide font-semibold"
+          >
+            Prepare for battle
+          </motion.p>
+
+          {/* Opponent card */}
+          <motion.div
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.4, type: "spring" }}
+            className="brutal-white brutal-border rounded-2xl p-8 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] mb-6"
+          >
+            <div className="flex items-center justify-center gap-4 mb-4">
+              <div className="w-14 h-14 rounded-full brutal-violet brutal-border-thin flex items-center justify-center">
+                <User className="w-7 h-7 text-foreground" />
+              </div>
+              <Swords className="w-6 h-6 text-foreground" />
+              <div className="w-14 h-14 rounded-full brutal-beige brutal-border-thin flex items-center justify-center">
+                <User className="w-7 h-7 text-foreground" />
+              </div>
+            </div>
+            <p className="text-2xl font-bold text-foreground uppercase tracking-tight">
+              {opponent}
+            </p>
+          </motion.div>
+
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.6 }}
+            className="text-sm text-muted-foreground font-semibold uppercase tracking-wider"
+          >
+            Starting game...
+          </motion.p>
         </motion.div>
       )}
     </div>

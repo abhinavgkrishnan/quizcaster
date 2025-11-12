@@ -90,15 +90,25 @@ export default function GameScreen({ topic, onGameEnd }: GameScreenProps) {
   }
 
   if (gameOver) {
-    return <GameOver playerScore={playerScore} opponentScore={opponentScore} onPlayAgain={onGameEnd} />
+    return (
+      <div className="relative w-full h-screen flex items-center justify-center overflow-hidden bg-muted">
+        <GameOver
+          playerScore={playerScore}
+          opponentScore={opponentScore}
+          onPlayAgain={onGameEnd}
+        />
+      </div>
+    )
   }
 
   const question = QUESTIONS[currentQuestion]
 
   return (
-    <div className="relative w-full max-w-md px-4 py-4 flex flex-col h-screen bg-background overflow-hidden">
+    <div className="relative w-full max-w-md px-4 py-4 flex flex-col h-screen overflow-hidden bg-muted">
+      {/* Score bars background */}
       <ScoreBars playerScore={playerScore} opponentScore={opponentScore} />
 
+      {/* Player header */}
       <div className="relative z-10 mb-4">
         <PlayerHeader
           playerName="You"
@@ -115,22 +125,37 @@ export default function GameScreen({ topic, onGameEnd }: GameScreenProps) {
 
       {/* Question Counter */}
       <div className="relative z-10 text-center mb-2">
-        <p className="text-xs text-muted-foreground">
-          Question {currentQuestion + 1} of {QUESTIONS.length}
-        </p>
+        <motion.div
+          key={currentQuestion}
+          initial={{ scale: 0.9, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          className="inline-block brutal-white brutal-border px-4 py-2 rounded-full shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+        >
+          <p className="text-[10px] font-bold text-foreground uppercase tracking-wider">
+            Question {currentQuestion + 1} of {QUESTIONS.length}
+          </p>
+        </motion.div>
       </div>
 
       {/* Question Content */}
       <AnimatePresence mode="wait">
         <motion.div
           key={currentQuestion}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -20 }}
-          transition={{ duration: 0.3 }}
+          initial={{ opacity: 0, x: 50 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: -50 }}
+          transition={{
+            type: "spring",
+            stiffness: 300,
+            damping: 25
+          }}
           className="relative z-10 flex-1 flex flex-col justify-center pb-4"
         >
-          <GameQuestion question={question} onAnswer={handleAnswer} answered={answered} />
+          <GameQuestion
+            question={question}
+            onAnswer={handleAnswer}
+            answered={answered}
+          />
         </motion.div>
       </AnimatePresence>
     </div>

@@ -1,6 +1,8 @@
 "use client"
 
-import { motion } from "framer-motion"
+import { motion, AnimatePresence } from "framer-motion"
+import { useEffect, useState } from "react"
+import { User, Users } from "lucide-react"
 
 interface PlayerHeaderProps {
   playerName: string
@@ -25,45 +27,109 @@ export default function PlayerHeader({
   opponentAvatar,
   timer,
 }: PlayerHeaderProps) {
+  const [prevPlayerScore, setPrevPlayerScore] = useState(playerScore)
+  const [prevOpponentScore, setPrevOpponentScore] = useState(opponentScore)
+  const [playerScoreChanged, setPlayerScoreChanged] = useState(false)
+  const [opponentScoreChanged, setOpponentScoreChanged] = useState(false)
+
+  useEffect(() => {
+    if (playerScore !== prevPlayerScore) {
+      setPlayerScoreChanged(true)
+      setTimeout(() => setPlayerScoreChanged(false), 400)
+      setPrevPlayerScore(playerScore)
+    }
+  }, [playerScore, prevPlayerScore])
+
+  useEffect(() => {
+    if (opponentScore !== prevOpponentScore) {
+      setOpponentScoreChanged(true)
+      setTimeout(() => setOpponentScoreChanged(false), 400)
+      setPrevOpponentScore(opponentScore)
+    }
+  }, [opponentScore, prevOpponentScore])
+
   return (
-    <div className="flex items-center justify-between gap-2">
-      {/* Player 1 */}
-      <div className="flex items-center gap-2 flex-1">
-        <img
-          src={playerAvatar || "/placeholder.svg"}
-          alt={playerName}
-          className="w-12 h-12 rounded-full border-2 border-primary"
-        />
-        <div className="min-w-0">
-          <p className="text-xs text-muted-foreground truncate">{playerName}</p>
-          <p className="text-sm font-bold text-foreground">{playerScore}</p>
+    <div className="flex items-center justify-between gap-3">
+      {/* Player */}
+      <motion.div
+        className="flex items-center gap-3 flex-1 p-3 rounded-2xl brutal-violet brutal-border shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]"
+        animate={playerScoreChanged ? {
+          y: [-2, 0],
+        } : {}}
+        transition={{ duration: 0.2 }}
+      >
+        <div className="relative">
+          <div className="w-12 h-12 rounded-full brutal-white brutal-border-thin flex items-center justify-center overflow-hidden">
+            {playerAvatar ? (
+              <img
+                src={playerAvatar}
+                alt={playerName}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <User className="w-5 h-5 text-foreground" />
+            )}
+          </div>
         </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-[10px] text-foreground/60 font-semibold truncate uppercase tracking-wider">{playerName}</p>
+          <AnimatePresence mode="wait">
+            <motion.p
+              key={playerScore}
+              initial={{ y: 5, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: -5, opacity: 0 }}
+              transition={{ type: "spring", stiffness: 500, damping: 25 }}
+              className="text-2xl font-bold text-foreground"
+            >
+              {playerScore}
+            </motion.p>
+          </AnimatePresence>
+        </div>
+      </motion.div>
+
+      {/* Center indicator */}
+      <div className="flex items-center justify-center w-12 h-12 rounded-full brutal-white brutal-border shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]">
+        <Users className="w-5 h-5 text-foreground" />
       </div>
 
-      {/* Timer or level */}
-      {timer !== undefined ? (
-        <motion.div className="text-center px-3 py-2 rounded-full bg-primary/10 border border-primary/30">
-          <div className="text-xs text-muted-foreground">Time</div>
-          <div className="text-lg font-bold text-primary">{timer}</div>
-        </motion.div>
-      ) : (
-        <div className="text-center">
-          <div className="text-xs text-muted-foreground">Question</div>
+      {/* Opponent */}
+      <motion.div
+        className="flex items-center justify-end gap-3 flex-1 p-3 rounded-2xl brutal-beige brutal-border shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]"
+        animate={opponentScoreChanged ? {
+          y: [-2, 0],
+        } : {}}
+        transition={{ duration: 0.2 }}
+      >
+        <div className="min-w-0 flex-1 text-right">
+          <p className="text-[10px] text-foreground/60 font-semibold truncate uppercase tracking-wider">{opponentName}</p>
+          <AnimatePresence mode="wait">
+            <motion.p
+              key={opponentScore}
+              initial={{ y: 5, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: -5, opacity: 0 }}
+              transition={{ type: "spring", stiffness: 500, damping: 25 }}
+              className="text-2xl font-bold text-foreground"
+            >
+              {opponentScore}
+            </motion.p>
+          </AnimatePresence>
         </div>
-      )}
-
-      {/* Player 2 */}
-      <div className="flex items-center justify-end gap-2 flex-1">
-        <div className="min-w-0 text-right">
-          <p className="text-xs text-muted-foreground truncate">{opponentName}</p>
-          <p className="text-sm font-bold text-foreground">{opponentScore}</p>
+        <div className="relative">
+          <div className="w-12 h-12 rounded-full brutal-white brutal-border-thin flex items-center justify-center overflow-hidden">
+            {opponentAvatar ? (
+              <img
+                src={opponentAvatar}
+                alt={opponentName}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <User className="w-5 h-5 text-foreground" />
+            )}
+          </div>
         </div>
-        <img
-          src={opponentAvatar || "/placeholder.svg"}
-          alt={opponentName}
-          className="w-12 h-12 rounded-full border-2 border-secondary"
-        />
-      </div>
+      </motion.div>
     </div>
   )
 }

@@ -26,12 +26,17 @@ export default function Home() {
   }
 
   return (
-    <main className="w-full h-screen bg-gradient-to-br from-background to-muted flex items-center justify-center overflow-hidden">
-      {currentScreen === "topics" && <TopicSelection onSelectTopic={handleTopicSelect} />}
-      {currentScreen === "matchmaking" && selectedTopic && (
-        <Matchmaking topic={selectedTopic} onMatchFound={handleMatchmakingComplete} />
-      )}
-      {currentScreen === "game" && selectedTopic && <GameScreen topic={selectedTopic} onGameEnd={handleGameEnd} />}
+    <main className="relative w-full h-screen overflow-hidden bg-muted">
+      {/* Content */}
+      <div className="relative z-10 h-full">
+        {currentScreen === "topics" && <TopicSelection onSelectTopic={handleTopicSelect} />}
+        {currentScreen === "matchmaking" && selectedTopic && (
+          <div className="flex items-center justify-center h-full bg-card">
+            <Matchmaking topic={selectedTopic} onMatchFound={handleMatchmakingComplete} />
+          </div>
+        )}
+        {currentScreen === "game" && selectedTopic && <GameScreen topic={selectedTopic} onGameEnd={handleGameEnd} />}
+      </div>
     </main>
   )
 }
