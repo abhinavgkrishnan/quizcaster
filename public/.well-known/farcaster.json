@@ -1,18 +1,18 @@
 {
   "accountAssociation": {
     "header": "eyJmaWQiOjg2MDc4MywidHlwZSI6ImF1dGgiLCJrZXkiOiIweGEyMjg1OTNFNjgwNzJGQzY2ZGViNDM1QTc1MEE3QjQ4MUQwZENGMzIifQ",
-    "payload": "eyJkb21haW4iOiI0YTdmMmViMTQxZmMubmdyb2stZnJlZS5hcHAifQ",
-    "signature": "QiF6CS3kzCwJgxe1WC53PvI9u0hWkS9hwNc4sOnqTIVnuTGi3kH9C3YMDqBbLJp0gC1vYWazGSbqQC4DUNBe5xs="
+    "payload": "eyJkb21haW4iOiJxdWl6Y2FzdGVyLm9oc25hcC5pdCJ9",
+    "signature": "TqQ7tAp9Npyz2SVdOddhJeGTk2y/SeRkEbH3J1mGijZHMXJgCjFDKAVCOwYjv5w0TcKcjgjrety9XYZQbIf68hs="
   },
   "miniapp": {
     "version": "1",
     "name": "QuizCaster",
-    "iconUrl": "https://4a7f2eb141fc.ngrok-free.app/icon.png",
-    "homeUrl": "https://4a7f2eb141fc.ngrok-free.app",
-    "imageUrl": "https://4a7f2eb141fc.ngrok-free.app/og-image.png",
+    "iconUrl": "https://quizcaster.ohsnap.it//icon.png",
+    "homeUrl": "https://quizcaster.ohsnap.it/",
+    "imageUrl": "https://quizcaster.ohsnap.it//og-image.png",
     "buttonTitle": "Play Quiz",
     "description": "Battle opponents worldwide in fast-paced trivia challenges. Answer questions quickly to earn more points!",
-    "splashImageUrl": "https://4a7f2eb141fc.ngrok-free.app/splash.png",
+    "splashImageUrl": "https://quizcaster.ohsnap.it//splash.png",
     "splashBackgroundColor": "#CFB8FF"
   }
 }
