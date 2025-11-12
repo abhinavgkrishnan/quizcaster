@@ -4,11 +4,12 @@ import { useState } from "react"
 import TopicSelection from "@/components/topic-selection"
 import Matchmaking from "@/components/matchmaking"
 import GameScreen from "@/components/game-screen"
+import Profile from "@/components/profile"
 import { useFarcaster } from "@/lib/farcaster-sdk"
 import { motion } from "framer-motion"
 import { LogIn } from "lucide-react"
 
-type AppScreen = "topics" | "matchmaking" | "game"
+type AppScreen = "topics" | "matchmaking" | "game" | "profile"
 
 export default function Home() {
   const [currentScreen, setCurrentScreen] = useState<AppScreen>("topics")
@@ -76,13 +77,19 @@ export default function Home() {
     <main className="relative w-full h-screen overflow-hidden bg-muted">
       {/* Content */}
       <div className="relative z-10 h-full">
-        {currentScreen === "topics" && <TopicSelection onSelectTopic={handleTopicSelect} />}
+        {currentScreen === "topics" && (
+          <TopicSelection
+            onSelectTopic={handleTopicSelect}
+            onNavigate={setCurrentScreen}
+          />
+        )}
         {currentScreen === "matchmaking" && selectedTopic && (
           <div className="flex items-center justify-center h-full bg-card">
             <Matchmaking topic={selectedTopic} onMatchFound={handleMatchmakingComplete} />
           </div>
         )}
         {currentScreen === "game" && selectedTopic && <GameScreen topic={selectedTopic} onGameEnd={handleGameEnd} user={user} />}
+        {currentScreen === "profile" && <Profile user={user} onNavigate={setCurrentScreen} />}
       </div>
     </main>
   )

@@ -5,6 +5,7 @@ import { Microscope, BookOpen, Trophy, Film, Globe2, Cpu, Home, Search, User, Be
 
 interface TopicSelectionProps {
   onSelectTopic: (topic: string) => void
+  onNavigate: (screen: "topics" | "matchmaking" | "game" | "profile") => void
 }
 
 const TOPICS = [
@@ -20,14 +21,14 @@ const TOPICS = [
 ]
 
 const MENU_ITEMS = [
-  { icon: Home, label: "Home", active: true },
-  { icon: Search, label: "Discover", active: false },
-  { icon: Trophy, label: "Leaderboard", active: false },
-  { icon: Bell, label: "Activity", active: false },
-  { icon: User, label: "Profile", active: false },
+  { icon: Home, label: "Home", screen: "topics" as const },
+  { icon: Search, label: "Discover", screen: "topics" as const },
+  { icon: Trophy, label: "Leaderboard", screen: "topics" as const },
+  { icon: Bell, label: "Activity", screen: "topics" as const },
+  { icon: User, label: "Profile", screen: "profile" as const },
 ]
 
-export default function TopicSelection({ onSelectTopic }: TopicSelectionProps) {
+export default function TopicSelection({ onSelectTopic, onNavigate }: TopicSelectionProps) {
   return (
     <div className="w-full max-w-2xl mx-auto h-screen flex flex-col bg-card">
       {/* Header */}
@@ -98,22 +99,24 @@ export default function TopicSelection({ onSelectTopic }: TopicSelectionProps) {
         <div className="flex items-center justify-around px-2 py-3 max-w-2xl mx-auto">
           {MENU_ITEMS.map((item) => {
             const Icon = item.icon
+            const isActive = item.screen === "topics" && item.label === "Home"
             return (
               <motion.button
                 key={item.label}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
+                onClick={() => onNavigate(item.screen)}
                 className={`flex flex-col items-center gap-1 px-1.5 py-2 rounded-xl transition-all min-w-0 ${
-                  item.active
+                  isActive
                     ? 'text-foreground'
                     : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
-                <Icon className={`w-5 h-5 shrink-0 ${item.active ? 'stroke-[2.5]' : 'stroke-[2]'}`} />
-                <span className={`text-[9px] font-semibold uppercase tracking-wider ${item.active ? 'font-bold' : ''} truncate max-w-[60px] text-center`}>
+                <Icon className={`w-5 h-5 shrink-0 ${isActive ? 'stroke-[2.5]' : 'stroke-[2]'}`} />
+                <span className={`text-[9px] font-semibold uppercase tracking-wider ${isActive ? 'font-bold' : ''} truncate max-w-[60px] text-center`}>
                   {item.label}
                 </span>
-                {item.active && (
+                {isActive && (
                   <div className="w-6 h-0.5 bg-foreground rounded-full" />
                 )}
               </motion.button>
