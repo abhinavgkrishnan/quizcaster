@@ -32,7 +32,7 @@ export default function TopicSelection({ onSelectTopic, onNavigate }: TopicSelec
   return (
     <div className="w-full max-w-2xl mx-auto h-screen flex flex-col bg-card">
       {/* Header */}
-      <div className="flex-none px-6 pt-8 pb-6">
+      <div className="flex-none px-4 pt-6 pb-4">
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -50,8 +50,8 @@ export default function TopicSelection({ onSelectTopic, onNavigate }: TopicSelec
       </div>
 
       {/* Topics Grid - Scrollable */}
-      <div className="flex-1 overflow-y-auto px-6 pb-6">
-        <div className="grid grid-cols-3 gap-4">
+      <div className="flex-1 overflow-y-auto px-4 pb-4">
+        <div className="grid grid-cols-3 gap-3">
           {TOPICS.map((topic, index) => {
             const Icon = topic.icon
             return (
@@ -74,7 +74,7 @@ export default function TopicSelection({ onSelectTopic, onNavigate }: TopicSelec
                   transition: { type: "spring", stiffness: 500, damping: 15 }
                 }}
                 onClick={() => onSelectTopic(topic.name)}
-                className={`relative aspect-square rounded-2xl ${topic.color} brutal-border font-bold shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:shadow-none transition-all`}
+                className={`relative aspect-square rounded-2xl ${topic.color} brutal-border font-bold shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:shadow-none transition-shadow`}
               >
                 {/* Content */}
                 <div className="relative z-10 flex flex-col items-center justify-center h-full gap-2 p-3">

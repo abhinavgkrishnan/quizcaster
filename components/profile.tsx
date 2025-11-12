@@ -30,17 +30,17 @@ export default function Profile({ user, onNavigate }: ProfileProps) {
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ type: "spring", stiffness: 300, damping: 25 }}
-        className="flex-1 overflow-y-auto px-6 py-8"
+        className="flex-1 overflow-y-auto px-4 py-6"
       >
         {/* Profile Header */}
-        <div className="text-center mb-8">
+        <div className="text-center mb-6">
           <motion.div
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ type: "spring", stiffness: 300, damping: 20, delay: 0.1 }}
-            className="mb-6 flex justify-center"
+            className="mb-4 flex justify-center"
           >
-            <div className="w-32 h-32 rounded-full brutal-violet brutal-border flex items-center justify-center overflow-hidden shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
+            <div className="w-24 h-24 rounded-full brutal-violet brutal-border flex items-center justify-center overflow-hidden shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
               {user?.pfpUrl ? (
                 <img
                   src={user.pfpUrl}
@@ -57,7 +57,7 @@ export default function Profile({ user, onNavigate }: ProfileProps) {
             initial={{ y: 10, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.2 }}
-            className="text-3xl font-bold text-foreground mb-2"
+            className="text-2xl font-bold text-foreground mb-1"
           >
             {user?.displayName || "Player"}
           </motion.h1>
@@ -65,55 +65,55 @@ export default function Profile({ user, onNavigate }: ProfileProps) {
             initial={{ y: 10, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.3 }}
-            className="text-sm text-muted-foreground font-semibold uppercase tracking-wider"
+            className="text-xs text-muted-foreground font-semibold uppercase tracking-wider"
           >
             @{user?.username || "user"}
           </motion.p>
         </div>
 
         {/* Stats Grid */}
-        <div className="space-y-4">
+        <div className="space-y-3">
           <motion.div
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.4 }}
-            className="brutal-violet brutal-border p-6 rounded-2xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
+            className="brutal-violet brutal-border p-5 rounded-2xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
           >
-            <div className="flex items-center gap-3 mb-4">
-              <Trophy className="w-6 h-6 text-foreground" />
-              <p className="text-sm font-bold uppercase tracking-wide text-foreground">Matches Played</p>
+            <div className="flex items-center gap-2 mb-3">
+              <Trophy className="w-5 h-5 text-foreground" />
+              <p className="text-xs font-bold uppercase tracking-wide text-foreground">Matches Played</p>
             </div>
-            <p className="text-5xl font-bold text-foreground">0</p>
-            <p className="text-xs text-foreground/60 font-semibold uppercase tracking-wider mt-2">
+            <p className="text-4xl font-bold text-foreground">0</p>
+            <p className="text-[10px] text-foreground/60 font-semibold uppercase tracking-wider mt-1">
               Total Games
             </p>
           </motion.div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-3">
             <motion.div
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.5 }}
-              className="brutal-beige brutal-border p-6 rounded-2xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
+              className="brutal-beige brutal-border p-4 rounded-2xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
             >
-              <div className="flex items-center gap-2 mb-3">
-                <Target className="w-5 h-5 text-foreground" />
-                <p className="text-xs font-bold uppercase tracking-wide text-foreground">Accuracy</p>
+              <div className="flex items-center gap-2 mb-2">
+                <Target className="w-4 h-4 text-foreground" />
+                <p className="text-[10px] font-bold uppercase tracking-wide text-foreground">Accuracy</p>
               </div>
-              <p className="text-4xl font-bold text-foreground">0%</p>
+              <p className="text-3xl font-bold text-foreground">0%</p>
             </motion.div>
 
             <motion.div
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.6 }}
-              className="brutal-beige brutal-border p-6 rounded-2xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
+              className="brutal-beige brutal-border p-4 rounded-2xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
             >
-              <div className="flex items-center gap-2 mb-3">
-                <Clock className="w-5 h-5 text-foreground" />
-                <p className="text-xs font-bold uppercase tracking-wide text-foreground">Avg. Time</p>
+              <div className="flex items-center gap-2 mb-2">
+                <Clock className="w-4 h-4 text-foreground" />
+                <p className="text-[10px] font-bold uppercase tracking-wide text-foreground">Avg. Time</p>
               </div>
-              <p className="text-4xl font-bold text-foreground">0s</p>
+              <p className="text-3xl font-bold text-foreground">0s</p>
             </motion.div>
           </div>
 
@@ -122,9 +122,9 @@ export default function Profile({ user, onNavigate }: ProfileProps) {
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.7 }}
-            className="brutal-white brutal-border p-6 rounded-2xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
+            className="brutal-white brutal-border p-4 rounded-2xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
           >
-            <p className="text-sm font-bold uppercase tracking-wide text-foreground mb-4">Performance</p>
+            <p className="text-xs font-bold uppercase tracking-wide text-foreground mb-3">Performance</p>
             <div className="space-y-3">
               <div className="flex justify-between items-center">
                 <span className="text-foreground/70 text-xs uppercase tracking-wide font-semibold">Wins</span>

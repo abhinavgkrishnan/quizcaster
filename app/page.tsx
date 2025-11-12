@@ -15,6 +15,7 @@ export default function Home() {
   const [currentScreen, setCurrentScreen] = useState<AppScreen>("topics")
   const [selectedTopic, setSelectedTopic] = useState<string | null>(null)
   const { isSDKLoaded, user, isAuthenticated, signIn } = useFarcaster()
+  const isDevMode = process.env.NEXT_PUBLIC_DEV_MODE === 'true'
 
   const handleTopicSelect = (topic: string) => {
     setSelectedTopic(topic)
@@ -48,8 +49,8 @@ export default function Home() {
     )
   }
 
-  // Show sign-in prompt if not authenticated
-  if (!isAuthenticated) {
+  // Show sign-in prompt if not authenticated (skip in dev mode)
+  if (!isAuthenticated && !isDevMode) {
     return (
       <main className="relative w-full h-screen overflow-hidden bg-muted flex items-center justify-center">
         <div className="w-full max-w-md px-6 text-center">

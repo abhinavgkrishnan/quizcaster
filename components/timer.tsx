@@ -41,7 +41,7 @@ export default function Timer({ onTimeout, duration = 10, isPaused = false }: Ti
 
   return (
     <motion.div
-      className="relative w-32 h-32"
+      className="relative w-28 h-28"
       animate={isLowTime ? {
         x: [-2, 2, -2, 2, 0],
       } : {}}
@@ -94,10 +94,10 @@ export default function Timer({ onTimeout, duration = 10, isPaused = false }: Ti
             repeat: isLowTime ? Infinity : 0,
           }}
         >
-          <div className="text-4xl font-bold text-foreground">
+          <div className="text-3xl font-bold text-foreground">
             {Math.ceil(timeLeft)}
           </div>
-          <div className="text-xs text-muted-foreground font-semibold uppercase tracking-wider mt-1">
+          <div className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider mt-0.5">
             sec
           </div>
         </motion.div>

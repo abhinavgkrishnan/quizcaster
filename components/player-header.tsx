@@ -49,17 +49,17 @@ export default function PlayerHeader({
   }, [opponentScore, prevOpponentScore])
 
   return (
-    <div className="flex items-center justify-between gap-3">
+    <div className="flex items-center justify-between gap-2">
       {/* Player */}
       <motion.div
-        className="flex items-center gap-3 flex-1 p-3 rounded-2xl brutal-violet brutal-border shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]"
+        className="flex items-center gap-2 flex-1 p-2.5 rounded-2xl brutal-violet brutal-border shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]"
         animate={playerScoreChanged ? {
           y: [-2, 0],
         } : {}}
         transition={{ duration: 0.2 }}
       >
         <div className="relative">
-          <div className="w-12 h-12 rounded-full brutal-white brutal-border-thin flex items-center justify-center overflow-hidden">
+          <div className="w-10 h-10 rounded-full brutal-white brutal-border-thin flex items-center justify-center overflow-hidden">
             {playerAvatar ? (
               <img
                 src={playerAvatar}
@@ -67,12 +67,12 @@ export default function PlayerHeader({
                 className="w-full h-full object-cover"
               />
             ) : (
-              <User className="w-5 h-5 text-foreground" />
+              <User className="w-4 h-4 text-foreground" />
             )}
           </div>
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-[10px] text-foreground/60 font-semibold truncate uppercase tracking-wider">{playerName}</p>
+          <p className="text-[9px] text-foreground/60 font-semibold truncate uppercase tracking-wider">{playerName}</p>
           <AnimatePresence mode="wait">
             <motion.p
               key={playerScore}
@@ -80,7 +80,7 @@ export default function PlayerHeader({
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: -5, opacity: 0 }}
               transition={{ type: "spring", stiffness: 500, damping: 25 }}
-              className="text-2xl font-bold text-foreground"
+              className="text-xl font-bold text-foreground"
             >
               {playerScore}
             </motion.p>
@@ -89,20 +89,20 @@ export default function PlayerHeader({
       </motion.div>
 
       {/* Center indicator */}
-      <div className="flex items-center justify-center w-12 h-12 rounded-full brutal-white brutal-border shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]">
-        <Users className="w-5 h-5 text-foreground" />
+      <div className="flex items-center justify-center w-10 h-10 rounded-full brutal-white brutal-border shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+        <Users className="w-4 h-4 text-foreground" />
       </div>
 
       {/* Opponent */}
       <motion.div
-        className="flex items-center justify-end gap-3 flex-1 p-3 rounded-2xl brutal-beige brutal-border shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]"
+        className="flex items-center justify-end gap-2 flex-1 p-2.5 rounded-2xl brutal-beige brutal-border shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]"
         animate={opponentScoreChanged ? {
           y: [-2, 0],
         } : {}}
         transition={{ duration: 0.2 }}
       >
         <div className="min-w-0 flex-1 text-right">
-          <p className="text-[10px] text-foreground/60 font-semibold truncate uppercase tracking-wider">{opponentName}</p>
+          <p className="text-[9px] text-foreground/60 font-semibold truncate uppercase tracking-wider">{opponentName}</p>
           <AnimatePresence mode="wait">
             <motion.p
               key={opponentScore}
@@ -110,14 +110,14 @@ export default function PlayerHeader({
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: -5, opacity: 0 }}
               transition={{ type: "spring", stiffness: 500, damping: 25 }}
-              className="text-2xl font-bold text-foreground"
+              className="text-xl font-bold text-foreground"
             >
               {opponentScore}
             </motion.p>
           </AnimatePresence>
         </div>
         <div className="relative">
-          <div className="w-12 h-12 rounded-full brutal-white brutal-border-thin flex items-center justify-center overflow-hidden">
+          <div className="w-10 h-10 rounded-full brutal-white brutal-border-thin flex items-center justify-center overflow-hidden">
             {opponentAvatar ? (
               <img
                 src={opponentAvatar}
@@ -125,7 +125,7 @@ export default function PlayerHeader({
                 className="w-full h-full object-cover"
               />
             ) : (
-              <User className="w-5 h-5 text-foreground" />
+              <User className="w-4 h-4 text-foreground" />
             )}
           </div>
         </div>

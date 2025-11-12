@@ -112,12 +112,12 @@ export default function GameScreen({ topic, onGameEnd, user }: GameScreenProps) 
   const question = QUESTIONS[currentQuestion]
 
   return (
-    <div className="relative w-full max-w-md px-4 py-4 flex flex-col h-screen overflow-hidden bg-muted">
+    <div className="relative w-full max-w-md mx-auto px-3 py-3 flex flex-col h-screen overflow-hidden bg-muted">
       {/* Score bars background */}
       <ScoreBars playerScore={playerScore} opponentScore={opponentScore} />
 
       {/* Player header */}
-      <div className="relative z-10 mb-4">
+      <div className="relative z-10 mb-3">
         <PlayerHeader
           playerName={user?.displayName || user?.username || "You"}
           playerScore={playerScore}

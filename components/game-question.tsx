@@ -61,9 +61,9 @@ export default function GameQuestion({ question, onAnswer, answered }: GameQuest
   const hasImage = !!question.image
 
   return (
-    <div className="space-y-6 flex flex-col h-full">
+    <div className="space-y-4 flex flex-col h-full">
       {/* Timer */}
-      <div className="flex justify-center pt-2">
+      <div className="flex justify-center pt-1">
         <Timer
           onTimeout={() => onAnswer(false, 10000)}
           isPaused={!showOptions}
@@ -75,9 +75,9 @@ export default function GameQuestion({ question, onAnswer, answered }: GameQuest
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ type: "spring", stiffness: 300, damping: 25 }}
-        className="text-center px-4"
+        className="text-center px-2"
       >
-        <h2 className="text-2xl font-bold text-foreground leading-tight text-balance">
+        <h2 className="text-xl sm:text-2xl font-bold text-foreground leading-tight text-balance">
           {question.question}
         </h2>
       </motion.div>
@@ -99,8 +99,8 @@ export default function GameQuestion({ question, onAnswer, answered }: GameQuest
       )}
 
       {/* Options */}
-      <div className={`flex-1 flex flex-col justify-end pb-4 ${hasImage ? 'gap-2' : 'gap-3'}`}>
-        <div className={hasImage ? 'grid grid-cols-2 grid-rows-2 gap-3' : 'flex flex-col gap-3'}>
+      <div className={`flex-1 flex flex-col justify-end pb-2 ${hasImage ? 'gap-2' : 'gap-2.5'}`}>
+        <div className={hasImage ? 'grid grid-cols-2 grid-rows-2 gap-2.5' : 'flex flex-col gap-2.5'}>
           {question.options.map((option, index) => {
             const isSelected = selectedAnswer === option
             const isCorrect = option === question.correct
@@ -136,9 +136,9 @@ export default function GameQuestion({ question, onAnswer, answered }: GameQuest
                   } : {}}
                   transition={{ duration: 0.4 }}
                   className={`
-                    relative ${hasImage ? 'h-full' : ''} w-full ${hasImage ? 'p-4' : 'p-5'} rounded-2xl font-bold ${hasImage ? 'text-sm' : 'text-base'} brutal-border transition-all uppercase tracking-wide
-                    ${!answered && 'brutal-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:shadow-none'}
-                    ${showCorrect && 'brutal-beige shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]'}
+                    relative ${hasImage ? 'h-full min-h-[60px]' : ''} w-full ${hasImage ? 'p-3' : 'p-4'} rounded-2xl font-bold ${hasImage ? 'text-xs' : 'text-sm'} brutal-border transition-shadow uppercase tracking-wide
+                    ${!answered && 'bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:shadow-none'}
+                    ${showCorrect && 'bg-[#FEFFDD] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]'}
                     ${showWrong && 'bg-[#ffcccc] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]'}
                     ${answered && !isSelected && !isCorrect && 'opacity-40 bg-gray-200'}
                     disabled:cursor-default text-foreground
