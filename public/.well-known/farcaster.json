@@ -7,12 +7,12 @@
   "miniapp": {
     "version": "1",
     "name": "QuizCaster",
-    "iconUrl": "https://quizcaster.ohsnap.it//icon.png",
+    "iconUrl": "https://quizcaster.ohsnap.it/icon.png",
     "homeUrl": "https://quizcaster.ohsnap.it/",
-    "imageUrl": "https://quizcaster.ohsnap.it//og-image.png",
+    "imageUrl": "https://quizcaster.ohsnap.it/og-image.png",
     "buttonTitle": "Play Quiz",
     "description": "Battle opponents worldwide in fast-paced trivia challenges. Answer questions quickly to earn more points!",
-    "splashImageUrl": "https://quizcaster.ohsnap.it//splash.png",
+    "splashImageUrl": "https://quizcaster.ohsnap.it/splash.png",
     "splashBackgroundColor": "#CFB8FF"
   }
 }
