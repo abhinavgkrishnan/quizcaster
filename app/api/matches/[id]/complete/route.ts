@@ -15,15 +15,17 @@ export async function POST(
     }
 
     // Get match
-    const { data: match, error: matchError } = await supabase
+    const { data: matchData, error: matchError } = await supabase
       .from('matches')
-      .select()
+      .select('*')
       .eq('id', matchId)
       .single()
 
-    if (matchError || !match) {
+    if (matchError || !matchData) {
       return NextResponse.json({ error: 'Match not found' }, { status: 404 })
     }
+
+    const match = matchData as any
 
     // Verify user is part of this match
     if (match.player1_fid !== fid && match.player2_fid !== fid) {
@@ -34,8 +36,8 @@ export async function POST(
 
     // Determine if match is complete
     let matchStatus = match.status
-    let matchCompletedAt = match.completedAt
-    let winnerFid = match.winnerFid
+    let matchCompletedAt = match.completed_at
+    let winnerFid = match.winner_fid
 
     if (match.match_type === 'bot' || match.match_type === 'realtime') {
       // For bot/realtime, match completes when either player finishes
@@ -53,8 +55,7 @@ export async function POST(
     } else if (match.match_type === 'async') {
       // For async, mark this player as completed
       if (isPlayer1) {
-        await supabase
-          .from('matches')
+        await (supabase.from('matches') as any)
           .update({
             player1_completed_at: new Date().toISOString()
           })
@@ -76,11 +77,10 @@ export async function POST(
     }
 
     // Update match
-    await supabase
-      .from('matches')
+    await (supabase.from('matches') as any)
       .update({
         status: matchStatus,
-        completed_at: matchCompletedAt?.toISOString(),
+        completed_at: matchCompletedAt?.toISOString ? matchCompletedAt.toISOString() : matchCompletedAt,
         winner_fid: winnerFid
       })
       .eq('id', matchId)

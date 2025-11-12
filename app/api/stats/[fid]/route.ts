@@ -14,17 +14,21 @@ export async function GET(
     }
 
     // Get overall stats
-    const { data: overall } = await supabase
+    const { data: overallRaw } = await supabase
       .from('user_stats_overall')
-      .select()
+      .select('*')
       .eq('fid', fidNumber)
       .single()
 
+    const overall = overallRaw as any
+
     // Get topic stats
-    const { data: topicStats } = await supabase
+    const { data: topicStatsRaw } = await supabase
       .from('user_stats_by_topic')
-      .select()
+      .select('*')
       .eq('fid', fidNumber)
+
+    const topicStats = topicStatsRaw as any[]
 
     // Calculate derived metrics
     const overallData = overall ? {

@@ -44,15 +44,14 @@ export async function POST(request: NextRequest) {
 
     // Randomly select 10 questions
     const shuffledQuestions = shuffleArray(questionResults).slice(0, 10)
-    const questionIds = shuffledQuestions.map(q => q.id)
+    const questionIds = shuffledQuestions.map((q: any) => q.id)
 
     // Create match record
     const expiresAt = type === 'async'
       ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
       : null
 
-    const { data: match, error: matchError } = await supabase
-      .from('matches')
+    const { data: matchData, error: matchError } = await (supabase.from('matches') as any)
       .insert({
         match_type: type,
         topic,
@@ -65,20 +64,22 @@ export async function POST(request: NextRequest) {
         expires_at: expiresAt,
         started_at: new Date().toISOString()
       })
-      .select()
+      .select('*')
       .single()
 
-    if (matchError || !match) {
+    if (matchError || !matchData) {
       console.error('Error creating match:', matchError)
       return NextResponse.json({ error: 'Failed to create match' }, { status: 500 })
     }
+
+    const match = matchData as any
 
     // Get opponent data if provided
     let opponentData = null
     if (opponent_fid && type !== 'bot') {
       const { data: opponent } = await supabase
         .from('users')
-        .select()
+        .select('*')
         .eq('fid', opponent_fid)
         .single()
 
@@ -90,7 +91,7 @@ export async function POST(request: NextRequest) {
       match_id: match.id,
       match_type: type,
       topic,
-      questions: shuffledQuestions.map(q => ({
+      questions: shuffledQuestions.map((q: any) => ({
         id: q.id,
         question: q.question,
         options: shuffleArray(q.options as string[]),

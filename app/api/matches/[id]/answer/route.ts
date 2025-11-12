@@ -33,30 +33,34 @@ export async function POST(
     }
 
     // Get match to verify it exists and user is part of it
-    const { data: match, error: matchError } = await supabase
+    const { data: matchData, error: matchError } = await supabase
       .from('matches')
-      .select()
+      .select('*')
       .eq('id', matchId)
       .single()
 
-    if (matchError || !match) {
+    if (matchError || !matchData) {
       return NextResponse.json({ error: 'Match not found' }, { status: 404 })
     }
+
+    const match = matchData as any
 
     if (match.player1_fid !== fid && match.player2_fid !== fid) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
     }
 
     // Get question to check correct answer
-    const { data: question, error: questionError } = await supabase
+    const { data: questionData, error: questionError } = await supabase
       .from('questions')
-      .select()
+      .select('*')
       .eq('id', question_id)
       .single()
 
-    if (questionError || !question) {
+    if (questionError || !questionData) {
       return NextResponse.json({ error: 'Question not found' }, { status: 404 })
     }
+
+    const question = questionData as any
 
     // Check if answer is correct
     const isCorrect = answer === question.correct_answer
@@ -65,7 +69,7 @@ export async function POST(
     const pointsEarned = isCorrect ? calculatePoints(time_taken_ms) : 0
 
     // Insert answer record
-    await supabase.from('match_answers').insert({
+    await (supabase.from('match_answers') as any).insert({
       match_id: matchId,
       fid,
       question_id: question_id,
@@ -86,22 +90,19 @@ export async function POST(
       const botAccuracy = Math.random() < 0.75 // 75% accuracy
       if (botAccuracy) {
         const botTime = Math.random() * 5000 + 1000 // 1-6 seconds
-        botPoints = calculatePoints(botTime) * 0.9 // 90% of max points
-        botPoints = Math.floor(botPoints)
+        botPoints = Math.floor(calculatePoints(botTime) * 0.9) // 90% of max points
       }
     }
 
     if (isPlayer1) {
-      await supabase
-        .from('matches')
+      await (supabase.from('matches') as any)
         .update({
           player1_score: match.player1_score + pointsEarned,
           player2_score: match.player2_score + botPoints
         })
         .eq('id', matchId)
     } else {
-      await supabase
-        .from('matches')
+      await (supabase.from('matches') as any)
         .update({
           player2_score: match.player2_score + pointsEarned
         })
@@ -109,11 +110,13 @@ export async function POST(
     }
 
     // Get updated match for response
-    const { data: updatedMatch } = await supabase
+    const { data: updatedMatchData } = await supabase
       .from('matches')
-      .select()
+      .select('*')
       .eq('id', matchId)
       .single()
+
+    const updatedMatch = updatedMatchData as any
 
     return NextResponse.json({
       is_correct: isCorrect,

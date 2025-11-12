@@ -9,15 +9,17 @@ export async function GET(
     const { id: matchId } = await params
 
     // Get match
-    const { data: match, error: matchError } = await supabase
+    const { data: matchData, error: matchError } = await supabase
       .from('matches')
-      .select()
+      .select('*')
       .eq('id', matchId)
       .single()
 
-    if (matchError || !match) {
+    if (matchError || !matchData) {
       return NextResponse.json({ error: 'Match not found' }, { status: 404 })
     }
+
+    const match = matchData as any
 
     // Only allow emulation for async matches
     if (match.match_type !== 'async') {
@@ -28,7 +30,7 @@ export async function GET(
     }
 
     // Get player 1's answers (the challenger)
-    const { data: answers } = await supabase
+    const { data: answersData } = await supabase
       .from('match_answers')
       .select('question_number, time_taken_ms, is_correct, points_earned')
       .eq('match_id', matchId)
@@ -36,18 +38,20 @@ export async function GET(
       .order('question_number')
 
     // Get opponent (player 1) data
-    const { data: opponent, error: opponentError } = await supabase
+    const { data: opponentData, error: opponentError } = await supabase
       .from('users')
-      .select()
+      .select('*')
       .eq('fid', match.player1_fid)
       .single()
 
-    if (opponentError || !opponent) {
+    if (opponentError || !opponentData) {
       return NextResponse.json(
         { error: 'Opponent data not found' },
         { status: 404 }
       )
     }
+
+    const opponent = opponentData as any
 
     return NextResponse.json({
       opponent: {
@@ -56,7 +60,12 @@ export async function GET(
         display_name: opponent.display_name,
         pfp_url: opponent.pfp_url
       },
-      answers: answers || []
+      answers: (answersData || []).map((a: any) => ({
+        question_number: a.question_number,
+        time_taken_ms: a.time_taken_ms,
+        is_correct: a.is_correct,
+        points_earned: a.points_earned
+      }))
     })
   } catch (error) {
     console.error('Error fetching emulation data:', error)

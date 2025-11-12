@@ -34,7 +34,7 @@ export async function GET(
     const randomQuestions = shuffleArray(questionResults).slice(0, 10)
 
     return NextResponse.json({
-      questions: randomQuestions.map(q => ({
+      questions: randomQuestions.map((q: any) => ({
         id: q.id,
         question: q.question,
         options: shuffleArray(q.options as string[]),
