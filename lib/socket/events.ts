@@ -83,6 +83,11 @@ export interface ServerToClientEvents {
   opponent_joined: (data: PlayerData) => void;
   opponent_left: (data: { fid: number }) => void;
 
+  // Rematch
+  rematch_requested: (data: { fid: number; username: string }) => void;
+  rematch_ready: (data: { matchId: string }) => void;
+  rematch_expired: () => void;
+
   // Errors
   error: (data: { message: string }) => void;
 }
@@ -116,6 +121,13 @@ export interface ClientToServerEvents {
   leave_game: (data: {
     matchId: string;
     fid: number;
+  }) => void;
+
+  // Rematch
+  request_rematch: (data: {
+    matchId: string;
+    fid: number;
+    topic: string;
   }) => void;
 }
 

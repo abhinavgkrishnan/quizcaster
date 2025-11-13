@@ -34,6 +34,12 @@ export default function Home() {
     setCurrentMatch(null)
   }
 
+  const handlePlayAgain = () => {
+    // Keep the same topic and go back to matchmaking
+    setCurrentMatch(null)
+    setCurrentScreen("matchmaking")
+  }
+
   // Show loading state while SDK initializes
   if (!isSDKLoaded) {
     return (
@@ -103,6 +109,7 @@ export default function Home() {
             myPlayer={currentMatch.myPlayer}
             opponent={currentMatch.opponent}
             onGameEnd={handleGameEnd}
+            onPlayAgain={handlePlayAgain}
           />
         )}
         {currentScreen === "profile" && <Profile user={user} onNavigate={setCurrentScreen} />}

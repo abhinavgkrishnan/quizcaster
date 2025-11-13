@@ -31,12 +31,15 @@ interface GameState {
   }>;
   winner: number | null;
   error: string | null;
+  opponentRequestedRematch: boolean;
+  rematchReady: string | null;
 }
 
 export function useSocketGame(
   matchId: string,
   myPlayer: PlayerData,
-  opponent: PlayerData
+  opponent: PlayerData,
+  topic: string
 ) {
   const [gameState, setGameState] = useState<GameState>({
     phase: 'connecting',
@@ -52,6 +55,8 @@ export function useSocketGame(
     myAnswers: [],
     winner: null,
     error: null,
+    opponentRequestedRematch: false,
+    rematchReady: null,
   });
 
   const socketRef = useRef<Socket<ServerToClientEvents, ClientToServerEvents> | null>(null);
@@ -192,6 +197,19 @@ export function useSocketGame(
       setGameState(prev => ({ ...prev, error: data.message }));
     });
 
+    // Rematch events
+    socket.on('rematch_requested', (data) => {
+      setGameState(prev => ({ ...prev, opponentRequestedRematch: true }));
+    });
+
+    socket.on('rematch_ready', (data) => {
+      setGameState(prev => ({ ...prev, rematchReady: data.matchId }));
+    });
+
+    socket.on('rematch_expired', () => {
+      setGameState(prev => ({ ...prev, opponentRequestedRematch: false }));
+    });
+
     // Cleanup
     return () => {
       socket.emit('leave_game', { matchId, fid: myPlayer.fid });
@@ -220,12 +238,24 @@ export function useSocketGame(
     });
   }, [matchId, myPlayer.fid, gameState.currentQuestion]);
 
+  // Request rematch
+  const requestRematch = useCallback(() => {
+    if (!socketRef.current) return;
+
+    socketRef.current.emit('request_rematch', {
+      matchId,
+      fid: myPlayer.fid,
+      topic,
+    });
+  }, [matchId, myPlayer.fid, topic]);
+
   return {
     // State
     ...gameState,
 
     // Actions
     submitAnswer,
+    requestRematch,
 
     // Computed
     isConnected: socketRef.current?.connected || false,

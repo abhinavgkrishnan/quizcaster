@@ -406,6 +406,13 @@ export class GameRoom {
   }
 
   /**
+   * Get players (for rematch)
+   */
+  getPlayers() {
+    return this.players;
+  }
+
+  /**
    * Cleanup room
    */
   cleanup(): void {

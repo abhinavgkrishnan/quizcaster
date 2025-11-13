@@ -24,12 +24,21 @@ interface GameScreenProps {
   myPlayer: PlayerData
   opponent: PlayerData
   onGameEnd: () => void
+  onPlayAgain: () => void
 }
 
-export default function GameScreen({ topic, matchId, myPlayer, opponent, onGameEnd }: GameScreenProps) {
+export default function GameScreen({ topic, matchId, myPlayer, opponent, onGameEnd, onPlayAgain }: GameScreenProps) {
   // Single hook manages everything
-  const game = useSocketGame(matchId, myPlayer, opponent);
+  const game = useSocketGame(matchId, myPlayer, opponent, topic);
   const [show2xBadge, setShow2xBadge] = useState(false);
+
+  // Handle rematch ready - redirect to new match
+  useEffect(() => {
+    if (game.rematchReady) {
+      // Reload to new match (will be handled by app routing)
+      window.location.href = `/?match=${game.rematchReady}`;
+    }
+  }, [game.rematchReady]);
 
   // Show confetti on correct answer
   useEffect(() => {
@@ -121,7 +130,11 @@ export default function GameScreen({ topic, matchId, myPlayer, opponent, onGameE
           playerScore={game.myScore}
           opponentScore={game.opponentScore}
           playerAnswers={game.myAnswers}
-          onPlayAgain={onGameEnd}
+          opponent={opponent}
+          opponentRequestedRematch={game.opponentRequestedRematch}
+          onPlayAgain={onPlayAgain}
+          onGoHome={onGameEnd}
+          onChallenge={game.requestRematch}
         />
       </div>
     );

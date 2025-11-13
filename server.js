@@ -108,6 +108,18 @@ app.prepare().then(() => {
 
       socket.leave(matchId);
     });
+
+    // Handle rematch request
+    socket.on('request_rematch', async ({ matchId, fid, topic }) => {
+      const room = roomManager.getRoom(matchId);
+      if (room) {
+        // Get player data from room
+        const players = Array.from(room.getPlayers().values());
+        if (players.length === 2) {
+          await roomManager.handleRematchRequest(matchId, fid, topic, players[0], players[1]);
+        }
+      }
+    });
   });
 
   console.log('[Server] Socket.IO initialized on path: /socket.io/');

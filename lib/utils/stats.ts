@@ -79,6 +79,11 @@ async function updatePlayerStats(
     }
   }
 
+  // If this match was a win, current streak includes this match
+  if (isWin) {
+    currentStreak++; // Add current match to streak
+  }
+
   // Update user_stats_by_topic
   const { data: existingTopicStats } = await supabase
     .from('user_stats_by_topic')
@@ -101,7 +106,7 @@ async function updatePlayerStats(
       ((existingTopicStats?.avg_response_time_ms || 0) * (existingTopicStats?.questions_answered || 0) + avgTime * totalAnswers) /
       ((existingTopicStats?.questions_answered || 0) + totalAnswers)
     ),
-    best_streak: Math.max(existingTopicStats?.best_streak || 0, currentStreak),
+    best_streak: Math.max(existingTopicStats?.best_streak || 0, currentStreak), // Update if current > best
     updated_at: new Date().toISOString(),
   };
 
@@ -127,7 +132,7 @@ async function updatePlayerStats(
       ((existingOverallStats?.avg_response_time_ms || 0) * (existingOverallStats?.total_questions || 0) + avgTime * totalAnswers) /
       ((existingOverallStats?.total_questions || 0) + totalAnswers)
     ),
-    longest_streak: Math.max(existingOverallStats?.longest_streak || 0, currentStreak),
+    longest_streak: Math.max(existingOverallStats?.longest_streak || 0, currentStreak), // Update if current > best
     updated_at: new Date().toISOString(),
   };
 

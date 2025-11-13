@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { motion } from "framer-motion"
 import { Trophy, Target, Clock, TrendingUp, ChevronDown, Medal } from "lucide-react"
 import type { AppScreen } from "@/lib/types"
@@ -50,6 +50,18 @@ export default function Leaderboard({ onNavigate }: LeaderboardProps) {
   const [loading, setLoading] = useState(true)
   const [showTopicDropdown, setShowTopicDropdown] = useState(false)
   const [showSortDropdown, setShowSortDropdown] = useState(false)
+
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    const handleClick = () => {
+      setShowTopicDropdown(false)
+      setShowSortDropdown(false)
+    }
+    if (showTopicDropdown || showSortDropdown) {
+      document.addEventListener('click', handleClick)
+      return () => document.removeEventListener('click', handleClick)
+    }
+  }, [showTopicDropdown, showSortDropdown])
 
   // Fetch topics
   useEffect(() => {
@@ -110,15 +122,16 @@ export default function Leaderboard({ onNavigate }: LeaderboardProps) {
         </motion.div>
 
         {/* Filters */}
-        <div className="flex gap-2">
+        <div className="flex gap-2 relative z-50">
           {/* Topic Selector */}
-          <div className="relative flex-1">
+          <div className="relative flex-1 z-50">
             <button
-              onClick={() => {
+              onClick={(e) => {
+                e.stopPropagation()
                 setShowTopicDropdown(!showTopicDropdown)
                 setShowSortDropdown(false)
               }}
-              className="w-full brutal-white brutal-border px-4 py-3 rounded-xl font-bold text-sm shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all uppercase tracking-wide flex items-center justify-between"
+              className="w-full brutal-white brutal-border px-4 py-3 rounded-xl font-bold text-sm shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all uppercase tracking-wide flex items-center justify-between relative z-10"
             >
               <span className="truncate">
                 {selectedTopic ? topics.find(t => t.slug === selectedTopic)?.display_name : 'Overall'}
@@ -127,7 +140,7 @@ export default function Leaderboard({ onNavigate }: LeaderboardProps) {
             </button>
 
             {showTopicDropdown && (
-              <div className="absolute top-full left-0 right-0 mt-2 brutal-white brutal-border rounded-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] overflow-hidden z-50 max-h-60 overflow-y-auto">
+              <div className="absolute top-full left-0 right-0 mt-2 brutal-white brutal-border rounded-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] overflow-hidden z-[100] max-h-60 overflow-y-auto">
                 <button
                   onClick={() => {
                     setSelectedTopic(null)
@@ -154,20 +167,21 @@ export default function Leaderboard({ onNavigate }: LeaderboardProps) {
           </div>
 
           {/* Sort Selector */}
-          <div className="relative">
+          <div className="relative z-50">
             <button
-              onClick={() => {
+              onClick={(e) => {
+                e.stopPropagation()
                 setShowSortDropdown(!showSortDropdown)
                 setShowTopicDropdown(false)
               }}
-              className="brutal-violet brutal-border px-4 py-3 rounded-xl font-bold text-sm shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all flex items-center gap-2"
+              className="brutal-violet brutal-border px-4 py-3 rounded-xl font-bold text-sm shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all flex items-center gap-2 relative z-10"
             >
               <SortIcon className="w-4 h-4" />
               <ChevronDown className="w-4 h-4" />
             </button>
 
             {showSortDropdown && (
-              <div className="absolute top-full right-0 mt-2 brutal-white brutal-border rounded-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] overflow-hidden z-50 min-w-[180px]">
+              <div className="absolute top-full right-0 mt-2 brutal-white brutal-border rounded-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] overflow-hidden z-[100] min-w-[180px]">
                 {SORT_OPTIONS.map(option => {
                   const Icon = option.icon
                   return (
