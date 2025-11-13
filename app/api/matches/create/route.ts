@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/db/supabase'
+import { supabase } from '@/lib/utils/supabase'
 import { shuffleArray } from '@/lib/utils/shuffle'
-import type { Tables } from '@/lib/database.types'
+import { createGameSession } from '@/lib/redis/game-state'
+import { GAME_CONFIG, MATCH_TYPES, MATCH_STATUS } from '@/lib/constants'
+import type { Tables, TablesInsert } from '@/lib/database.types'
 
 type Question = Pick<Tables<'questions'>, 'id' | 'topic' | 'question' | 'options' | 'image_url'>
 type User = Tables<'users'>
-type Match = Tables<'matches'>
 
 export async function POST(request: NextRequest) {
   try {
@@ -20,14 +21,14 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    if (!['realtime', 'async', 'bot'].includes(type)) {
+    if (!Object.values(MATCH_TYPES).includes(type)) {
       return NextResponse.json(
-        { error: 'Invalid match type. Must be: realtime, async, or bot' },
+        { error: 'Invalid match type. Must be: realtime or async' },
         { status: 400 }
       )
     }
 
-    // Get 10 random questions for this topic
+    // Get random questions for this topic
     const { data: questionResults, error: questionsError } = await supabase
       .from('questions')
       .select('id, topic, question, options, image_url')
@@ -40,36 +41,38 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to fetch questions' }, { status: 500 })
     }
 
-    if (!questionResults || questionResults.length < 10) {
+    if (!questionResults || questionResults.length < GAME_CONFIG.QUESTIONS_PER_MATCH) {
       return NextResponse.json(
         { error: `Not enough questions for topic: ${topic}` },
         { status: 404 }
       )
     }
 
-    // Randomly select 10 questions
-    const shuffledQuestions = shuffleArray(questionResults).slice(0, 10) as Question[]
+    // Randomly select questions
+    const shuffledQuestions = shuffleArray(questionResults).slice(0, GAME_CONFIG.QUESTIONS_PER_MATCH) as Question[]
     const questionIds = shuffledQuestions.map((q) => q.id)
 
-    // Create match record
-    const expiresAt = type === 'async'
+    // Create match record in Postgres
+    const expiresAt = type === MATCH_TYPES.ASYNC
       ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
       : null
 
+    const matchRecord: TablesInsert<'matches'> = {
+      match_type: type,
+      topic,
+      player1_fid: player_fid,
+      player2_fid: opponent_fid || null,
+      is_bot_opponent: false,
+      status: MATCH_STATUS.WAITING,
+      questions_used: questionIds,
+      challenge_message: challenge_message || null,
+      expires_at: expiresAt,
+      started_at: new Date().toISOString()
+    }
+
     const { data: matchData, error: matchError } = await supabase
       .from('matches')
-      .insert({
-        match_type: type,
-        topic,
-        player1_fid: player_fid,
-        player2_fid: opponent_fid || null,
-        is_bot_opponent: type === 'bot',
-        status: type === 'bot' ? 'in_progress' : 'waiting',
-        questions_used: questionIds,
-        challenge_message: challenge_message || null,
-        expires_at: expiresAt,
-        started_at: new Date().toISOString()
-      })
+      .insert(matchRecord)
       .select('*')
       .single()
 
@@ -78,9 +81,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to create match' }, { status: 500 })
     }
 
+    // For realtime games, create Redis session
+    if (type === MATCH_TYPES.REALTIME && opponent_fid) {
+      await createGameSession(
+        matchData.id,
+        player_fid,
+        opponent_fid,
+        questionIds
+      )
+    }
+
     // Get opponent data if provided
     let opponentData: User | null = null
-    if (opponent_fid && type !== 'bot') {
+    if (opponent_fid) {
       const { data: opponent } = await supabase
         .from('users')
         .select('*')

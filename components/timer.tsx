@@ -1,39 +1,30 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect } from "react"
 import { motion } from "framer-motion"
+import { GAME_CONFIG } from "@/lib/constants"
 
 interface TimerProps {
-  onTimeout: () => void
+  timeRemaining: number  // Server-controlled time
+  onTimeout?: () => void
   duration?: number
-  isPaused?: boolean
 }
 
-export default function Timer({ onTimeout, duration = 10, isPaused = false }: TimerProps) {
-  const [timeLeft, setTimeLeft] = useState(duration)
-
+export default function Timer({ timeRemaining, onTimeout, duration = GAME_CONFIG.QUESTION_TIME_LIMIT }: TimerProps) {
+  // Call onTimeout when time reaches 0
   useEffect(() => {
-    if (isPaused) return
-
-    if (timeLeft <= 0) {
+    if (timeRemaining <= 0 && onTimeout) {
       onTimeout()
-      return
     }
+  }, [timeRemaining, onTimeout])
 
-    const timer = setInterval(() => {
-      setTimeLeft((prev) => prev - 0.1)
-    }, 100)
-
-    return () => clearInterval(timer)
-  }, [timeLeft, onTimeout, isPaused])
-
-  const progress = (timeLeft / duration) * 100
-  const isLowTime = timeLeft < 3
+  const progress = (timeRemaining / duration) * 100
+  const isLowTime = timeRemaining < 3
 
   // Simple color based on time
   const getColor = () => {
-    if (timeLeft > 5) return '#CFB8FF'
-    if (timeLeft > 3) return '#FEFFDD'
+    if (timeRemaining > 5) return '#CFB8FF'
+    if (timeRemaining > 3) return '#FEFFDD'
     return '#ffcccc'
   }
 
@@ -95,7 +86,7 @@ export default function Timer({ onTimeout, duration = 10, isPaused = false }: Ti
           }}
         >
           <div className="text-3xl font-bold text-foreground">
-            {Math.ceil(timeLeft)}
+            {Math.ceil(timeRemaining)}
           </div>
           <div className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider mt-0.5">
             sec

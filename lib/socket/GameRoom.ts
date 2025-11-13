@@ -1,0 +1,384 @@
+/**
+ * GameRoom Class
+ * Server-authoritative game logic for a single match
+ * Controls questions, timer, scoring, and broadcasts all events
+ */
+
+import { Server, Socket } from 'socket.io';
+import { supabase } from '@/lib/utils/supabase';
+import { calculatePoints } from '@/lib/utils/scoring';
+import { getGameState, updatePlayerScore, savePlayerAnswer, markPlayerCompleted, getPlayerAnswers, deleteGameSession } from '@/lib/redis/game-state';
+import { GAME_CONFIG } from '@/lib/constants';
+import type { PlayerData, Question, PlayerScore, ServerToClientEvents } from './events';
+import type { TablesInsert } from '@/lib/database.types';
+
+export class GameRoom {
+  private matchId: string;
+  private io: Server;
+  private players: Map<number, PlayerData>; // fid → PlayerData
+  private sockets: Map<number, Socket>; // fid → Socket
+  private questions: Question[];
+  private questionIds: string[]; // Original question IDs for DB storage
+  private currentQuestionIndex: number = 0;
+  private scores: Map<number, number>; // fid → score
+  private answers: Map<number, any[]>; // fid → array of answers
+  private timer: NodeJS.Timeout | null = null;
+  private timeRemaining: number = 0;
+  private questionStartTime: number = 0;
+  private playersReady: Set<number>; // FIDs that are ready
+  private playersAnsweredCurrentQuestion: Set<number>; // FIDs that answered current question
+  private questionEnded: boolean = false; // Prevent multiple endQuestion calls
+  private correctAnswers: Map<string, string>; // questionId → correct answer
+
+  constructor(
+    matchId: string,
+    io: Server,
+    player1: PlayerData,
+    player2: PlayerData,
+    questions: Question[],
+    questionIds: string[],
+    correctAnswers: Map<string, string>
+  ) {
+    this.matchId = matchId;
+    this.io = io;
+    this.players = new Map([
+      [player1.fid, player1],
+      [player2.fid, player2],
+    ]);
+    this.sockets = new Map();
+    this.questions = questions;
+    this.questionIds = questionIds;
+    this.scores = new Map([
+      [player1.fid, 0],
+      [player2.fid, 0],
+    ]);
+    this.answers = new Map([
+      [player1.fid, []],
+      [player2.fid, []],
+    ]);
+    this.playersReady = new Set();
+    this.playersAnsweredCurrentQuestion = new Set();
+    this.correctAnswers = correctAnswers;
+  }
+
+  /**
+   * Add a player's socket to the room
+   */
+  addPlayer(fid: number, socket: Socket): void {
+    this.sockets.set(fid, socket);
+    socket.join(this.matchId);
+
+    // Notify other player
+    const player = this.players.get(fid);
+    if (player) {
+      socket.to(this.matchId).emit('opponent_joined', player);
+    }
+  }
+
+  /**
+   * Mark player as ready to start
+   */
+  markPlayerReady(fid: number): void {
+    this.playersReady.add(fid);
+
+    // Start game when both players ready
+    if (this.playersReady.size === this.players.size) {
+      setTimeout(() => this.startGame(), 1000);
+    }
+  }
+
+  /**
+   * Start the game
+   */
+  private startGame(): void {
+
+    this.io.to(this.matchId).emit('game_ready', {
+      matchId: this.matchId,
+      players: Array.from(this.players.values()),
+      totalQuestions: this.questions.length,
+    });
+
+    // Start first question after brief delay (reduced from 2s to 1s)
+    setTimeout(() => this.startQuestion(), 1000);
+  }
+
+  /**
+   * Start a question
+   */
+  private startQuestion(): void {
+    if (this.currentQuestionIndex >= this.questions.length) {
+      this.endGame();
+      return;
+    }
+
+    const question = this.questions[this.currentQuestionIndex];
+    this.timeRemaining = GAME_CONFIG.QUESTION_TIME_LIMIT;
+    this.questionStartTime = Date.now();
+    this.playersAnsweredCurrentQuestion.clear(); // Reset for new question
+    this.questionEnded = false; // Reset end flag
+
+    // Broadcast question to all players with current scores
+    this.io.to(this.matchId).emit('question_start', {
+      questionNumber: this.currentQuestionIndex + 1,
+      totalQuestions: this.questions.length,
+      question,
+      timeLimit: GAME_CONFIG.QUESTION_TIME_LIMIT,
+      scores: this.getScores(), // Show scores from previous questions
+    });
+
+    // Wait 1 second for clients to receive and render before starting timer
+    // This accounts for network latency + client rendering time
+    setTimeout(() => {
+      // Only start timer if question hasn't ended yet
+      if (!this.questionEnded) {
+        this.startTimer();
+      }
+    }, 1000);
+  }
+
+  /**
+   * Server-controlled timer (broadcasts every second)
+   */
+  private startTimer(): void {
+    this.timer = setInterval(() => {
+      this.timeRemaining--;
+
+      // Stop at 0, don't go negative
+      if (this.timeRemaining < 0) {
+        this.timeRemaining = 0;
+      }
+
+      // Broadcast tick to all players
+      this.io.to(this.matchId).emit('timer_tick', {
+        remaining: this.timeRemaining,
+      });
+
+      // End question when time runs out
+      if (this.timeRemaining <= 0) {
+        this.endQuestion();
+      }
+    }, 1000);
+  }
+
+  /**
+   * Handle player answer submission
+   */
+  handleAnswer(fid: number, answer: string, clientTimestamp: number): void {
+    // Prevent duplicate answers from same player for current question
+    if (this.playersAnsweredCurrentQuestion.has(fid)) {
+      return;
+    }
+
+    const currentQuestion = this.questions[this.currentQuestionIndex];
+    const questionId = this.questionIds[this.currentQuestionIndex];
+
+    // Calculate time taken (server-side for anti-cheat)
+    const serverTimeTaken = Date.now() - this.questionStartTime;
+    const timeTaken = Math.min(serverTimeTaken, GAME_CONFIG.QUESTION_TIME_LIMIT * 1000);
+
+    // Validate answer (server-side)
+    const isCorrect = this.validateAnswer(answer, currentQuestion);
+    const points = isCorrect ? calculatePoints(timeTaken) : 0;
+
+    // Update score
+    const currentScore = this.scores.get(fid) || 0;
+    const newScore = currentScore + points;
+    this.scores.set(fid, newScore);
+
+    // Store answer for DB
+    this.answers.get(fid)?.push({
+      question_id: questionId,
+      question_number: this.currentQuestionIndex + 1,
+      answer,
+      is_correct: isCorrect,
+      time_taken_ms: timeTaken,
+      points_earned: points,
+      timestamp: Date.now(),
+    });
+
+    // Mark player as answered for current question
+    this.playersAnsweredCurrentQuestion.add(fid);
+
+    // Broadcast result to ALL players (instant feedback)
+    const scores = this.getScores();
+    this.io.to(this.matchId).emit('player_answered', {
+      fid,
+      isCorrect,
+      points,
+      scores,
+    });
+
+    // If all players have answered, end question immediately
+    if (this.playersAnsweredCurrentQuestion.size === this.players.size) {
+      this.endQuestion();
+    }
+  }
+
+  /**
+   * Validate answer against correct answer (server-side)
+   */
+  private validateAnswer(playerAnswer: string, question: Question): boolean {
+    const questionId = this.questionIds[this.currentQuestionIndex];
+    const correctAnswer = this.correctAnswers.get(questionId);
+
+    if (!correctAnswer) {
+      console.error('[GameRoom] Correct answer not found for question:', questionId);
+      return false;
+    }
+
+    // Case-insensitive comparison
+    return playerAnswer.toLowerCase().trim() === correctAnswer.toLowerCase().trim();
+  }
+
+  /**
+   * End current question
+   */
+  private endQuestion(): void {
+    // Prevent multiple calls
+    if (this.questionEnded) {
+      return;
+    }
+    this.questionEnded = true;
+
+    // Stop timer
+    if (this.timer) {
+      clearInterval(this.timer);
+      this.timer = null;
+    }
+
+    // Get correct answer from map
+    const questionId = this.questionIds[this.currentQuestionIndex];
+    const correctAnswer = this.correctAnswers.get(questionId) || 'Unknown';
+
+    // Broadcast question end with correct answer
+    this.io.to(this.matchId).emit('question_end', {
+      correctAnswer,
+      scores: this.getScores(),
+    });
+
+    // Move to next question after brief delay (reduced from 2s to 1s)
+    setTimeout(() => {
+      this.currentQuestionIndex++;
+
+      if (this.currentQuestionIndex < this.questions.length) {
+        this.io.to(this.matchId).emit('next_question', { delay: 1000 });
+        setTimeout(() => this.startQuestion(), 1000);
+      } else {
+        this.endGame();
+      }
+    }, 1000);
+  }
+
+  /**
+   * End game and save results
+   */
+  private async endGame(): Promise<void> {
+    if (this.timer) {
+      clearInterval(this.timer);
+      this.timer = null;
+    }
+
+    const scores = this.getScores();
+    const [score1, score2] = scores;
+    const winnerFid = score1.score > score2.score ? score1.fid : score2.score > score1.score ? score2.fid : null;
+
+    // Broadcast game complete
+    this.io.to(this.matchId).emit('game_complete', {
+      winnerFid,
+      finalScores: scores,
+      isDraw: winnerFid === null,
+    });
+
+    // Save to database
+    await this.saveToDatabase();
+  }
+
+  /**
+   * Save game results to Postgres
+   */
+  private async saveToDatabase(): Promise<void> {
+    try {
+      // Collect all answers
+      const allAnswers: TablesInsert<'match_answers'>[] = [];
+
+      for (const [fid, answersList] of this.answers.entries()) {
+        for (const answer of answersList) {
+          allAnswers.push({
+            match_id: this.matchId,
+            fid,
+            question_id: answer.question_id,
+            question_number: answer.question_number,
+            answer_given: answer.answer, // Map 'answer' to 'answer_given'
+            is_correct: answer.is_correct,
+            time_taken_ms: answer.time_taken_ms,
+            points_earned: answer.points_earned,
+            answered_at: new Date(answer.timestamp).toISOString(),
+          });
+        }
+      }
+
+      // Batch insert
+      if (allAnswers.length > 0) {
+        const { error } = await supabase.from('match_answers').insert(allAnswers);
+        if (error) console.error('[GameRoom] Error saving answers:', error);
+      }
+
+      // Update match status
+      const scores = this.getScores();
+      const winnerFid = scores[0].score > scores[1].score ? scores[0].fid : scores[1].score > scores[0].score ? scores[1].fid : null;
+
+      const { error: matchUpdateError } = await supabase.from('matches').update({
+        status: 'completed',
+        completed_at: new Date().toISOString(),
+        winner_fid: winnerFid,
+      }).eq('id', this.matchId);
+
+      if (matchUpdateError) {
+        console.error('[GameRoom] Error updating match status:', matchUpdateError);
+      }
+
+      // Cleanup Redis
+      await deleteGameSession(this.matchId);
+    } catch (error) {
+      console.error('[GameRoom] Database save error:', error);
+    }
+  }
+
+  /**
+   * Handle player disconnect
+   */
+  handleDisconnect(fid: number): void {
+    this.sockets.delete(fid);
+
+    // Notify other player
+    this.io.to(this.matchId).emit('opponent_left', { fid });
+
+    // TODO: Handle bot takeover or forfeit
+  }
+
+  /**
+   * Get current scores as array
+   */
+  private getScores(): PlayerScore[] {
+    return Array.from(this.players.entries()).map(([fid, player]) => ({
+      fid,
+      score: this.scores.get(fid) || 0,
+      username: player.username,
+      displayName: player.displayName,
+    }));
+  }
+
+  /**
+   * Cleanup room
+   */
+  cleanup(): void {
+    if (this.timer) {
+      clearInterval(this.timer);
+    }
+
+    // Remove all sockets from room
+    for (const socket of this.sockets.values()) {
+      socket.leave(this.matchId);
+    }
+  }
+}

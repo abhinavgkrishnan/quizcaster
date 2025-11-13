@@ -8,12 +8,12 @@ import Profile from "@/components/profile"
 import { useFarcaster } from "@/lib/farcaster-sdk"
 import { motion } from "framer-motion"
 import { LogIn } from "lucide-react"
-
-type AppScreen = "topics" | "matchmaking" | "game" | "profile"
+import type { AppScreen, MatchData } from "@/lib/types"
 
 export default function Home() {
   const [currentScreen, setCurrentScreen] = useState<AppScreen>("topics")
   const [selectedTopic, setSelectedTopic] = useState<string | null>(null)
+  const [currentMatch, setCurrentMatch] = useState<MatchData | null>(null)
   const { isSDKLoaded, user, isAuthenticated, signIn } = useFarcaster()
   const isDevMode = process.env.NEXT_PUBLIC_DEV_MODE === 'true'
 
@@ -22,13 +22,15 @@ export default function Home() {
     setCurrentScreen("matchmaking")
   }
 
-  const handleMatchmakingComplete = () => {
+  const handleMatchmakingComplete = (matchData: MatchData) => {
+    setCurrentMatch(matchData)
     setCurrentScreen("game")
   }
 
   const handleGameEnd = () => {
     setCurrentScreen("topics")
     setSelectedTopic(null)
+    setCurrentMatch(null)
   }
 
   // Show loading state while SDK initializes
@@ -89,7 +91,15 @@ export default function Home() {
             <Matchmaking topic={selectedTopic} onMatchFound={handleMatchmakingComplete} />
           </div>
         )}
-        {currentScreen === "game" && selectedTopic && <GameScreen topic={selectedTopic} onGameEnd={handleGameEnd} user={user} />}
+        {currentScreen === "game" && selectedTopic && currentMatch && (
+          <GameScreen
+            topic={selectedTopic}
+            matchId={currentMatch.match_id}
+            myPlayer={currentMatch.myPlayer}
+            opponent={currentMatch.opponent}
+            onGameEnd={handleGameEnd}
+          />
+        )}
         {currentScreen === "profile" && <Profile user={user} onNavigate={setCurrentScreen} />}
       </div>
     </main>

@@ -1,133 +1,53 @@
+/**
+ * GameScreen - Socket.IO Version
+ * Clean, simple component that just renders server state
+ * ALL game logic handled by server via Socket.IO
+ */
+
 "use client"
 
-import { useState, useEffect } from "react"
+import { useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import confetti from "canvas-confetti"
 import GameQuestion from "./game-question"
 import GameOver from "./game-over"
 import PlayerHeader from "./player-header"
 import ScoreBars from "./score-bars"
-import { useGame } from "@/lib/hooks/useGame"
-
-interface FarcasterUser {
-  fid: number
-  username: string
-  displayName: string
-  pfpUrl: string
-}
+import { useSocketGame } from "@/lib/hooks/useSocketGame"
+import { GAME_CONFIG } from "@/lib/constants"
+import type { PlayerData } from "@/lib/types"
 
 interface GameScreenProps {
   topic: string
+  matchId: string
+  myPlayer: PlayerData
+  opponent: PlayerData
   onGameEnd: () => void
-  user: FarcasterUser | null
 }
 
-interface Question {
-  id: string
-  question: string
-  options: string[]
-  imageUrl?: string | null
-}
+export default function GameScreen({ topic, matchId, myPlayer, opponent, onGameEnd }: GameScreenProps) {
+  // Single hook manages everything
+  const game = useSocketGame(matchId, myPlayer, opponent);
 
-export default function GameScreen({ topic, onGameEnd, user }: GameScreenProps) {
-  const [currentQuestion, setCurrentQuestion] = useState(0)
-  const [playerScore, setPlayerScore] = useState(0)
-  const [opponentScore, setOpponentScore] = useState(0)
-  const [gameOver, setGameOver] = useState(false)
-  const [answered, setAnswered] = useState(false)
-  const [questions, setQuestions] = useState<Question[]>([])
-  const [matchId, setMatchId] = useState<string | null>(null)
-  const [loading, setLoading] = useState(true)
-
-  const { createMatch, submitAnswer, completeMatch } = useGame()
-
-  // Create match and fetch questions on mount
+  // Show confetti on correct answer
   useEffect(() => {
-    const initGame = async () => {
-      // Use mock FID in dev mode if user is null
-      const playerFid = user?.fid || 999999
-
-      try {
-        const matchData = await createMatch('bot', topic, playerFid)
-
-        if (matchData) {
-          setMatchId(matchData.match_id)
-          setQuestions(matchData.questions)
-          setLoading(false)
-        }
-      } catch (error) {
-        console.error('Failed to initialize game:', error)
-        setLoading(false)
-      }
+    if (game.lastAnswerResult?.isCorrect && game.lastAnswerResult.fid === myPlayer.fid) {
+      confetti({
+        particleCount: 30,
+        spread: 50,
+        origin: { y: 0.7 },
+        colors: ['#CFB8FF', '#FEFFDD', '#000000']
+      });
     }
+  }, [game.lastAnswerResult, myPlayer.fid]);
 
-    initGame()
-  }, [topic, user?.fid])
+  // Handle answer submission
+  const handleAnswer = (answer: string, timeTaken: number) => {
+    game.submitAnswer(answer);
+  };
 
-  const handleAnswer = async (answer: string, timeToAnswer: number) => {
-    if (answered || !matchId) return
-
-    const playerFid = user?.fid || 999999
-
-    setAnswered(true)
-
-    try {
-      const question = questions[currentQuestion]
-
-      // Submit answer to API
-      const result = await submitAnswer(
-        matchId,
-        playerFid,
-        question.id,
-        currentQuestion + 1,
-        answer,
-        timeToAnswer
-      )
-
-      // Update scores from API response
-      setPlayerScore(result.player_score)
-      setOpponentScore(result.opponent_score)
-
-      // Show confetti if correct
-      if (result.is_correct) {
-        confetti({
-          particleCount: 30,
-          spread: 50,
-          origin: { y: 0.7 },
-          colors: ['#CFB8FF', '#FEFFDD', '#000000']
-        })
-      }
-
-      // Move to next question or end game
-      setTimeout(() => {
-        if (currentQuestion < questions.length - 1) {
-          setCurrentQuestion((prev) => prev + 1)
-          setAnswered(false)
-        } else {
-          // Complete match
-          completeMatchAndEnd()
-        }
-      }, 1500)
-    } catch (error) {
-      console.error('Error handling answer:', error)
-    }
-  }
-
-  const completeMatchAndEnd = async () => {
-    if (!matchId) return
-
-    const playerFid = user?.fid || 999999
-
-    try {
-      await completeMatch(matchId, playerFid)
-      setGameOver(true)
-    } catch (error) {
-      console.error('Error completing match:', error)
-      setGameOver(true)
-    }
-  }
-
-  if (loading) {
+  // Connecting state
+  if (game.phase === 'connecting' || !game.isConnected) {
     return (
       <div className="relative w-full h-screen flex items-center justify-center bg-muted">
         <div className="text-center">
@@ -139,18 +59,40 @@ export default function GameScreen({ topic, onGameEnd, user }: GameScreenProps) 
             <div className="w-3 h-3 rounded-full bg-foreground" />
           </motion.div>
           <p className="text-sm text-muted-foreground font-semibold uppercase tracking-wide">
-            Loading game...
+            Connecting to game...
           </p>
         </div>
       </div>
-    )
+    );
   }
 
-  if (!questions.length || !matchId) {
+  // Waiting for opponent
+  if (game.isWaitingForOpponent) {
+    return (
+      <div className="relative w-full h-screen flex items-center justify-center bg-muted">
+        <div className="text-center">
+          <motion.div
+            animate={{ scale: [1, 1.05, 1] }}
+            transition={{ duration: 2, repeat: Infinity }}
+            className="w-24 h-24 rounded-full brutal-beige brutal-border flex items-center justify-center mx-auto mb-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
+          >
+            <div className="text-4xl">⏳</div>
+          </motion.div>
+          <p className="text-sm text-muted-foreground font-semibold uppercase tracking-wide">
+            Waiting for opponent...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (game.error) {
     return (
       <div className="relative w-full h-screen flex items-center justify-center bg-muted">
         <div className="text-center px-6">
-          <p className="text-foreground font-bold text-lg mb-4">Failed to load game</p>
+          <p className="text-foreground font-bold text-lg mb-4">Error</p>
+          <p className="text-sm text-muted-foreground mb-4">{game.error}</p>
           <button
             onClick={onGameEnd}
             className="brutal-violet brutal-border px-6 py-3 rounded-2xl font-bold uppercase shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
@@ -159,53 +101,70 @@ export default function GameScreen({ topic, onGameEnd, user }: GameScreenProps) 
           </button>
         </div>
       </div>
-    )
+    );
   }
 
-  if (gameOver) {
+  // Game complete
+  if (game.isComplete) {
     return (
       <div className="relative w-full h-screen flex items-center justify-center overflow-hidden bg-muted">
         <GameOver
-          playerScore={playerScore}
-          opponentScore={opponentScore}
+          playerScore={game.myScore}
+          opponentScore={game.opponentScore}
+          playerAnswers={game.myAnswers}
           onPlayAgain={onGameEnd}
         />
       </div>
-    )
+    );
   }
 
-  const question = questions[currentQuestion]
+  // No current question yet
+  if (!game.currentQuestion) {
+    return (
+      <div className="relative w-full h-screen flex items-center justify-center bg-muted">
+        <div className="text-center">
+          <p className="text-sm text-muted-foreground font-semibold uppercase tracking-wide">
+            Loading question...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Main game UI
+  const wasMyLastAnswer = game.lastAnswerResult?.fid === myPlayer.fid;
+  const wasCorrect = wasMyLastAnswer ? game.lastAnswerResult?.isCorrect : null;
 
   return (
     <div className="relative w-full max-w-md mx-auto px-3 py-3 flex flex-col h-screen overflow-hidden bg-muted">
-      {/* Score bars background */}
-      <ScoreBars playerScore={playerScore} opponentScore={opponentScore} />
+      {/* Score bars */}
+      <ScoreBars playerScore={game.myScore} opponentScore={game.opponentScore} />
 
       {/* Player header */}
       <div className="relative z-10 mb-3">
         <PlayerHeader
-          playerName={user?.displayName || user?.username || "You"}
-          playerScore={playerScore}
+          playerName={myPlayer.displayName || myPlayer.username}
+          playerScore={game.myScore}
           playerLevel="Novice"
-          playerAvatar={user?.pfpUrl || ""}
-          opponentName="Opponent"
-          opponentScore={opponentScore}
-          opponentLevel="Beginner"
-          opponentAvatar=""
-          timer={Math.ceil((questions.length - currentQuestion) / 2)}
+          playerAvatar={myPlayer.pfpUrl || ""}
+          opponentName={opponent.displayName || opponent.username}
+          opponentScore={game.opponentScore}
+          opponentLevel={game.opponentOnline ? "🟢 Online" : "🔴 Offline"}
+          opponentAvatar={opponent.pfpUrl || ""}
+          timer={Math.ceil(game.timeRemaining)}
         />
       </div>
 
       {/* Question Counter */}
       <div className="relative z-10 text-center mb-2">
         <motion.div
-          key={currentQuestion}
+          key={game.questionNumber}
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           className="inline-block brutal-white brutal-border px-4 py-2 rounded-full shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
         >
           <p className="text-[10px] font-bold text-foreground uppercase tracking-wider">
-            Question {currentQuestion + 1} of {questions.length}
+            Question {game.questionNumber} of {game.totalQuestions}
           </p>
         </motion.div>
       </div>
@@ -213,7 +172,7 @@ export default function GameScreen({ topic, onGameEnd, user }: GameScreenProps) 
       {/* Question Content */}
       <AnimatePresence mode="wait">
         <motion.div
-          key={currentQuestion}
+          key={game.questionNumber}
           initial={{ opacity: 0, x: 50 }}
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: -50 }}
@@ -225,17 +184,15 @@ export default function GameScreen({ topic, onGameEnd, user }: GameScreenProps) 
           className="relative z-10 flex-1 flex flex-col justify-center pb-4"
         >
           <GameQuestion
-            question={{
-              id: question.id,
-              question: question.question,
-              options: question.options,
-              image: question.imageUrl
-            }}
+            question={game.currentQuestion}
             onAnswer={handleAnswer}
-            answered={answered}
+            isDisabled={game.isAnswered}
+            showResult={game.isAnswered}
+            wasCorrect={wasCorrect ?? null}
+            timeRemaining={game.timeRemaining}
           />
         </motion.div>
       </AnimatePresence>
     </div>
-  )
+  );
 }

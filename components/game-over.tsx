@@ -1,19 +1,41 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, useMemo } from "react"
 import { motion } from "framer-motion"
 import confetti from "canvas-confetti"
 import { Trophy, Target, Zap, RotateCcw } from "lucide-react"
+import { GAME_CONFIG } from "@/lib/constants"
 
 interface GameOverProps {
   playerScore: number
   opponentScore: number
+  playerAnswers: Array<{
+    isCorrect: boolean
+    timeTaken: number
+    points: number
+  }>
   onPlayAgain: () => void
 }
 
-export default function GameOver({ playerScore, opponentScore, onPlayAgain }: GameOverProps) {
+export default function GameOver({ playerScore, opponentScore, playerAnswers, onPlayAgain }: GameOverProps) {
   const playerWon = playerScore > opponentScore
   const isDraw = playerScore === opponentScore
+
+  // Calculate real stats from player answers
+  const stats = useMemo(() => {
+    const questionsAnswered = playerAnswers.length
+    const questionsCorrect = playerAnswers.filter(a => a.isCorrect).length
+    const totalTime = playerAnswers.reduce((sum, a) => sum + a.timeTaken, 0)
+    const avgTime = questionsAnswered > 0 ? totalTime / questionsAnswered : 0
+    const accuracy = questionsAnswered > 0 ? (questionsCorrect / questionsAnswered) * 100 : 0
+
+    return {
+      questionsAnswered,
+      questionsCorrect,
+      accuracy: accuracy.toFixed(0),
+      avgTimeSeconds: (avgTime / 1000).toFixed(1),
+    }
+  }, [playerAnswers])
 
   useEffect(() => {
     if (playerWon) {
@@ -117,15 +139,17 @@ export default function GameOver({ playerScore, opponentScore, onPlayAgain }: Ga
           <div className="space-y-3">
             <div className="flex justify-between items-center">
               <span className="text-foreground/70 text-xs uppercase tracking-wide font-semibold">Questions</span>
-              <span className="font-bold text-foreground text-sm">5 / 5</span>
+              <span className="font-bold text-foreground text-sm">
+                {stats.questionsCorrect} / {stats.questionsAnswered}
+              </span>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-foreground/70 text-xs uppercase tracking-wide font-semibold">Avg. Time</span>
-              <span className="font-bold text-foreground text-sm">2.4s</span>
+              <span className="font-bold text-foreground text-sm">{stats.avgTimeSeconds}s</span>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-foreground/70 text-xs uppercase tracking-wide font-semibold">Accuracy</span>
-              <span className="font-bold text-foreground text-sm">80%</span>
+              <span className="font-bold text-foreground text-sm">{stats.accuracy}%</span>
             </div>
           </div>
         </motion.div>

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/db/supabase'
+import { supabase } from '@/lib/utils/supabase'
 import { shuffleArray } from '@/lib/utils/shuffle'
 import type { Tables } from '@/lib/database.types'
 

@@ -3,17 +3,11 @@
 import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import { User, Trophy, Target, Clock, Home, Search, Bell } from "lucide-react"
-
-interface FarcasterUser {
-  fid: number
-  username: string
-  displayName: string
-  pfpUrl: string
-}
+import type { FarcasterUser, AppScreen } from "@/lib/types"
 
 interface ProfileProps {
   user: FarcasterUser | null
-  onNavigate?: (screen: "topics" | "matchmaking" | "game" | "profile") => void
+  onNavigate?: (screen: AppScreen) => void
 }
 
 interface UserStats {

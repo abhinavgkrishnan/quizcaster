@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/db/supabase'
-import { calculatePoints, isValidAnswerTime } from '@/lib/game/scoring'
+import { supabase } from '@/lib/utils/supabase'
+import { calculatePoints, isValidAnswerTime } from '@/lib/utils/scoring'
+import { getGameState, updatePlayerScore, savePlayerAnswer } from '@/lib/redis/game-state'
 import type { Tables } from '@/lib/database.types'
+import type { PlayerAnswer } from '@/lib/redis/types'
 
-type Match = Tables<'matches'>
 type Question = Tables<'questions'>
 
 export async function POST(
@@ -13,6 +14,7 @@ export async function POST(
   try {
     const { id: matchId } = await params
     const body = await request.json()
+
     const {
       fid,
       question_id,
@@ -21,12 +23,17 @@ export async function POST(
       time_taken_ms
     } = body
 
-    // Validate inputs
-    if (!fid || !question_id || !question_number || !answer || time_taken_ms === undefined) {
+    // Validate inputs (allow empty string for timeout)
+    if (!fid || !question_id || !question_number || time_taken_ms === undefined) {
+      console.error('[Answer API] Validation failed:', { fid, question_id, question_number, answer, time_taken_ms });
       return NextResponse.json(
-        { error: 'Missing required fields' },
+        { error: 'Missing required fields', received: body },
         { status: 400 }
       )
+    }
+
+    // Allow empty answer for timeouts
+    if (answer === undefined || answer === null) {
     }
 
     if (!isValidAnswerTime(time_taken_ms)) {
@@ -36,25 +43,22 @@ export async function POST(
       )
     }
 
-    // Get match to verify it exists and user is part of it
-    const { data: match, error: matchError } = await supabase
-      .from('matches')
-      .select('*')
-      .eq('id', matchId)
-      .single()
+    // Get game state from Redis (fast!)
+    const gameState = await getGameState(matchId)
 
-    if (matchError || !match) {
-      return NextResponse.json({ error: 'Match not found' }, { status: 404 })
+    if (!gameState) {
+      return NextResponse.json({ error: 'Game session not found' }, { status: 404 })
     }
 
-    if (match.player1_fid !== fid && match.player2_fid !== fid) {
+    // Verify user is part of this game
+    if (gameState.player1_fid !== fid && gameState.player2_fid !== fid) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
     }
 
-    // Get question to check correct answer
+    // Get question to validate answer (cached or direct query)
     const { data: question, error: questionError } = await supabase
       .from('questions')
-      .select('*')
+      .select('correct_answer')
       .eq('id', question_id)
       .single()
 
@@ -68,64 +72,32 @@ export async function POST(
     // Calculate points
     const pointsEarned = isCorrect ? calculatePoints(time_taken_ms) : 0
 
-    // Insert answer record
-    await supabase.from('match_answers').insert({
-      match_id: matchId,
-      fid,
-      question_id: question_id,
-      question_number: question_number,
-      answer_given: answer,
+    // Save answer to Redis (temporary storage)
+    const answerData: PlayerAnswer = {
+      question_id,
+      question_number,
+      answer,
       is_correct: isCorrect,
-      time_taken_ms: time_taken_ms,
-      points_earned: pointsEarned
-    })
-
-    // Update match score
-    const isPlayer1 = match.player1_fid === fid
-    let botPoints = 0
-
-    // Generate bot response if playing against bot
-    if (match.is_bot_opponent && isPlayer1) {
-      // Bot randomly gets between 0-18 points (slightly easier than perfect player)
-      const botAccuracy = Math.random() < 0.75 // 75% accuracy
-      if (botAccuracy) {
-        const botTime = Math.random() * 5000 + 1000 // 1-6 seconds
-        botPoints = Math.floor(calculatePoints(botTime) * 0.9) // 90% of max points
-      }
+      time_taken_ms,
+      points_earned: pointsEarned,
+      timestamp: Date.now(),
     }
 
-    if (isPlayer1) {
-      await supabase.from('matches')
-        .update({
-          player1_score: match.player1_score + pointsEarned,
-          player2_score: match.player2_score + botPoints
-        })
-        .eq('id', matchId)
-    } else {
-      await supabase.from('matches')
-        .update({
-          player2_score: match.player2_score + pointsEarned
-        })
-        .eq('id', matchId)
-    }
+    await savePlayerAnswer(matchId, fid, answerData)
 
-    // Get updated match for response
-    const { data: updatedMatch } = await supabase
-      .from('matches')
-      .select('*')
-      .eq('id', matchId)
-      .single()
-
-    if (!updatedMatch) {
-      return NextResponse.json({ error: 'Failed to get updated match' }, { status: 500 })
-    }
+    // Update score in Redis
+    const { playerScore, opponentScore } = await updatePlayerScore(
+      matchId,
+      fid,
+      pointsEarned
+    )
 
     return NextResponse.json({
-      is_correct: isCorrect,
-      correct_answer: question.correct_answer,
-      points_earned: pointsEarned,
-      player_score: isPlayer1 ? updatedMatch.player1_score : updatedMatch.player2_score,
-      opponent_score: isPlayer1 ? updatedMatch.player2_score : updatedMatch.player1_score
+      isCorrect,
+      points: pointsEarned,
+      playerScore,
+      opponentScore,
+      questionNum: question_number,
     })
   } catch (error) {
     console.error('Error submitting answer:', error)

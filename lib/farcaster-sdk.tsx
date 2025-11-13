@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useState, ReactNode } from "react"
 import { sdk } from "@farcaster/miniapp-sdk"
-import { supabase } from "@/lib/db/supabase"
+import { supabase } from "@/lib/utils/supabase"
 import type { TablesInsert } from "@/lib/database.types"
 
 interface FarcasterUser {
