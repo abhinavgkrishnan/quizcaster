@@ -79,7 +79,7 @@ export default function TopicSelection({ onSelectTopic, onNavigate }: TopicSelec
             </motion.div>
           </div>
         ) : (
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-3 gap-4 p-2">
             {topics.map((topic, index) => {
               // Get icon from lucide-react by name
               const IconComponent = topic.icon_name ? (Icons as any)[topic.icon_name] : Icons.HelpCircle
@@ -88,8 +88,8 @@ export default function TopicSelection({ onSelectTopic, onNavigate }: TopicSelec
               return (
                 <motion.button
                   key={topic.slug}
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
                   transition={{
                     type: "spring",
                     stiffness: 300,
@@ -97,15 +97,15 @@ export default function TopicSelection({ onSelectTopic, onNavigate }: TopicSelec
                     delay: index * 0.03
                   }}
                   whileHover={{
-                    scale: 1.03,
-                    transition: { type: "spring", stiffness: 500, damping: 15 }
+                    y: -6,
+                    transition: { type: "spring", stiffness: 400, damping: 20 }
                   }}
                   whileTap={{
-                    scale: 0.97,
-                    transition: { type: "spring", stiffness: 500, damping: 15 }
+                    y: 0,
+                    transition: { type: "spring", stiffness: 400, damping: 20 }
                   }}
                   onClick={() => onSelectTopic(topic.slug)}
-                  className={`relative aspect-square rounded-2xl ${colorClass} brutal-border font-bold shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:shadow-none transition-shadow`}
+                  className={`relative aspect-square rounded-2xl ${colorClass} brutal-border font-bold shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] active:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all`}
                 >
                   {/* Content */}
                   <div className="relative z-10 flex flex-col items-center justify-center h-full gap-2 p-3">

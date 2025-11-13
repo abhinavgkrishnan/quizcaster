@@ -72,9 +72,9 @@ export default function GameQuestion({
   const hasImage = !!question.imageUrl
 
   return (
-    <div className="space-y-4 flex flex-col h-full">
+    <div className="space-y-4 flex flex-col h-full overflow-visible">
       {/* Timer */}
-      <div className="flex justify-center pt-1">
+      <div className="flex justify-center pt-1 overflow-visible">
         <Timer
           timeRemaining={timeRemaining}
           onTimeout={handleTimeout}
@@ -110,8 +110,8 @@ export default function GameQuestion({
       )}
 
       {/* Options */}
-      <div className={`flex-1 flex flex-col justify-end pb-2 ${hasImage ? 'gap-2' : 'gap-2.5'}`}>
-        <div className={hasImage ? 'grid grid-cols-2 grid-rows-2 gap-2.5' : 'flex flex-col gap-2.5'}>
+      <div className={`flex-1 flex flex-col justify-end pb-2 ${hasImage ? 'gap-2' : 'gap-2.5'} overflow-visible`}>
+        <div className={`${hasImage ? 'grid grid-cols-2 grid-rows-2 gap-3' : 'flex flex-col gap-3'} overflow-visible p-1`}>
           {!showOptions ? (
             // Skeleton placeholders
             Array.from({ length: 4 }).map((_, index) => (
@@ -139,56 +139,52 @@ export default function GameQuestion({
               return (
                 <motion.button
                   key={`${question.id}-${option}-${index}`}
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
                   transition={{
                     type: "spring",
                     stiffness: 300,
                     damping: 25,
                     delay: index * 0.04
                   }}
+                  whileHover={!isDisabled && !selectedAnswer ? {
+                    y: -4,
+                    transition: { type: "spring", stiffness: 400, damping: 20 }
+                  } : {}}
+                  whileTap={!isDisabled && !selectedAnswer ? {
+                    y: 0,
+                    transition: { type: "spring", stiffness: 400, damping: 20 }
+                  } : {}}
                   onClick={() => handleSelectAnswer(option)}
                   disabled={isDisabled || !!selectedAnswer}
-                  className={`relative ${hasImage ? 'h-full' : ''} overflow-visible`}
+                  className={`
+                    relative ${hasImage ? 'h-full min-h-[60px]' : ''} w-full ${hasImage ? 'p-3' : 'p-4'} rounded-2xl font-bold ${hasImage ? 'text-xs' : 'text-sm'} brutal-border transition-all uppercase tracking-wide
+                    ${!selectedAnswer && !isDisabled && 'bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] active:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]'}
+                    ${isSelected && !showResult && 'bg-gray-100 animate-pulse shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]'}
+                    ${isSelected && showResult && wasCorrect && 'brutal-violet shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]'}
+                    ${isSelected && showResult && !wasCorrect && 'brutal-beige shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]'}
+                    ${!isSelected && selectedAnswer && 'opacity-40 bg-gray-200 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]'}
+                    ${isTimeoutMarker && 'opacity-40 bg-gray-200 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]'}
+                    disabled:cursor-default text-foreground
+                  `}
                 >
-                  <motion.div
-                    whileHover={!isDisabled && !selectedAnswer ? {
-                      scale: 1.02,
-                      transition: { type: "spring", stiffness: 400, damping: 20 }
-                    } : {}}
-                    whileTap={!isDisabled && !selectedAnswer ? {
-                      scale: 0.98,
-                      transition: { type: "spring", stiffness: 400, damping: 20 }
-                    } : {}}
-                    className={`
-                      relative ${hasImage ? 'h-full min-h-[60px]' : ''} w-full ${hasImage ? 'p-3' : 'p-4'} rounded-2xl font-bold ${hasImage ? 'text-xs' : 'text-sm'} brutal-border transition-shadow uppercase tracking-wide
-                      ${!selectedAnswer && !isDisabled && 'bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:shadow-none'}
-                      ${isSelected && !showResult && 'bg-gray-100 animate-pulse'}
-                      ${isSelected && showResult && wasCorrect && 'brutal-violet shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]'}
-                      ${isSelected && showResult && !wasCorrect && 'brutal-beige shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]'}
-                      ${!isSelected && selectedAnswer && 'opacity-40 bg-gray-200'}
-                      ${isTimeoutMarker && 'opacity-40 bg-gray-200'}
-                      disabled:cursor-default text-foreground
-                    `}
-                  >
-                    {/* Content */}
-                    <div className="relative z-10 flex items-center justify-center gap-2">
-                      {showResult && isSelected && wasCorrect !== null && (
-                        <motion.div
-                          initial={{ scale: 0 }}
-                          animate={{ scale: 1 }}
-                          transition={{ type: "spring", stiffness: 500, damping: 20 }}
-                        >
-                          {wasCorrect ? (
-                            <Check className="w-5 h-5 stroke-[3]" />
-                          ) : (
-                            <X className="w-5 h-5 stroke-[3]" />
-                          )}
-                        </motion.div>
-                      )}
-                      <span className="text-center leading-tight">{option}</span>
-                    </div>
-                  </motion.div>
+                  {/* Content */}
+                  <div className="relative z-10 flex items-center justify-center gap-2">
+                    {showResult && isSelected && wasCorrect !== null && (
+                      <motion.div
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        transition={{ type: "spring", stiffness: 500, damping: 20 }}
+                      >
+                        {wasCorrect ? (
+                          <Check className="w-5 h-5 stroke-[3]" />
+                        ) : (
+                          <X className="w-5 h-5 stroke-[3]" />
+                        )}
+                      </motion.div>
+                    )}
+                    <span className="text-center leading-tight">{option}</span>
+                  </div>
                 </motion.button>
               )
             })

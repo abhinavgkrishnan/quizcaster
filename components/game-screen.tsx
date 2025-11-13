@@ -145,12 +145,13 @@ export default function GameScreen({ topic, matchId, myPlayer, opponent, onGameE
   const wasCorrect = wasMyLastAnswer ? game.lastAnswerResult?.isCorrect : null;
 
   return (
-    <div className="relative w-full max-w-md mx-auto px-[3%] py-[2%] flex flex-col h-screen overflow-hidden bg-muted">
-      {/* Score bars */}
-      <ScoreBars playerScore={game.myScore} opponentScore={game.opponentScore} />
+    <div className="relative w-full h-screen bg-muted overflow-y-auto overflow-x-hidden">
+      <div className="w-full max-w-md mx-auto px-[3%] py-[2%] min-h-screen flex flex-col">
+        {/* Score bars */}
+        <ScoreBars playerScore={game.myScore} opponentScore={game.opponentScore} />
 
-      {/* Player header */}
-      <div className="relative z-10 mb-3">
+        {/* Player header */}
+        <div className="relative z-10 mb-3">
         <PlayerHeader
           playerName={myPlayer.displayName || myPlayer.username}
           playerScore={game.myScore}
@@ -204,30 +205,31 @@ export default function GameScreen({ topic, matchId, myPlayer, opponent, onGameE
         </div>
       </div>
 
-      {/* Question Content */}
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={game.questionNumber}
-          initial={{ opacity: 0, x: 50 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: -50 }}
-          transition={{
-            type: "spring",
-            stiffness: 300,
-            damping: 25
-          }}
-          className="relative z-10 flex-1 flex flex-col justify-center pb-4"
-        >
-          <GameQuestion
-            question={game.currentQuestion}
-            onAnswer={handleAnswer}
-            isDisabled={game.isAnswered}
-            showResult={game.isAnswered}
-            wasCorrect={wasCorrect ?? null}
-            timeRemaining={game.timeRemaining}
-          />
-        </motion.div>
-      </AnimatePresence>
+        {/* Question Content */}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={game.questionNumber}
+            initial={{ opacity: 0, x: 50 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -50 }}
+            transition={{
+              type: "spring",
+              stiffness: 300,
+              damping: 25
+            }}
+            className="relative z-10 flex-1 flex flex-col justify-center pb-4 overflow-visible"
+          >
+            <GameQuestion
+              question={game.currentQuestion}
+              onAnswer={handleAnswer}
+              isDisabled={game.isAnswered}
+              showResult={game.isAnswered}
+              wasCorrect={wasCorrect ?? null}
+              timeRemaining={game.timeRemaining}
+            />
+          </motion.div>
+        </AnimatePresence>
+      </div>
     </div>
   );
 }

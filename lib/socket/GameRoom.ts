@@ -113,7 +113,6 @@ export class GameRoom {
 
     const question = this.questions[this.currentQuestionIndex];
     this.timeRemaining = GAME_CONFIG.QUESTION_TIME_LIMIT;
-    this.questionStartTime = Date.now();
     this.playersAnsweredCurrentQuestion.clear(); // Reset for new question
     this.questionEnded = false; // Reset end flag
 
@@ -130,14 +129,18 @@ export class GameRoom {
       isFinalQuestion,
     });
 
-    // Wait 1 second for clients to receive and render before starting timer
-    // This accounts for network latency + client rendering time
+    // Wait for OPTIONS_LOAD_DELAY + buffer before starting timer
+    // This ensures timer only starts AFTER options are visible to players
+    const timerStartDelay = GAME_CONFIG.OPTIONS_LOAD_DELAY + GAME_CONFIG.TIMER_START_BUFFER;
     setTimeout(() => {
+      // Set questionStartTime HERE (when timer actually starts, not when question broadcasts)
+      this.questionStartTime = Date.now();
+
       // Only start timer if question hasn't ended yet
       if (!this.questionEnded) {
         this.startTimer();
       }
-    }, 1000);
+    }, timerStartDelay);
   }
 
   /**

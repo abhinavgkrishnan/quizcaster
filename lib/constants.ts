@@ -7,7 +7,8 @@ export const GAME_CONFIG = {
   // Match Configuration
   QUESTIONS_PER_MATCH: 10,
   QUESTION_TIME_LIMIT: 10, // seconds
-  OPTIONS_LOAD_DELAY: 1400, // milliseconds before options appear (increased for suspense)
+  OPTIONS_LOAD_DELAY: 1400, // milliseconds before options appear
+  TIMER_START_BUFFER: 800, // extra milliseconds after options load before timer starts
 
   // TTL Configuration
   MATCH_TTL: 3600, // 1 hour in seconds
