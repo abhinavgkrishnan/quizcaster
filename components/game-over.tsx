@@ -28,10 +28,12 @@ interface GameOverProps {
 }
 
 export default function GameOver({ playerScore, opponentScore, playerAnswers, opponent, opponentRequestedRematch, forfeitedBy, myFid, onPlayAgain, onGoHome, onChallenge }: GameOverProps) {
-  const playerWon = playerScore > opponentScore
-  const isDraw = playerScore === opponentScore
   const opponentForfeited = forfeitedBy !== null && forfeitedBy !== myFid
   const iForfeited = forfeitedBy === myFid
+
+  // Forfeit overrides score - forfeiter always loses
+  const playerWon = iForfeited ? false : opponentForfeited ? true : playerScore > opponentScore
+  const isDraw = !iForfeited && !opponentForfeited && playerScore === opponentScore
   const [challengeProgress, setChallengeProgress] = useState(0)
   const [challengeActive, setChallengeActive] = useState(false)
 
