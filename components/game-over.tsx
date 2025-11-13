@@ -31,7 +31,6 @@ export default function GameOver({ playerScore, opponentScore, playerAnswers, op
   const [challengeProgress, setChallengeProgress] = useState(0)
   const [challengeActive, setChallengeActive] = useState(false)
 
-  // Calculate real stats from player answers
   const stats = useMemo(() => {
     const questionsAnswered = playerAnswers.length
     const questionsCorrect = playerAnswers.filter(a => a.isCorrect).length
@@ -49,7 +48,6 @@ export default function GameOver({ playerScore, opponentScore, playerAnswers, op
 
   useEffect(() => {
     if (playerWon) {
-      // Minimal confetti - just one burst
       confetti({
         particleCount: 50,
         spread: 60,
@@ -59,11 +57,10 @@ export default function GameOver({ playerScore, opponentScore, playerAnswers, op
     }
   }, [playerWon])
 
-  // Challenge timer (10 seconds)
   useEffect(() => {
     if (challengeActive) {
-      const duration = 10000 // 10 seconds
-      const interval = 50 // Update every 50ms
+      const duration = 10000
+      const interval = 50
       const steps = duration / interval
       let currentStep = 0
 
@@ -88,217 +85,181 @@ export default function GameOver({ playerScore, opponentScore, playerAnswers, op
   }
 
   return (
-    <div className="w-full h-full px-6 py-8 flex flex-col items-center justify-center">
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ type: "spring", stiffness: 300, damping: 25 }}
-        className="text-center w-full max-w-md"
-      >
-        {/* Result Icon */}
+    <div className="w-full h-screen overflow-hidden flex items-center justify-center px-[5%]">
+      <div className="text-center w-full max-w-md flex flex-col justify-center">
         <motion.div
-          initial={{ scale: 0, y: -20 }}
-          animate={{ scale: 1, y: 0 }}
-          transition={{ type: "spring", stiffness: 300, damping: 20, delay: 0.1 }}
-          className="mb-8 flex justify-center"
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ type: "spring", stiffness: 300, damping: 25 }}
+          className="flex flex-col"
         >
-          <div className={`w-28 h-28 rounded-full flex items-center justify-center brutal-border shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] ${
-            playerWon ? 'brutal-beige' : isDraw ? 'brutal-violet' : 'bg-gray-300'
-          }`}>
-            {playerWon ? (
-              <Trophy className="w-14 h-14 text-foreground" />
-            ) : (
-              <Target className="w-14 h-14 text-foreground" />
-            )}
-          </div>
-        </motion.div>
-
-        {/* Result Text */}
-        <motion.h2
-          initial={{ y: 10, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.2 }}
-          className="text-4xl font-bold mb-3 text-foreground uppercase tracking-tight"
-        >
-          {playerWon ? "Victory!" : isDraw ? "Draw!" : "Defeat"}
-        </motion.h2>
-
-        <motion.p
-          initial={{ y: 10, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.3 }}
-          className="text-muted-foreground text-sm mb-10 uppercase tracking-wide font-semibold"
-        >
-          {playerWon ? "Outstanding!" : isDraw ? "Evenly matched!" : "Try again!"}
-        </motion.p>
-
-        {/* Scores */}
-        <motion.div
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.4 }}
-          className="grid grid-cols-2 gap-4 mb-6 w-full"
-        >
-          <div className="brutal-violet brutal-border p-5 rounded-2xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-            <p className="text-[10px] text-foreground/60 mb-2 font-bold uppercase tracking-wider">Your Score</p>
-            <motion.p
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ type: "spring", delay: 0.6 }}
-              className="text-4xl font-bold text-foreground"
-            >
-              {playerScore}
-            </motion.p>
-          </div>
-          <div className="brutal-beige brutal-border p-5 rounded-2xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-            <p className="text-[10px] text-foreground/60 mb-2 font-bold uppercase tracking-wider">Opponent</p>
-            <motion.p
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ type: "spring", delay: 0.7 }}
-              className="text-4xl font-bold text-foreground"
-            >
-              {opponentScore}
-            </motion.p>
-          </div>
-        </motion.div>
-
-        {/* Stats */}
-        <motion.div
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.8 }}
-          className="brutal-white brutal-border p-5 rounded-2xl mb-6 w-full shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
-        >
-          <div className="flex items-center gap-2 mb-4">
-            <Zap className="w-5 h-5 text-foreground" />
-            <p className="text-sm text-foreground font-bold uppercase tracking-wide">Stats</p>
-          </div>
-          <div className="space-y-3">
-            <div className="flex justify-between items-center">
-              <span className="text-foreground/70 text-xs uppercase tracking-wide font-semibold">Questions</span>
-              <span className="font-bold text-foreground text-sm">
-                {stats.questionsCorrect} / {stats.questionsAnswered}
-              </span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-foreground/70 text-xs uppercase tracking-wide font-semibold">Avg. Time</span>
-              <span className="font-bold text-foreground text-sm">{stats.avgTimeSeconds}s</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-foreground/70 text-xs uppercase tracking-wide font-semibold">Accuracy</span>
-              <span className="font-bold text-foreground text-sm">{stats.accuracy}%</span>
-            </div>
-          </div>
-        </motion.div>
-
-        {/* Action Buttons */}
-        <div className="w-full space-y-3">
-          <motion.button
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 1, type: "spring" }}
-            whileHover={{
-              y: -2,
-              transition: { type: "spring", stiffness: 500, damping: 15 }
-            }}
-            whileTap={{
-              y: 2,
-              transition: { type: "spring", stiffness: 500, damping: 15 }
-            }}
-            onClick={onPlayAgain}
-            className="relative w-full py-5 rounded-2xl brutal-violet brutal-border font-bold text-base shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:shadow-none transition-all text-foreground uppercase tracking-wide"
-          >
-            <span className="flex items-center justify-center gap-2">
-              <RotateCcw className="w-5 h-5" />
-              Play Again
-            </span>
-          </motion.button>
-
-          <motion.button
-            initial={{ y: 20, opacity: 0 }}
-            animate={{
-              y: 0,
-              opacity: 1,
-              scale: opponentRequestedRematch && !challengeActive ? [1, 1.02, 1] : 1,
-            }}
-            transition={{
-              delay: 1.1,
-              type: "spring",
-              scale: {
-                repeat: opponentRequestedRematch && !challengeActive ? Infinity : 0,
-                duration: 1,
-              }
-            }}
-            onClick={handleChallenge}
-            disabled={challengeProgress >= 100}
-            className={`relative w-full py-4 rounded-2xl brutal-border font-bold text-sm shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all uppercase tracking-wide overflow-hidden ${
-              challengeProgress >= 100 ? 'bg-gray-300 opacity-50' : opponentRequestedRematch ? 'brutal-violet animate-pulse' : 'brutal-beige'
-            }`}
-          >
-            {/* Circular Progress Bar - starts from top middle, goes clockwise */}
-            {challengeActive && (
-              <svg className="absolute inset-0 w-full h-full pointer-events-none">
-                <rect
-                  x="2"
-                  y="2"
-                  width="calc(100% - 4px)"
-                  height="calc(100% - 4px)"
-                  fill="none"
-                  stroke="#CFB8FF"
-                  strokeWidth="4"
-                  strokeDasharray={`${challengeProgress * 2}% ${200 - challengeProgress * 2}%`}
-                  strokeDashoffset="50%"
-                  rx="14"
-                  style={{
-                    transition: 'stroke-dasharray 0.05s linear',
-                  }}
-                />
-              </svg>
-            )}
-
-            <span className="relative z-10 flex items-center justify-center gap-2">
-              {opponent.pfpUrl && (
-                <img
-                  src={opponent.pfpUrl}
-                  alt={opponent.displayName}
-                  className="w-6 h-6 rounded-full brutal-border"
-                />
+          {/* Result Icon */}
+          <div className="mb-3 flex justify-center">
+            <div className={`w-16 h-16 rounded-full flex items-center justify-center brutal-border shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] ${
+              playerWon ? 'brutal-beige' : isDraw ? 'brutal-violet' : 'bg-gray-300'
+            }`}>
+              {playerWon ? (
+                <Trophy className="w-8 h-8 text-foreground" />
+              ) : (
+                <Target className="w-8 h-8 text-foreground" />
               )}
-              <Swords className="w-4 h-4" />
-              <span className="truncate max-w-[150px]">
-                {opponentRequestedRematch && !challengeActive
-                  ? `${opponent.displayName} wants rematch!`
-                  : `Challenge ${opponent.displayName}`}
+            </div>
+          </div>
+
+          {/* Result Text */}
+          <h2 className="text-2xl font-bold mb-1 text-foreground uppercase tracking-tight">
+            {playerWon ? "Victory!" : isDraw ? "Draw!" : "Defeat"}
+          </h2>
+
+          <p className="text-muted-foreground text-[10px] mb-3 uppercase tracking-wide font-semibold">
+            {playerWon ? "Outstanding!" : isDraw ? "Evenly matched!" : "Try again!"}
+          </p>
+
+          {/* Scores */}
+          <div className="grid grid-cols-2 gap-2 mb-2.5 w-full">
+            <div className="brutal-violet brutal-border p-2.5 rounded-2xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+              <p className="text-[8px] text-foreground/60 mb-0.5 font-bold uppercase tracking-wider">Your Score</p>
+              <p className="text-2xl font-bold text-foreground">{playerScore}</p>
+            </div>
+            <div className="brutal-beige brutal-border p-2.5 rounded-2xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+              <p className="text-[8px] text-foreground/60 mb-0.5 font-bold uppercase tracking-wider">Opponent</p>
+              <p className="text-2xl font-bold text-foreground">{opponentScore}</p>
+            </div>
+          </div>
+
+          {/* Stats */}
+          <div className="brutal-white brutal-border p-2.5 rounded-2xl mb-2.5 w-full shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+            <div className="flex items-center gap-1.5 mb-1.5">
+              <Zap className="w-3.5 h-3.5 text-foreground" />
+              <p className="text-[10px] text-foreground font-bold uppercase tracking-wide">Stats</p>
+            </div>
+            <div className="space-y-1">
+              <div className="flex justify-between items-center">
+                <span className="text-foreground/70 text-[9px] uppercase tracking-wide font-semibold">Questions</span>
+                <span className="font-bold text-foreground text-[10px]">
+                  {stats.questionsCorrect} / {stats.questionsAnswered}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-foreground/70 text-[9px] uppercase tracking-wide font-semibold">Avg. Time</span>
+                <span className="font-bold text-foreground text-[10px]">{stats.avgTimeSeconds}s</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-foreground/70 text-[9px] uppercase tracking-wide font-semibold">Accuracy</span>
+                <span className="font-bold text-foreground text-[10px]">{stats.accuracy}%</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="w-full space-y-1.5">
+            <motion.button
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 1, type: "spring" }}
+              onClick={onPlayAgain}
+              style={{
+                transform: 'translate3d(0, 0, 0)',
+              }}
+              onTouchStart={(e) => {
+                e.currentTarget.style.transform = 'translate3d(0, -2px, 0)'
+              }}
+              onTouchEnd={(e) => {
+                e.currentTarget.style.transform = 'translate3d(0, 0, 0)'
+              }}
+              className="relative w-full py-3 rounded-2xl brutal-violet brutal-border font-bold text-xs shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all text-foreground uppercase tracking-wide"
+            >
+              <span className="flex items-center justify-center gap-2">
+                <RotateCcw className="w-4 h-4" />
+                Play Again
               </span>
+            </motion.button>
+
+            <motion.button
+              initial={{ y: 20, opacity: 0 }}
+              animate={{
+                y: 0,
+                opacity: 1,
+                scale: opponentRequestedRematch && !challengeActive ? [1, 1.02, 1] : 1,
+              }}
+              transition={{
+                delay: 1.1,
+                type: "spring",
+                scale: {
+                  repeat: opponentRequestedRematch && !challengeActive ? Infinity : 0,
+                  duration: 1,
+                }
+              }}
+              onClick={handleChallenge}
+              disabled={challengeProgress >= 100}
+              className={`relative w-full py-2.5 rounded-2xl brutal-border font-bold text-[10px] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all uppercase tracking-wide overflow-hidden ${
+                challengeProgress >= 100 ? 'bg-gray-300 opacity-50' : opponentRequestedRematch ? 'brutal-violet animate-pulse' : 'brutal-beige'
+              }`}
+            >
               {challengeActive && (
-                <span className="text-xs">({Math.ceil(10 - (challengeProgress / 10))}s)</span>
+                <svg className="absolute inset-0 w-full h-full pointer-events-none">
+                  <rect
+                    x="2"
+                    y="2"
+                    width="calc(100% - 4px)"
+                    height="calc(100% - 4px)"
+                    fill="none"
+                    stroke="#CFB8FF"
+                    strokeWidth="4"
+                    strokeDasharray={`${challengeProgress * 2}% ${200 - challengeProgress * 2}%`}
+                    strokeDashoffset="50%"
+                    rx="12"
+                    style={{
+                      transition: 'stroke-dasharray 0.05s linear',
+                    }}
+                  />
+                </svg>
               )}
-            </span>
-          </motion.button>
 
-          <motion.button
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 1.2, type: "spring" }}
-            whileHover={{
-              y: -2,
-              transition: { type: "spring", stiffness: 500, damping: 15 }
-            }}
-            whileTap={{
-              y: 2,
-              transition: { type: "spring", stiffness: 500, damping: 15 }
-            }}
-            onClick={onGoHome}
-            className="relative w-full py-4 rounded-2xl brutal-border bg-background font-bold text-sm shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:shadow-none transition-all text-foreground uppercase tracking-wide"
-          >
-            <span className="flex items-center justify-center gap-2">
-              <Home className="w-4 h-4" />
-              Home
-            </span>
-          </motion.button>
-        </div>
-      </motion.div>
+              <span className="relative z-10 flex items-center justify-center gap-1.5">
+                {opponent.pfpUrl && (
+                  <img
+                    src={opponent.pfpUrl}
+                    alt={opponent.displayName}
+                    className="w-5 h-5 rounded-full brutal-border flex-shrink-0"
+                  />
+                )}
+                <Swords className="w-3.5 h-3.5 flex-shrink-0" />
+                <span className="truncate max-w-[120px]">
+                  {opponentRequestedRematch && !challengeActive
+                    ? `${opponent.displayName} wants rematch!`
+                    : `Challenge ${opponent.displayName}`}
+                </span>
+                {challengeActive && (
+                  <span className="text-[9px] flex-shrink-0">({Math.ceil(10 - (challengeProgress / 10))}s)</span>
+                )}
+              </span>
+            </motion.button>
+
+            <motion.button
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 1.2, type: "spring" }}
+              onClick={onGoHome}
+              style={{
+                transform: 'translate3d(0, 0, 0)',
+              }}
+              onTouchStart={(e) => {
+                e.currentTarget.style.transform = 'translate3d(0, -2px, 0)'
+              }}
+              onTouchEnd={(e) => {
+                e.currentTarget.style.transform = 'translate3d(0, 0, 0)'
+              }}
+              className="relative w-full py-2.5 rounded-2xl brutal-border bg-background font-bold text-[10px] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all text-foreground uppercase tracking-wide"
+            >
+              <span className="flex items-center justify-center gap-2">
+                <Home className="w-3.5 h-3.5" />
+                Home
+              </span>
+            </motion.button>
+          </div>
+        </motion.div>
+      </div>
     </div>
   )
 }

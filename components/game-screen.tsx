@@ -25,20 +25,20 @@ interface GameScreenProps {
   opponent: PlayerData
   onGameEnd: () => void
   onPlayAgain: () => void
+  onRematchReady: (newMatchId: string) => void
 }
 
-export default function GameScreen({ topic, matchId, myPlayer, opponent, onGameEnd, onPlayAgain }: GameScreenProps) {
+export default function GameScreen({ topic, matchId, myPlayer, opponent, onGameEnd, onPlayAgain, onRematchReady }: GameScreenProps) {
   // Single hook manages everything
   const game = useSocketGame(matchId, myPlayer, opponent, topic);
   const [show2xBadge, setShow2xBadge] = useState(false);
 
-  // Handle rematch ready - redirect to new match
+  // Handle rematch ready - start new match with new matchId
   useEffect(() => {
     if (game.rematchReady) {
-      // Reload to new match (will be handled by app routing)
-      window.location.href = `/?match=${game.rematchReady}`;
+      onRematchReady(game.rematchReady);
     }
-  }, [game.rematchReady]);
+  }, [game.rematchReady, onRematchReady]);
 
   // Show confetti on correct answer
   useEffect(() => {
@@ -158,13 +158,13 @@ export default function GameScreen({ topic, matchId, myPlayer, opponent, onGameE
   const wasCorrect = wasMyLastAnswer ? game.lastAnswerResult?.isCorrect : null;
 
   return (
-    <div className="relative w-full h-screen bg-muted overflow-y-auto overflow-x-hidden">
-      <div className="w-full max-w-md mx-auto px-[3%] py-[2%] min-h-screen flex flex-col">
+    <div className="relative w-full h-screen bg-muted overflow-hidden">
+      <div className="w-full max-w-md mx-auto px-[4%] py-[3%] h-full flex flex-col">
         {/* Score bars */}
         <ScoreBars playerScore={game.myScore} opponentScore={game.opponentScore} />
 
         {/* Player header */}
-        <div className="relative z-10 mb-3">
+        <div className="relative z-10 mb-2 flex-shrink-0">
         <PlayerHeader
           playerName={myPlayer.displayName || myPlayer.username}
           playerScore={game.myScore}
@@ -179,7 +179,7 @@ export default function GameScreen({ topic, matchId, myPlayer, opponent, onGameE
       </div>
 
       {/* Question Counter with 2X Badge */}
-      <div className="relative z-10 text-center mb-2">
+      <div className="relative z-10 text-center mb-1.5 flex-shrink-0">
         <div className="flex items-center justify-center gap-2">
           <motion.div
             key={game.questionNumber}
@@ -230,7 +230,7 @@ export default function GameScreen({ topic, matchId, myPlayer, opponent, onGameE
               stiffness: 300,
               damping: 25
             }}
-            className="relative z-10 flex-1 flex flex-col justify-center pb-4 overflow-visible"
+            className="relative z-10 flex-1 flex flex-col justify-center pb-[2%] overflow-visible px-[2%]"
           >
             <GameQuestion
               question={game.currentQuestion}

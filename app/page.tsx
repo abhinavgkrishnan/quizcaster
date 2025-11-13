@@ -40,6 +40,18 @@ export default function Home() {
     setCurrentScreen("matchmaking")
   }
 
+  const handleRematchReady = (newMatchId: string) => {
+    // Update match with new matchId - keeps same players and topic
+    if (currentMatch && selectedTopic) {
+      setCurrentMatch({
+        match_id: newMatchId,
+        myPlayer: currentMatch.myPlayer,
+        opponent: currentMatch.opponent,
+      })
+      // Stay on game screen - will reconnect with new matchId
+    }
+  }
+
   // Show loading state while SDK initializes
   if (!isSDKLoaded) {
     return (
@@ -104,12 +116,14 @@ export default function Home() {
         )}
         {currentScreen === "game" && selectedTopic && currentMatch && (
           <GameScreen
+            key={currentMatch.match_id}
             topic={selectedTopic}
             matchId={currentMatch.match_id}
             myPlayer={currentMatch.myPlayer}
             opponent={currentMatch.opponent}
             onGameEnd={handleGameEnd}
             onPlayAgain={handlePlayAgain}
+            onRematchReady={handleRematchReady}
           />
         )}
         {currentScreen === "profile" && <Profile user={user} onNavigate={setCurrentScreen} />}

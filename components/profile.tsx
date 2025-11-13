@@ -70,12 +70,12 @@ export default function Profile({ user, onNavigate }: ProfileProps) {
   }
 
   return (
-    <div className="w-full max-w-2xl mx-auto h-screen flex flex-col bg-card">
+    <div className="w-full max-w-2xl mx-auto h-screen flex flex-col bg-card overflow-hidden">
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ type: "spring", stiffness: 300, damping: 25 }}
-        className="flex-1 overflow-y-auto px-4 py-6"
+        className="flex-1 overflow-y-auto overflow-x-hidden px-[4%] py-6"
       >
         {/* Profile Header */}
         <div className="text-center mb-6">

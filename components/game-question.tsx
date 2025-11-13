@@ -72,9 +72,9 @@ export default function GameQuestion({
   const hasImage = !!question.imageUrl
 
   return (
-    <div className="space-y-4 flex flex-col h-full overflow-visible">
+    <div className="flex flex-col h-full overflow-visible" style={{ gap: '1rem' }}>
       {/* Timer */}
-      <div className="flex justify-center pt-1 overflow-visible">
+      <div className="flex justify-center overflow-visible flex-shrink-0">
         <Timer
           timeRemaining={timeRemaining}
           onTimeout={handleTimeout}
@@ -86,9 +86,9 @@ export default function GameQuestion({
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ type: "spring", stiffness: 300, damping: 25 }}
-        className="text-center px-2"
+        className="text-center flex-shrink-0"
       >
-        <h2 className="text-3xl sm:text-4xl font-bold text-foreground leading-tight text-balance">
+        <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground leading-tight text-balance">
           {question.question}
         </h2>
       </motion.div>
@@ -110,7 +110,7 @@ export default function GameQuestion({
       )}
 
       {/* Options */}
-      <div className={`flex-1 flex flex-col justify-end pb-2 ${hasImage ? 'gap-2' : 'gap-2.5'} overflow-visible`}>
+      <div className="flex-1 flex flex-col justify-end overflow-visible min-h-0">
         <AnimatePresence mode="wait">
           {!showOptions ? (
             <motion.div
@@ -119,7 +119,7 @@ export default function GameQuestion({
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.15 }}
-              className={`${hasImage ? 'grid grid-cols-2 grid-rows-2 gap-3' : 'flex flex-col gap-3'} overflow-visible p-1`}
+              className={`${hasImage ? 'grid grid-cols-2 grid-rows-2 gap-2.5' : 'flex flex-col gap-2.5'} overflow-visible p-2`}
             >
               {Array.from({ length: 4 }).map((_, index) => (
                 <div
@@ -137,7 +137,7 @@ export default function GameQuestion({
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.2 }}
-              className={`${hasImage ? 'grid grid-cols-2 grid-rows-2 gap-3' : 'flex flex-col gap-3'} overflow-visible p-1`}
+              className={`${hasImage ? 'grid grid-cols-2 grid-rows-2 gap-2.5' : 'flex flex-col gap-2.5'} overflow-visible p-2`}
             >
               {question.options.map((option, index) => {
                 const isSelected = selectedAnswer === option

@@ -48,9 +48,9 @@ export default function TopicSelection({ onSelectTopic, onNavigate }: TopicSelec
   }, [])
 
   return (
-    <div className="w-full max-w-2xl mx-auto h-screen flex flex-col bg-card">
+    <div className="w-full max-w-2xl mx-auto h-screen flex flex-col bg-card overflow-hidden">
       {/* Header */}
-      <div className="flex-none px-4 pt-6 pb-4">
+      <div className="flex-none px-[4%] pt-6 pb-4">
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -68,7 +68,7 @@ export default function TopicSelection({ onSelectTopic, onNavigate }: TopicSelec
       </div>
 
       {/* Topics Grid - Scrollable */}
-      <div className="flex-1 overflow-y-auto px-4 pb-4">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden px-[4%] pb-4">
         {loading ? (
           <div className="flex items-center justify-center h-full">
             <motion.div
