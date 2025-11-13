@@ -70,14 +70,17 @@ async function updatePlayerStats(
 
   // Calculate current streak (consecutive wins from most recent)
   // Current match is already in recentMatches[0], so don't add it again!
+  // NOTE: Draws don't break streak, only losses break it
   let currentStreak = 0;
   if (recentMatches) {
     for (const match of recentMatches) {
       if (match.winner_fid === fid) {
         currentStreak++;
-      } else {
-        break; // Streak broken
+      } else if (match.winner_fid !== null) {
+        // Loss breaks streak (winner_fid exists but isn't this player)
+        break;
       }
+      // Draw (winner_fid === null) continues without incrementing
     }
   }
 

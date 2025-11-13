@@ -186,6 +186,16 @@ svg {
   }
 }
 
+/* Flash animation for correct answer */
+@keyframes flashCorrect {
+  0%, 100% {
+    background-color: #CFB8FF;
+  }
+  50% {
+    background-color: #E5DAFF;
+  }
+}
+
 /* Brutal Design Utilities */
 @layer utilities {
   /* Solid color backgrounds */

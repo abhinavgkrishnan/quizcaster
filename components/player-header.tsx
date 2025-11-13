@@ -2,7 +2,7 @@
 
 import { motion, AnimatePresence } from "framer-motion"
 import { useEffect, useState } from "react"
-import { User, Users } from "lucide-react"
+import { User, Menu } from "lucide-react"
 
 interface PlayerHeaderProps {
   playerName: string
@@ -14,6 +14,7 @@ interface PlayerHeaderProps {
   opponentLevel: string
   opponentAvatar: string
   timer?: number
+  onMenuClick?: () => void
 }
 
 export default function PlayerHeader({
@@ -26,6 +27,7 @@ export default function PlayerHeader({
   opponentLevel,
   opponentAvatar,
   timer,
+  onMenuClick,
 }: PlayerHeaderProps) {
   const [prevPlayerScore, setPrevPlayerScore] = useState(playerScore)
   const [prevOpponentScore, setPrevOpponentScore] = useState(opponentScore)
@@ -88,10 +90,16 @@ export default function PlayerHeader({
         </div>
       </motion.div>
 
-      {/* Center indicator */}
-      <div className="flex items-center justify-center w-10 h-10 rounded-full brutal-white brutal-border shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
-        <Users className="w-4 h-4 text-foreground" />
-      </div>
+      {/* Center Menu Button */}
+      <button
+        onClick={onMenuClick}
+        className="flex items-center justify-center w-10 h-10 rounded-full brutal-white brutal-border shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all active:shadow-none"
+        style={{
+          transform: 'translate3d(0, 0, 0)',
+        }}
+      >
+        <Menu className="w-4 h-4 text-foreground" />
+      </button>
 
       {/* Opponent */}
       <motion.div

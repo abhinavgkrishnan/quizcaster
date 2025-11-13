@@ -22,6 +22,7 @@ interface GameQuestionProps {
   isDisabled: boolean
   showResult: boolean
   wasCorrect: boolean | null
+  correctAnswer?: string | null  // The correct answer to highlight
   timeRemaining: number  // Server-controlled time
 }
 
@@ -31,6 +32,7 @@ export default function GameQuestion({
   isDisabled,
   showResult,
   wasCorrect,
+  correctAnswer,
   timeRemaining
 }: GameQuestionProps) {
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null)
@@ -142,6 +144,8 @@ export default function GameQuestion({
               {question.options.map((option, index) => {
                 const isSelected = selectedAnswer === option
                 const isTimeoutMarker = selectedAnswer === 'TIMEOUT'
+                const isCorrectAnswer = showResult && correctAnswer === option
+                const shouldFlash = showResult && wasCorrect === false && isCorrectAnswer
 
                 return (
                   <button
@@ -149,6 +153,7 @@ export default function GameQuestion({
                     style={{
                       transform: 'translate3d(0, 0, 0)',
                       WebkitTransform: 'translate3d(0, 0, 0)',
+                      animation: shouldFlash ? 'flashCorrect 0.8s ease-in-out 2' : 'none',
                     }}
                     onMouseEnter={(e) => {
                       if (!isDisabled && !selectedAnswer) {
@@ -178,7 +183,8 @@ export default function GameQuestion({
                       ${isSelected && !showResult && 'bg-gray-100 animate-pulse shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]'}
                       ${isSelected && showResult && wasCorrect && 'brutal-violet shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]'}
                       ${isSelected && showResult && !wasCorrect && 'brutal-beige shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]'}
-                      ${!isSelected && selectedAnswer && 'opacity-40 bg-gray-200 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]'}
+                      ${isCorrectAnswer && !isSelected && showResult && 'brutal-violet shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]'}
+                      ${!isSelected && !isCorrectAnswer && selectedAnswer && 'opacity-40 bg-gray-200 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]'}
                       ${isTimeoutMarker && 'opacity-40 bg-gray-200 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]'}
                       disabled:cursor-default text-foreground
                     `}

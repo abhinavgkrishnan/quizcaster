@@ -32,6 +32,7 @@ export default function GameScreen({ topic, matchId, myPlayer, opponent, onGameE
   // Single hook manages everything
   const game = useSocketGame(matchId, myPlayer, opponent, topic);
   const [show2xBadge, setShow2xBadge] = useState(false);
+  const [showForfeitModal, setShowForfeitModal] = useState(false);
 
   // Handle rematch ready - start new match with new matchId
   useEffect(() => {
@@ -159,6 +160,43 @@ export default function GameScreen({ topic, matchId, myPlayer, opponent, onGameE
 
   return (
     <div className="relative w-full h-screen bg-muted overflow-hidden">
+      {/* Forfeit Modal */}
+      {showForfeitModal && (
+        <div className="absolute inset-0 bg-black/50 z-50 flex items-center justify-center px-[5%]" onClick={() => setShowForfeitModal(false)}>
+          <div className="brutal-white brutal-border rounded-2xl p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] max-w-sm w-full" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-xl font-bold text-foreground mb-2 uppercase tracking-tight text-center">
+              Forfeit Match?
+            </h3>
+            <p className="text-xs text-muted-foreground mb-6 text-center uppercase tracking-wide">
+              You will lose this match
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setShowForfeitModal(false);
+                  onGameEnd();
+                }}
+                className="flex-1 py-3 rounded-2xl brutal-violet brutal-border font-bold text-xs shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:shadow-none transition-all text-foreground uppercase tracking-wide"
+                style={{
+                  transform: 'translate3d(0, 0, 0)',
+                }}
+              >
+                Yes, Forfeit
+              </button>
+              <button
+                onClick={() => setShowForfeitModal(false)}
+                className="flex-1 py-3 rounded-2xl brutal-beige brutal-border font-bold text-xs shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:shadow-none transition-all text-foreground uppercase tracking-wide"
+                style={{
+                  transform: 'translate3d(0, 0, 0)',
+                }}
+              >
+                No, Continue
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="w-full max-w-md mx-auto px-[4%] py-[3%] h-full flex flex-col">
         {/* Score bars */}
         <ScoreBars playerScore={game.myScore} opponentScore={game.opponentScore} />
@@ -175,6 +213,7 @@ export default function GameScreen({ topic, matchId, myPlayer, opponent, onGameE
           opponentLevel={game.opponentOnline ? "🟢 Online" : "🔴 Offline"}
           opponentAvatar={opponent.pfpUrl || ""}
           timer={Math.ceil(game.timeRemaining)}
+          onMenuClick={() => setShowForfeitModal(true)}
         />
       </div>
 
@@ -238,6 +277,7 @@ export default function GameScreen({ topic, matchId, myPlayer, opponent, onGameE
               isDisabled={game.isAnswered}
               showResult={game.isAnswered}
               wasCorrect={wasCorrect ?? null}
+              correctAnswer={game.correctAnswer}
               timeRemaining={game.timeRemaining}
             />
           </motion.div>

@@ -157,14 +157,11 @@ export default function GameOver({ playerScore, opponentScore, playerAnswers, op
               onClick={onPlayAgain}
               style={{
                 transform: 'translate3d(0, 0, 0)',
+                WebkitTransform: 'translate3d(0, 0, 0)',
+                backfaceVisibility: 'hidden',
+                WebkitBackfaceVisibility: 'hidden',
               }}
-              onTouchStart={(e) => {
-                e.currentTarget.style.transform = 'translate3d(0, -2px, 0)'
-              }}
-              onTouchEnd={(e) => {
-                e.currentTarget.style.transform = 'translate3d(0, 0, 0)'
-              }}
-              className="relative w-full py-3 rounded-2xl brutal-violet brutal-border font-bold text-xs shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all text-foreground uppercase tracking-wide"
+              className="relative w-full py-3 rounded-2xl brutal-violet brutal-border font-bold text-xs shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all duration-200 text-foreground uppercase tracking-wide"
             >
               <span className="flex items-center justify-center gap-2">
                 <RotateCcw className="w-4 h-4" />
@@ -177,16 +174,12 @@ export default function GameOver({ playerScore, opponentScore, playerAnswers, op
               disabled={challengeProgress >= 100}
               style={{
                 transform: 'translate3d(0, 0, 0)',
+                WebkitTransform: 'translate3d(0, 0, 0)',
+                backfaceVisibility: 'hidden',
+                WebkitBackfaceVisibility: 'hidden',
+                animation: opponentRequestedRematch && !challengeActive ? 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite' : 'none',
               }}
-              onTouchStart={(e) => {
-                if (challengeProgress < 100) {
-                  e.currentTarget.style.transform = 'translate3d(0, -2px, 0)'
-                }
-              }}
-              onTouchEnd={(e) => {
-                e.currentTarget.style.transform = 'translate3d(0, 0, 0)'
-              }}
-              className={`relative w-full py-2.5 rounded-2xl brutal-border font-bold text-[10px] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all uppercase tracking-wide overflow-hidden ${
+              className={`relative w-full py-2.5 rounded-2xl brutal-border font-bold text-[10px] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all duration-200 uppercase tracking-wide overflow-hidden ${
                 challengeProgress >= 100 ? 'bg-gray-300 opacity-50' : opponentRequestedRematch ? 'brutal-violet' : 'brutal-beige'
               }`}
             >
@@ -219,7 +212,7 @@ export default function GameOver({ playerScore, opponentScore, playerAnswers, op
                   />
                 )}
                 <Swords className="w-3.5 h-3.5 flex-shrink-0" />
-                <span className="truncate max-w-[180px]">
+                <span className="truncate" style={{ maxWidth: 'calc(100% - 80px)' }}>
                   {opponentRequestedRematch && !challengeActive
                     ? `${opponent.displayName} wants rematch!`
                     : `Challenge ${opponent.displayName}`}
@@ -234,14 +227,11 @@ export default function GameOver({ playerScore, opponentScore, playerAnswers, op
               onClick={onGoHome}
               style={{
                 transform: 'translate3d(0, 0, 0)',
+                WebkitTransform: 'translate3d(0, 0, 0)',
+                backfaceVisibility: 'hidden',
+                WebkitBackfaceVisibility: 'hidden',
               }}
-              onTouchStart={(e) => {
-                e.currentTarget.style.transform = 'translate3d(0, -2px, 0)'
-              }}
-              onTouchEnd={(e) => {
-                e.currentTarget.style.transform = 'translate3d(0, 0, 0)'
-              }}
-              className="relative w-full py-2.5 rounded-2xl brutal-border bg-background font-bold text-[10px] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all text-foreground uppercase tracking-wide"
+              className="relative w-full py-2.5 rounded-2xl brutal-border bg-background font-bold text-[10px] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all duration-200 text-foreground uppercase tracking-wide"
             >
               <span className="flex items-center justify-center gap-2">
                 <Home className="w-3.5 h-3.5" />

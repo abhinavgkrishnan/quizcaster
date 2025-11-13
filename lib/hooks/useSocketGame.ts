@@ -19,6 +19,7 @@ interface GameState {
   opponentScore: number;
   opponentOnline: boolean;
   isFinalQuestion: boolean;
+  correctAnswer: string | null;
   lastAnswerResult: {
     fid: number;
     isCorrect: boolean;
@@ -51,6 +52,7 @@ export function useSocketGame(
     opponentScore: 0,
     opponentOnline: false,
     isFinalQuestion: false,
+    correctAnswer: null,
     lastAnswerResult: null,
     myAnswers: [],
     winner: null,
@@ -116,6 +118,7 @@ export function useSocketGame(
         myScore,
         opponentScore,
         isFinalQuestion: data.isFinalQuestion,
+        correctAnswer: null, // Clear previous correct answer
         lastAnswerResult: null, // Clear previous result
       }));
     });
@@ -156,9 +159,9 @@ export function useSocketGame(
       });
     });
 
-    // Question end - just acknowledge, don't update scores yet
+    // Question end - capture correct answer for display
     socket.on('question_end', (data) => {
-      // Scores will update when next question starts
+      setGameState(prev => ({ ...prev, correctAnswer: data.correctAnswer }));
     });
 
     // Next question
