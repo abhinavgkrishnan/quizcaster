@@ -88,7 +88,11 @@ export default function Home() {
         )}
         {currentScreen === "matchmaking" && selectedTopic && (
           <div className="flex items-center justify-center h-full bg-card">
-            <Matchmaking topic={selectedTopic} onMatchFound={handleMatchmakingComplete} />
+            <Matchmaking
+              topic={selectedTopic}
+              onMatchFound={handleMatchmakingComplete}
+              onCancel={() => setCurrentScreen("topics")}
+            />
           </div>
         )}
         {currentScreen === "game" && selectedTopic && currentMatch && (

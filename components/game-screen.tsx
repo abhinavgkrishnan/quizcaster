@@ -6,9 +6,10 @@
 
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import confetti from "canvas-confetti"
+import { Swords, Zap } from "lucide-react"
 import GameQuestion from "./game-question"
 import GameOver from "./game-over"
 import PlayerHeader from "./player-header"
@@ -28,6 +29,7 @@ interface GameScreenProps {
 export default function GameScreen({ topic, matchId, myPlayer, opponent, onGameEnd }: GameScreenProps) {
   // Single hook manages everything
   const game = useSocketGame(matchId, myPlayer, opponent);
+  const [show2xBadge, setShow2xBadge] = useState(false);
 
   // Show confetti on correct answer
   useEffect(() => {
@@ -40,6 +42,13 @@ export default function GameScreen({ topic, matchId, myPlayer, opponent, onGameE
       });
     }
   }, [game.lastAnswerResult, myPlayer.fid]);
+
+  // Show 2X badge for final question
+  useEffect(() => {
+    if (game.isFinalQuestion && game.currentQuestion) {
+      setShow2xBadge(true);
+    }
+  }, [game.isFinalQuestion, game.currentQuestion]);
 
   // Handle answer submission
   const handleAnswer = (answer: string, timeTaken: number) => {
@@ -72,11 +81,11 @@ export default function GameScreen({ topic, matchId, myPlayer, opponent, onGameE
       <div className="relative w-full h-screen flex items-center justify-center bg-muted">
         <div className="text-center">
           <motion.div
-            animate={{ scale: [1, 1.05, 1] }}
-            transition={{ duration: 2, repeat: Infinity }}
-            className="w-24 h-24 rounded-full brutal-beige brutal-border flex items-center justify-center mx-auto mb-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
+            animate={{ rotate: 360 }}
+            transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+            className="w-32 h-32 rounded-full brutal-violet brutal-border flex items-center justify-center mx-auto mb-4 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]"
           >
-            <div className="text-4xl">⏳</div>
+            <Swords className="w-16 h-16 text-foreground" />
           </motion.div>
           <p className="text-sm text-muted-foreground font-semibold uppercase tracking-wide">
             Waiting for opponent...
@@ -136,7 +145,7 @@ export default function GameScreen({ topic, matchId, myPlayer, opponent, onGameE
   const wasCorrect = wasMyLastAnswer ? game.lastAnswerResult?.isCorrect : null;
 
   return (
-    <div className="relative w-full max-w-md mx-auto px-3 py-3 flex flex-col h-screen overflow-hidden bg-muted">
+    <div className="relative w-full max-w-md mx-auto px-[3%] py-[2%] flex flex-col h-screen overflow-hidden bg-muted">
       {/* Score bars */}
       <ScoreBars playerScore={game.myScore} opponentScore={game.opponentScore} />
 
@@ -155,18 +164,44 @@ export default function GameScreen({ topic, matchId, myPlayer, opponent, onGameE
         />
       </div>
 
-      {/* Question Counter */}
+      {/* Question Counter with 2X Badge */}
       <div className="relative z-10 text-center mb-2">
-        <motion.div
-          key={game.questionNumber}
-          initial={{ scale: 0.9, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          className="inline-block brutal-white brutal-border px-4 py-2 rounded-full shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
-        >
-          <p className="text-[10px] font-bold text-foreground uppercase tracking-wider">
-            Question {game.questionNumber} of {game.totalQuestions}
-          </p>
-        </motion.div>
+        <div className="flex items-center justify-center gap-2">
+          <motion.div
+            key={game.questionNumber}
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="inline-block brutal-white brutal-border px-4 py-2 rounded-full shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+          >
+            <p className="text-[10px] font-bold text-foreground uppercase tracking-wider">
+              Question {game.questionNumber} of {game.totalQuestions}
+            </p>
+          </motion.div>
+
+          {/* 2X Badge for Final Question */}
+          <AnimatePresence>
+            {show2xBadge && (
+              <motion.div
+                initial={{ scale: 3, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{
+                  type: "spring",
+                  stiffness: 300,
+                  damping: 20,
+                  duration: 0.6
+                }}
+                className="inline-block brutal-violet brutal-border px-3 py-1.5 rounded-full shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+              >
+                <div className="flex items-center gap-1">
+                  <Zap className="w-3 h-3 text-foreground fill-foreground" />
+                  <p className="text-[10px] font-bold text-foreground uppercase tracking-wider">
+                    2X POINTS
+                  </p>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       </div>
 
       {/* Question Content */}

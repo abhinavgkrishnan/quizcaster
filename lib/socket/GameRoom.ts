@@ -8,7 +8,7 @@ import { Server, Socket } from 'socket.io';
 import { supabase } from '@/lib/utils/supabase';
 import { calculatePoints } from '@/lib/utils/scoring';
 import { getGameState, updatePlayerScore, savePlayerAnswer, markPlayerCompleted, getPlayerAnswers, deleteGameSession } from '@/lib/redis/game-state';
-import { GAME_CONFIG } from '@/lib/constants';
+import { GAME_CONFIG, SCORING } from '@/lib/constants';
 import type { PlayerData, Question, PlayerScore, ServerToClientEvents } from './events';
 import type { TablesInsert } from '@/lib/database.types';
 
@@ -117,6 +117,9 @@ export class GameRoom {
     this.playersAnsweredCurrentQuestion.clear(); // Reset for new question
     this.questionEnded = false; // Reset end flag
 
+    // Check if this is the final question
+    const isFinalQuestion = (this.currentQuestionIndex + 1) === this.questions.length;
+
     // Broadcast question to all players with current scores
     this.io.to(this.matchId).emit('question_start', {
       questionNumber: this.currentQuestionIndex + 1,
@@ -124,6 +127,7 @@ export class GameRoom {
       question,
       timeLimit: GAME_CONFIG.QUESTION_TIME_LIMIT,
       scores: this.getScores(), // Show scores from previous questions
+      isFinalQuestion,
     });
 
     // Wait 1 second for clients to receive and render before starting timer
@@ -178,7 +182,12 @@ export class GameRoom {
 
     // Validate answer (server-side)
     const isCorrect = this.validateAnswer(answer, currentQuestion);
-    const points = isCorrect ? calculatePoints(timeTaken) : 0;
+
+    // Check if this is the final question (2x points!)
+    const isFinalQuestion = (this.currentQuestionIndex + 1) === this.questions.length;
+    const multiplier = isFinalQuestion ? SCORING.FINAL_QUESTION_MULTIPLIER : 1;
+
+    const points = isCorrect ? calculatePoints(timeTaken, multiplier) : 0;
 
     // Update score
     const currentScore = this.scores.get(fid) || 0;

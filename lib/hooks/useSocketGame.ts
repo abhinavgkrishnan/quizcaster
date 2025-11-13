@@ -18,6 +18,7 @@ interface GameState {
   myScore: number;
   opponentScore: number;
   opponentOnline: boolean;
+  isFinalQuestion: boolean;
   lastAnswerResult: {
     fid: number;
     isCorrect: boolean;
@@ -46,6 +47,7 @@ export function useSocketGame(
     myScore: 0,
     opponentScore: 0,
     opponentOnline: false,
+    isFinalQuestion: false,
     lastAnswerResult: null,
     myAnswers: [],
     winner: null,
@@ -108,6 +110,7 @@ export function useSocketGame(
         timeRemaining: data.timeLimit,
         myScore,
         opponentScore,
+        isFinalQuestion: data.isFinalQuestion,
         lastAnswerResult: null, // Clear previous result
       }));
     });

@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from "react"
 import { motion } from "framer-motion"
-import { Swords, User, Zap, Clock } from "lucide-react"
+import { Swords, User, Zap, Clock, X } from "lucide-react"
 import { useMatchmaking } from "@/lib/hooks/useMatchmaking"
 import { useFarcaster } from "@/lib/farcaster-sdk"
 import type { PlayerData, MatchData } from "@/lib/types"
@@ -10,9 +10,10 @@ import type { PlayerData, MatchData } from "@/lib/types"
 interface MatchmakingProps {
   topic: string
   onMatchFound: (matchData: MatchData) => void
+  onCancel?: () => void
 }
 
-export default function Matchmaking({ topic, onMatchFound }: MatchmakingProps) {
+export default function Matchmaking({ topic, onMatchFound, onCancel }: MatchmakingProps) {
   const { user } = useFarcaster()
   const hasJoinedRef = useRef(false)
   const mockFidRef = useRef(999999 + Math.floor(Math.random() * 100)) // Stable random FID per component instance
@@ -70,6 +71,11 @@ export default function Matchmaking({ topic, onMatchFound }: MatchmakingProps) {
     }
   }, []) // Empty deps - only run once on mount
 
+  const handleCancel = async () => {
+    await leaveQueue()
+    onCancel?.()
+  }
+
   return (
     <div className="w-full max-w-md px-6 py-8 flex flex-col items-center justify-center min-h-[500px]">
       <motion.div
@@ -112,11 +118,6 @@ export default function Matchmaking({ topic, onMatchFound }: MatchmakingProps) {
                   {queueSize !== null && <span className="text-xs text-muted-foreground"> / {queueSize}</span>}
                 </div>
               </div>
-              {estimatedWaitTime !== null && estimatedWaitTime > 0 && (
-                <div className="text-xs text-muted-foreground mt-2 uppercase tracking-wide">
-                  Est. wait: ~{Math.ceil(estimatedWaitTime)}s
-                </div>
-              )}
             </div>
           )}
 
@@ -146,6 +147,17 @@ export default function Matchmaking({ topic, onMatchFound }: MatchmakingProps) {
           >
             Searching for opponent...
           </motion.p>
+
+          {/* Cancel Button */}
+          <motion.button
+            whileHover={{ y: -2 }}
+            whileTap={{ y: 2 }}
+            onClick={handleCancel}
+            className="mt-6 px-6 py-3 rounded-2xl brutal-border bg-background font-bold text-sm shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:shadow-none transition-all text-foreground uppercase tracking-wide flex items-center gap-2"
+          >
+            <X className="w-4 h-4" />
+            Cancel
+          </motion.button>
         </div>
     </div>
   )

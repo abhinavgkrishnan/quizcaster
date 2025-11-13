@@ -23,7 +23,8 @@ export async function joinMatchmakingQueue(
     value: JSON.stringify(player),
   });
 
-  // Set TTL on queue
+  // Set TTL on queue based on MATCHMAKING_TIMEOUT
+  // Individual players time out via clearStaleQueues()
   await redis.expire(queueKey, GAME_CONFIG.MATCHMAKING_TIMEOUT);
 }
 

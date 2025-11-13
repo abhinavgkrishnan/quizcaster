@@ -9,6 +9,7 @@ import { useState, useEffect, useRef } from "react"
 import { motion } from "framer-motion"
 import Timer from "./timer"
 import { Check, X } from "lucide-react"
+import { GAME_CONFIG } from "@/lib/constants"
 
 interface GameQuestionProps {
   question: {
@@ -42,11 +43,11 @@ export default function GameQuestion({
     setSelectedAnswer(null)
     startTimeRef.current = Date.now()
 
-    // Show real options after 800ms (just before timer starts at 1s)
+    // Show real options after configured delay
     const timer = setTimeout(() => {
       setShowOptions(true)
       startTimeRef.current = Date.now() // Reset timer when options show
-    }, 800)
+    }, GAME_CONFIG.OPTIONS_LOAD_DELAY)
 
     return () => clearTimeout(timer)
   }, [question.id])
@@ -87,7 +88,7 @@ export default function GameQuestion({
         transition={{ type: "spring", stiffness: 300, damping: 25 }}
         className="text-center px-2"
       >
-        <h2 className="text-2xl sm:text-3xl font-bold text-foreground leading-tight text-balance">
+        <h2 className="text-3xl sm:text-4xl font-bold text-foreground leading-tight text-balance">
           {question.question}
         </h2>
       </motion.div>
@@ -146,19 +147,19 @@ export default function GameQuestion({
                     damping: 25,
                     delay: index * 0.04
                   }}
-                  whileHover={!isDisabled && !selectedAnswer ? {
-                    y: -2,
-                    transition: { type: "spring", stiffness: 500, damping: 15 }
-                  } : {}}
-                  whileTap={!isDisabled && !selectedAnswer ? {
-                    y: 2,
-                    transition: { type: "spring", stiffness: 500, damping: 15 }
-                  } : {}}
                   onClick={() => handleSelectAnswer(option)}
                   disabled={isDisabled || !!selectedAnswer}
-                  className={`relative ${hasImage ? 'h-full' : ''}`}
+                  className={`relative ${hasImage ? 'h-full' : ''} overflow-visible`}
                 >
                   <motion.div
+                    whileHover={!isDisabled && !selectedAnswer ? {
+                      scale: 1.02,
+                      transition: { type: "spring", stiffness: 400, damping: 20 }
+                    } : {}}
+                    whileTap={!isDisabled && !selectedAnswer ? {
+                      scale: 0.98,
+                      transition: { type: "spring", stiffness: 400, damping: 20 }
+                    } : {}}
                     className={`
                       relative ${hasImage ? 'h-full min-h-[60px]' : ''} w-full ${hasImage ? 'p-3' : 'p-4'} rounded-2xl font-bold ${hasImage ? 'text-xs' : 'text-sm'} brutal-border transition-shadow uppercase tracking-wide
                       ${!selectedAnswer && !isDisabled && 'bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:shadow-none'}

@@ -48,6 +48,7 @@ export interface ServerToClientEvents {
     question: Question;
     timeLimit: number;
     scores: PlayerScore[]; // Current scores at start of question
+    isFinalQuestion: boolean; // Whether this is the last question (2x points)
   }) => void;
 
   timer_tick: (data: {

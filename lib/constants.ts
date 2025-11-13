@@ -7,10 +7,11 @@ export const GAME_CONFIG = {
   // Match Configuration
   QUESTIONS_PER_MATCH: 10,
   QUESTION_TIME_LIMIT: 10, // seconds
+  OPTIONS_LOAD_DELAY: 1400, // milliseconds before options appear (increased for suspense)
 
   // TTL Configuration
   MATCH_TTL: 3600, // 1 hour in seconds
-  MATCHMAKING_TIMEOUT: 30, // 30 seconds
+  MATCHMAKING_TIMEOUT: 180, // 3 minutes in seconds (increased from 30s)
   ANSWER_TTL: 3600, // 1 hour in seconds
 
   // Connection Configuration
@@ -37,6 +38,7 @@ export const SCORING = {
   // Base Points
   CORRECT_BASE: 10,
   TIME_BONUS_MAX: 10,
+  FINAL_QUESTION_MULTIPLIER: 2, // 2x points for final question
 
   // Time-based Scoring Thresholds (faster = more points)
   TIME_THRESHOLDS: [

@@ -9,13 +9,13 @@ import { SCORING } from '@/lib/constants';
  * Calculate points based on answer time
  * Faster answers = more points
  */
-export function calculatePoints(timeTakenMs: number): number {
+export function calculatePoints(timeTakenMs: number, multiplier: number = 1): number {
   const timeSec = timeTakenMs / 1000;
 
   // Find matching time threshold
   for (const threshold of SCORING.TIME_THRESHOLDS) {
     if (timeSec < threshold.maxTime) {
-      return threshold.points;
+      return threshold.points * multiplier;
     }
   }
 
