@@ -59,15 +59,17 @@ async function updatePlayerStats(
     : 0;
 
   // Get player's last match result to determine streak
+  // NOTE: Current match is ALREADY marked completed in DB before this runs
   const { data: recentMatches } = await supabase
     .from('matches')
     .select('winner_fid, player1_fid, player2_fid, completed_at')
     .or(`player1_fid.eq.${fid},player2_fid.eq.${fid}`)
     .eq('status', 'completed')
     .order('completed_at', { ascending: false })
-    .limit(20); // Get last 20 matches to calculate streak
+    .limit(20); // Get last 20 matches INCLUDING current match
 
   // Calculate current streak (consecutive wins from most recent)
+  // Current match is already in recentMatches[0], so don't add it again!
   let currentStreak = 0;
   if (recentMatches) {
     for (const match of recentMatches) {
@@ -77,11 +79,6 @@ async function updatePlayerStats(
         break; // Streak broken
       }
     }
-  }
-
-  // If this match was a win, current streak includes this match
-  if (isWin) {
-    currentStreak++; // Add current match to streak
   }
 
   // Update user_stats_by_topic

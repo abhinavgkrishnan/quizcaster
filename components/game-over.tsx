@@ -153,10 +153,7 @@ export default function GameOver({ playerScore, opponentScore, playerAnswers, op
 
           {/* Action Buttons */}
           <div className="w-full space-y-1.5">
-            <motion.button
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 1, type: "spring" }}
+            <button
               onClick={onPlayAgain}
               style={{
                 transform: 'translate3d(0, 0, 0)',
@@ -173,27 +170,24 @@ export default function GameOver({ playerScore, opponentScore, playerAnswers, op
                 <RotateCcw className="w-4 h-4" />
                 Play Again
               </span>
-            </motion.button>
+            </button>
 
-            <motion.button
-              initial={{ y: 20, opacity: 0 }}
-              animate={{
-                y: 0,
-                opacity: 1,
-                scale: opponentRequestedRematch && !challengeActive ? [1, 1.02, 1] : 1,
-              }}
-              transition={{
-                delay: 1.1,
-                type: "spring",
-                scale: {
-                  repeat: opponentRequestedRematch && !challengeActive ? Infinity : 0,
-                  duration: 1,
-                }
-              }}
+            <button
               onClick={handleChallenge}
               disabled={challengeProgress >= 100}
+              style={{
+                transform: 'translate3d(0, 0, 0)',
+              }}
+              onTouchStart={(e) => {
+                if (challengeProgress < 100) {
+                  e.currentTarget.style.transform = 'translate3d(0, -2px, 0)'
+                }
+              }}
+              onTouchEnd={(e) => {
+                e.currentTarget.style.transform = 'translate3d(0, 0, 0)'
+              }}
               className={`relative w-full py-2.5 rounded-2xl brutal-border font-bold text-[10px] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all uppercase tracking-wide overflow-hidden ${
-                challengeProgress >= 100 ? 'bg-gray-300 opacity-50' : opponentRequestedRematch ? 'brutal-violet animate-pulse' : 'brutal-beige'
+                challengeProgress >= 100 ? 'bg-gray-300 opacity-50' : opponentRequestedRematch ? 'brutal-violet' : 'brutal-beige'
               }`}
             >
               {challengeActive && (
@@ -225,7 +219,7 @@ export default function GameOver({ playerScore, opponentScore, playerAnswers, op
                   />
                 )}
                 <Swords className="w-3.5 h-3.5 flex-shrink-0" />
-                <span className="truncate max-w-[120px]">
+                <span className="truncate max-w-[180px]">
                   {opponentRequestedRematch && !challengeActive
                     ? `${opponent.displayName} wants rematch!`
                     : `Challenge ${opponent.displayName}`}
@@ -234,12 +228,9 @@ export default function GameOver({ playerScore, opponentScore, playerAnswers, op
                   <span className="text-[9px] flex-shrink-0">({Math.ceil(10 - (challengeProgress / 10))}s)</span>
                 )}
               </span>
-            </motion.button>
+            </button>
 
-            <motion.button
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 1.2, type: "spring" }}
+            <button
               onClick={onGoHome}
               style={{
                 transform: 'translate3d(0, 0, 0)',
@@ -256,7 +247,7 @@ export default function GameOver({ playerScore, opponentScore, playerAnswers, op
                 <Home className="w-3.5 h-3.5" />
                 Home
               </span>
-            </motion.button>
+            </button>
           </div>
         </motion.div>
       </div>
