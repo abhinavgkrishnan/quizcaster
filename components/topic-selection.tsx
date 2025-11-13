@@ -86,26 +86,31 @@ export default function TopicSelection({ onSelectTopic, onNavigate }: TopicSelec
               const colorClass = topic.color_class || 'brutal-violet'
 
               return (
-                <motion.button
+                <button
                   key={topic.slug}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{
-                    type: "spring",
-                    stiffness: 300,
-                    damping: 25,
-                    delay: index * 0.03
+                  style={{
+                    opacity: 0,
+                    transform: 'translate3d(0, 10px, 0)',
+                    animation: `fadeInUp 0.4s ease-out ${index * 0.05}s forwards`,
                   }}
-                  whileHover={{
-                    y: -6,
-                    transition: { type: "spring", stiffness: 400, damping: 20 }
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'translate3d(0, -6px, 0)';
+                    e.currentTarget.style.boxShadow = '6px 6px 0px 0px rgba(0,0,0,1)';
                   }}
-                  whileTap={{
-                    y: 0,
-                    transition: { type: "spring", stiffness: 400, damping: 20 }
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'translate3d(0, 0, 0)';
+                    e.currentTarget.style.boxShadow = '4px 4px 0px 0px rgba(0,0,0,1)';
+                  }}
+                  onTouchStart={(e) => {
+                    e.currentTarget.style.transform = 'translate3d(0, -4px, 0)';
+                    e.currentTarget.style.boxShadow = '6px 6px 0px 0px rgba(0,0,0,1)';
+                  }}
+                  onTouchEnd={(e) => {
+                    e.currentTarget.style.transform = 'translate3d(0, 0, 0)';
+                    e.currentTarget.style.boxShadow = '4px 4px 0px 0px rgba(0,0,0,1)';
                   }}
                   onClick={() => onSelectTopic(topic.slug)}
-                  className={`relative aspect-square rounded-2xl ${colorClass} brutal-border font-bold shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] active:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all`}
+                  className={`relative aspect-square rounded-2xl ${colorClass} brutal-border font-bold shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all duration-200`}
                 >
                   {/* Content */}
                   <div className="relative z-10 flex flex-col items-center justify-center h-full gap-2 p-3">
@@ -114,7 +119,7 @@ export default function TopicSelection({ onSelectTopic, onNavigate }: TopicSelec
                       {topic.display_name}
                     </div>
                   </div>
-                </motion.button>
+                </button>
               )
             })}
           </div>
