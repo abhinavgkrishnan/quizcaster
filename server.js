@@ -120,6 +120,30 @@ app.prepare().then(() => {
     .listen(port, () => {
       console.log(`> Ready on http://${hostname}:${port}`);
       console.log(`> Socket.IO ready`);
+
+      // Matchmaking processor - runs every 2 seconds
+      // This ensures players get matched even if they close their browser
+      const matchmakingInterval = setInterval(async () => {
+        try {
+          const url = `http://localhost:${port}/api/matchmaking/process`;
+          const response = await fetch(url, { method: 'POST' });
+
+          if (!response.ok && !dev) {
+            console.error('[Matchmaking Processor] Failed:', response.status);
+          }
+        } catch (err) {
+          // Silent fail in production - client polling is primary
+          if (dev) {
+            console.error('[Matchmaking Processor] Error:', err.message);
+          }
+        }
+      }, 2000);
+
+      // Cleanup on shutdown
+      process.on('SIGTERM', () => {
+        clearInterval(matchmakingInterval);
+        process.exit(0);
+      });
     });
 });
 
