@@ -131,6 +131,47 @@ html,
 body,
 #__next {
   height: 100%;
+  overflow-x: hidden;
+}
+
+/* Hide scrollbars globally */
+* {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+
+*::-webkit-scrollbar {
+  display: none; /* Chrome/Safari */
+}
+
+/* Mobile optimizations */
+@supports (-webkit-touch-callout: none) {
+  /* iOS-specific fixes */
+  body {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Prevent flicker */
+  * {
+    -webkit-transform: translateZ(0);
+    -webkit-backface-visibility: hidden;
+    -webkit-perspective: 1000;
+  }
+}
+
+/* GPU acceleration for smoother animations on mobile */
+.brutal-border,
+[class*="brutal-"] {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  will-change: transform;
+}
+
+/* Better SVG rendering on mobile */
+svg {
+  shape-rendering: geometricPrecision;
+  -webkit-transform: translateZ(0);
 }
 
 /* Brutal Design Utilities */
