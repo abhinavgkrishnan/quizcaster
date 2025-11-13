@@ -4,10 +4,11 @@ import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import * as Icons from "lucide-react"
 import { Home, Search, User, Bell, Trophy } from "lucide-react"
+import type { AppScreen } from "@/lib/types"
 
 interface TopicSelectionProps {
   onSelectTopic: (topic: string) => void
-  onNavigate: (screen: "topics" | "matchmaking" | "game" | "profile") => void
+  onNavigate: (screen: AppScreen) => void
 }
 
 interface Topic {
@@ -21,7 +22,7 @@ interface Topic {
 const MENU_ITEMS = [
   { icon: Home, label: "Home", screen: "topics" as const },
   { icon: Search, label: "Discover", screen: "topics" as const },
-  { icon: Trophy, label: "Leaderboard", screen: "topics" as const },
+  { icon: Trophy, label: "Leaderboard", screen: "leaderboard" as const },
   { icon: Bell, label: "Activity", screen: "topics" as const },
   { icon: User, label: "Profile", screen: "profile" as const },
 ]

@@ -5,6 +5,7 @@ import TopicSelection from "@/components/topic-selection"
 import Matchmaking from "@/components/matchmaking"
 import GameScreen from "@/components/game-screen"
 import Profile from "@/components/profile"
+import Leaderboard from "@/components/leaderboard"
 import { useFarcaster } from "@/lib/farcaster-sdk"
 import { motion } from "framer-motion"
 import { LogIn } from "lucide-react"
@@ -105,6 +106,7 @@ export default function Home() {
           />
         )}
         {currentScreen === "profile" && <Profile user={user} onNavigate={setCurrentScreen} />}
+        {currentScreen === "leaderboard" && <Leaderboard onNavigate={setCurrentScreen} />}
       </div>
     </main>
   )

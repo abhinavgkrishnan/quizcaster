@@ -49,6 +49,21 @@ export class GameRoomManager {
           return null;
         }
 
+        // Fetch match to get topic
+        const { data: match } = await supabase
+          .from('matches')
+          .select('topic')
+          .eq('id', matchId)
+          .single();
+
+        if (!match) {
+          console.error('[GameRoomManager] Match not found');
+          this.roomCreationPromises.delete(matchId);
+          return null;
+        }
+
+        const topic = match.topic;
+
         // Fetch player data
         const { data: players } = await supabase
           .from('users')
@@ -118,7 +133,8 @@ export class GameRoomManager {
           player2Data,
           questions,
           gameState.questions,
-          correctAnswers
+          correctAnswers,
+          topic
         );
 
         this.rooms.set(matchId, room);

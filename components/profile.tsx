@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
-import { User, Trophy, Target, Clock, Home, Search, Bell } from "lucide-react"
+import { User, Trophy, Target, Clock, Home, Search, Bell, TrendingUp } from "lucide-react"
 import type { FarcasterUser, AppScreen } from "@/lib/types"
 
 interface ProfileProps {
@@ -15,16 +15,19 @@ interface UserStats {
     total_matches: number
     total_wins: number
     total_losses: number
+    total_draws: number
     win_rate: string
     accuracy: string
     avg_response_time_s: string
+    current_streak: number
+    longest_streak: number
   }
 }
 
 const MENU_ITEMS = [
   { icon: Home, label: "Home", screen: "topics" as const },
   { icon: Search, label: "Discover", screen: "topics" as const },
-  { icon: Trophy, label: "Leaderboard", screen: "topics" as const },
+  { icon: Trophy, label: "Leaderboard", screen: "leaderboard" as const },
   { icon: Bell, label: "Activity", screen: "topics" as const },
   { icon: User, label: "Profile", screen: "profile" as const },
 ]
@@ -58,9 +61,12 @@ export default function Profile({ user, onNavigate }: ProfileProps) {
     total_matches: 0,
     total_wins: 0,
     total_losses: 0,
+    total_draws: 0,
     win_rate: '0',
     accuracy: '0',
-    avg_response_time_s: '0'
+    avg_response_time_s: '0',
+    current_streak: 0,
+    longest_streak: 0
   }
 
   return (
@@ -191,6 +197,45 @@ export default function Profile({ user, onNavigate }: ProfileProps) {
               </div>
             </div>
           </motion.div>
+
+          {/* Streaks */}
+          <div className="grid grid-cols-2 gap-3">
+            <motion.div
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.8 }}
+              className="brutal-violet brutal-border p-4 rounded-2xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
+            >
+              <div className="flex items-center gap-2 mb-2">
+                <TrendingUp className="w-4 h-4 text-foreground" />
+                <p className="text-[10px] font-bold uppercase tracking-wide text-foreground">Current</p>
+              </div>
+              <p className="text-3xl font-bold text-foreground">
+                {loading ? '...' : displayStats.current_streak}
+              </p>
+              <p className="text-[10px] text-foreground/60 font-semibold uppercase tracking-wider mt-1">
+                Win Streak
+              </p>
+            </motion.div>
+
+            <motion.div
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.9 }}
+              className="brutal-beige brutal-border p-4 rounded-2xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
+            >
+              <div className="flex items-center gap-2 mb-2">
+                <Trophy className="w-4 h-4 text-foreground" />
+                <p className="text-[10px] font-bold uppercase tracking-wide text-foreground">Best</p>
+              </div>
+              <p className="text-3xl font-bold text-foreground">
+                {loading ? '...' : displayStats.longest_streak}
+              </p>
+              <p className="text-[10px] text-foreground/60 font-semibold uppercase tracking-wider mt-1">
+                Win Streak
+              </p>
+            </motion.div>
+          </div>
         </div>
       </motion.div>
 

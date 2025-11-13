@@ -7,6 +7,7 @@
 import { Server, Socket } from 'socket.io';
 import { supabase } from '@/lib/utils/supabase';
 import { calculatePoints } from '@/lib/utils/scoring';
+import { updateUserStatsAfterMatch } from '@/lib/utils/stats';
 import { getGameState, updatePlayerScore, savePlayerAnswer, markPlayerCompleted, getPlayerAnswers, deleteGameSession } from '@/lib/redis/game-state';
 import { GAME_CONFIG, SCORING } from '@/lib/constants';
 import type { PlayerData, Question, PlayerScore, ServerToClientEvents } from './events';
@@ -29,6 +30,8 @@ export class GameRoom {
   private playersAnsweredCurrentQuestion: Set<number>; // FIDs that answered current question
   private questionEnded: boolean = false; // Prevent multiple endQuestion calls
   private correctAnswers: Map<string, string>; // questionId → correct answer
+  private playerStreaks: Map<number, number>; // fid → current streak of correct answers
+  private topic: string;
 
   constructor(
     matchId: string,
@@ -37,7 +40,8 @@ export class GameRoom {
     player2: PlayerData,
     questions: Question[],
     questionIds: string[],
-    correctAnswers: Map<string, string>
+    correctAnswers: Map<string, string>,
+    topic: string
   ) {
     this.matchId = matchId;
     this.io = io;
@@ -59,6 +63,11 @@ export class GameRoom {
     this.playersReady = new Set();
     this.playersAnsweredCurrentQuestion = new Set();
     this.correctAnswers = correctAnswers;
+    this.playerStreaks = new Map([
+      [player1.fid, 0],
+      [player2.fid, 0],
+    ]);
+    this.topic = topic;
   }
 
   /**
@@ -343,11 +352,27 @@ export class GameRoom {
         status: 'completed',
         completed_at: new Date().toISOString(),
         winner_fid: winnerFid,
+        player1_score: scores.find(s => s.fid === Array.from(this.players.keys())[0])?.score || 0,
+        player2_score: scores.find(s => s.fid === Array.from(this.players.keys())[1])?.score || 0,
       }).eq('id', this.matchId);
 
       if (matchUpdateError) {
         console.error('[GameRoom] Error updating match status:', matchUpdateError);
       }
+
+      // Update user stats (including streaks)
+      const [player1Fid, player2Fid] = Array.from(this.players.keys());
+      await updateUserStatsAfterMatch({
+        matchId: this.matchId,
+        topic: this.topic,
+        player1Fid,
+        player2Fid,
+        player1Score: scores.find(s => s.fid === player1Fid)?.score || 0,
+        player2Score: scores.find(s => s.fid === player2Fid)?.score || 0,
+        winnerFid,
+        player1Answers: this.answers.get(player1Fid) || [],
+        player2Answers: this.answers.get(player2Fid) || [],
+      });
 
       // Cleanup Redis
       await deleteGameSession(this.matchId);

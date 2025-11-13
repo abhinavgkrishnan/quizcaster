@@ -17,6 +17,7 @@ interface OverallStatsResponse {
   accuracy: string
   avg_response_time_ms: number
   avg_response_time_s: string
+  current_streak: number
   longest_streak: number
   global_rank: number | null
 }
@@ -55,6 +56,26 @@ export async function GET(
       .eq('fid', fidNumber)
       .single()
 
+    // Get recent matches to calculate current streak
+    const { data: recentMatches } = await supabase
+      .from('matches')
+      .select('winner_fid, player1_fid, player2_fid, completed_at')
+      .or(`player1_fid.eq.${fidNumber},player2_fid.eq.${fidNumber}`)
+      .eq('status', 'completed')
+      .order('completed_at', { ascending: false })
+      .limit(20)
+
+    let currentStreak = 0
+    if (recentMatches) {
+      for (const match of recentMatches) {
+        if (match.winner_fid === fidNumber) {
+          currentStreak++
+        } else {
+          break // Streak broken
+        }
+      }
+    }
+
     // Get topic stats
     const { data: topicStats } = await supabase
       .from('user_stats_by_topic')
@@ -80,6 +101,7 @@ export async function GET(
       avg_response_time_s: overall.avg_response_time_ms
         ? (overall.avg_response_time_ms / 1000).toFixed(1)
         : '0.0',
+      current_streak: currentStreak,
       longest_streak: overall.longest_streak,
       global_rank: overall.global_rank
     } : {
@@ -94,6 +116,7 @@ export async function GET(
       accuracy: '0.00',
       avg_response_time_ms: 0,
       avg_response_time_s: '0.0',
+      current_streak: 0,
       longest_streak: 0,
       global_rank: null
     }
