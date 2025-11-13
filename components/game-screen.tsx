@@ -176,7 +176,7 @@ export default function GameScreen({ topic, matchId, myPlayer, opponent, onGameE
               <button
                 onClick={() => {
                   setShowForfeitModal(false);
-                  onGameEnd();
+                  game.forfeitGame();
                 }}
                 className="flex-1 py-3 rounded-2xl brutal-violet brutal-border font-bold text-xs shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:shadow-none transition-all text-foreground uppercase tracking-wide"
                 style={{
