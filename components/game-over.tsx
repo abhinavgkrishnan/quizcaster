@@ -20,14 +20,18 @@ interface GameOverProps {
     pfpUrl?: string
   }
   opponentRequestedRematch: boolean
+  forfeitedBy?: number | null
+  myFid: number
   onPlayAgain: () => void
   onGoHome: () => void
   onChallenge: () => void
 }
 
-export default function GameOver({ playerScore, opponentScore, playerAnswers, opponent, opponentRequestedRematch, onPlayAgain, onGoHome, onChallenge }: GameOverProps) {
+export default function GameOver({ playerScore, opponentScore, playerAnswers, opponent, opponentRequestedRematch, forfeitedBy, myFid, onPlayAgain, onGoHome, onChallenge }: GameOverProps) {
   const playerWon = playerScore > opponentScore
   const isDraw = playerScore === opponentScore
+  const opponentForfeited = forfeitedBy !== null && forfeitedBy !== myFid
+  const iForfeited = forfeitedBy === myFid
   const [challengeProgress, setChallengeProgress] = useState(0)
   const [challengeActive, setChallengeActive] = useState(false)
 
@@ -112,7 +116,11 @@ export default function GameOver({ playerScore, opponentScore, playerAnswers, op
           </h2>
 
           <p className="text-muted-foreground text-[10px] mb-3 uppercase tracking-wide font-semibold">
-            {playerWon ? "Outstanding!" : isDraw ? "Evenly matched!" : "Try again!"}
+            {opponentForfeited
+              ? `${opponent.displayName} forfeited!`
+              : iForfeited
+              ? "You forfeited"
+              : playerWon ? "Outstanding!" : isDraw ? "Evenly matched!" : "Try again!"}
           </p>
 
           {/* Scores */}

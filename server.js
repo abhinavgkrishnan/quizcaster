@@ -120,6 +120,14 @@ app.prepare().then(() => {
         }
       }
     });
+
+    // Handle forfeit
+    socket.on('forfeit_game', async ({ matchId, fid }) => {
+      const room = roomManager.getRoom(matchId);
+      if (room) {
+        await room.handleForfeit(fid);
+      }
+    });
   });
 
   console.log('[Server] Socket.IO initialized on path: /socket.io/');

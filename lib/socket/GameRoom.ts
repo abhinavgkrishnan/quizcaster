@@ -382,6 +382,37 @@ export class GameRoom {
   }
 
   /**
+   * Handle player forfeit
+   */
+  async handleForfeit(fid: number): Promise<void> {
+    // Stop timer
+    if (this.timer) {
+      clearInterval(this.timer);
+      this.timer = null;
+    }
+
+    // Determine winner (opponent of player who forfeited)
+    const players = Array.from(this.players.keys());
+    const winnerFid = players.find(p => p !== fid);
+
+    if (!winnerFid) return;
+
+    // Get current scores
+    const scores = this.getScores();
+
+    // Broadcast game complete with forfeit info
+    this.io.to(this.matchId).emit('game_complete', {
+      winnerFid,
+      finalScores: scores,
+      isDraw: false,
+      forfeitedBy: fid,
+    });
+
+    // Save to database
+    await this.saveToDatabase();
+  }
+
+  /**
    * Handle player disconnect
    */
   handleDisconnect(fid: number): void {

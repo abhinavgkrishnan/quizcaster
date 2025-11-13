@@ -77,6 +77,7 @@ export interface ServerToClientEvents {
     winnerFid: number | null;
     finalScores: PlayerScore[];
     isDraw: boolean;
+    forfeitedBy?: number | null; // FID of player who forfeited
   }) => void;
 
   // Connection status
@@ -128,6 +129,12 @@ export interface ClientToServerEvents {
     matchId: string;
     fid: number;
     topic: string;
+  }) => void;
+
+  // Forfeit
+  forfeit_game: (data: {
+    matchId: string;
+    fid: number;
   }) => void;
 }
 

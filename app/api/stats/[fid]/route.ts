@@ -70,9 +70,10 @@ export async function GET(
       for (const match of recentMatches) {
         if (match.winner_fid === fidNumber) {
           currentStreak++
-        } else {
-          break // Streak broken
+        } else if (match.winner_fid !== null) {
+          break // Loss breaks streak
         }
+        // Draw (winner_fid === null) continues without incrementing
       }
     }
 

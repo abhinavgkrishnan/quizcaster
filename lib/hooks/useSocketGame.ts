@@ -34,6 +34,7 @@ interface GameState {
   error: string | null;
   opponentRequestedRematch: boolean;
   rematchReady: string | null;
+  forfeitedBy: number | null;
 }
 
 export function useSocketGame(
@@ -59,6 +60,7 @@ export function useSocketGame(
     error: null,
     opponentRequestedRematch: false,
     rematchReady: null,
+    forfeitedBy: null,
   });
 
   const socketRef = useRef<Socket<ServerToClientEvents, ClientToServerEvents> | null>(null);
@@ -182,6 +184,7 @@ export function useSocketGame(
         myScore,
         opponentScore,
         winner: data.winnerFid,
+        forfeitedBy: data.forfeitedBy || null,
       }));
     });
 
@@ -252,6 +255,16 @@ export function useSocketGame(
     });
   }, [matchId, myPlayer.fid, topic]);
 
+  // Forfeit game
+  const forfeitGame = useCallback(() => {
+    if (!socketRef.current) return;
+
+    socketRef.current.emit('forfeit_game', {
+      matchId,
+      fid: myPlayer.fid,
+    });
+  }, [matchId, myPlayer.fid]);
+
   return {
     // State
     ...gameState,
@@ -259,6 +272,7 @@ export function useSocketGame(
     // Actions
     submitAnswer,
     requestRematch,
+    forfeitGame,
 
     // Computed
     isConnected: socketRef.current?.connected || false,

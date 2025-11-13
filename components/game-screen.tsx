@@ -133,6 +133,8 @@ export default function GameScreen({ topic, matchId, myPlayer, opponent, onGameE
           playerAnswers={game.myAnswers}
           opponent={opponent}
           opponentRequestedRematch={game.opponentRequestedRematch}
+          forfeitedBy={game.forfeitedBy}
+          myFid={myPlayer.fid}
           onPlayAgain={onPlayAgain}
           onGoHome={onGameEnd}
           onChallenge={game.requestRematch}
