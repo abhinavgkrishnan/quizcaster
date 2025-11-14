@@ -45,7 +45,7 @@ export default function MatchHistory({ user, onClose }: MatchHistoryProps) {
       try {
         const response = await fetch('/api/topics')
         const data = await response.json()
-        setTopics(data.map((t: any) => t.slug))
+        setTopics((data.topics || []).map((t: any) => t.slug))
       } catch (error) {
         console.error('Failed to fetch topics:', error)
       }

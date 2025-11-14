@@ -6,6 +6,7 @@ import Matchmaking from "@/components/matchmaking"
 import GameScreen from "@/components/game-screen"
 import Profile from "@/components/profile"
 import Leaderboard from "@/components/leaderboard"
+import FriendsList from "@/components/friends-list"
 import { useFarcaster } from "@/lib/farcaster-sdk"
 import { motion } from "framer-motion"
 import { LogIn } from "lucide-react"
@@ -15,6 +16,7 @@ export default function Home() {
   const [currentScreen, setCurrentScreen] = useState<AppScreen>("topics")
   const [selectedTopic, setSelectedTopic] = useState<string | null>(null)
   const [currentMatch, setCurrentMatch] = useState<MatchData | null>(null)
+  const [showFriends, setShowFriends] = useState(false)
   const { isSDKLoaded, user, isAuthenticated, signIn } = useFarcaster()
   const isDevMode = process.env.NEXT_PUBLIC_DEV_MODE === 'true'
 
@@ -104,6 +106,7 @@ export default function Home() {
             onSelectTopic={handleTopicSelect}
             onNavigate={setCurrentScreen}
             user={user}
+            onFriendsClick={() => setShowFriends(true)}
           />
         )}
         {currentScreen === "matchmaking" && selectedTopic && (
@@ -127,9 +130,34 @@ export default function Home() {
             onRematchReady={handleRematchReady}
           />
         )}
-        {currentScreen === "profile" && <Profile user={user} onNavigate={setCurrentScreen} />}
-        {currentScreen === "leaderboard" && <Leaderboard onNavigate={setCurrentScreen} />}
+        {currentScreen === "profile" && (
+          <Profile
+            user={user}
+            onNavigate={setCurrentScreen}
+            onFriendsClick={() => setShowFriends(true)}
+          />
+        )}
+        {currentScreen === "leaderboard" && (
+          <Leaderboard
+            onNavigate={setCurrentScreen}
+            onFriendsClick={() => setShowFriends(true)}
+          />
+        )}
       </div>
+
+      {/* Global Friends Modal */}
+      {showFriends && (
+        <div className="fixed inset-0 z-50 bg-black/50">
+          <FriendsList
+            user={user}
+            onClose={() => setShowFriends(false)}
+            onChallenge={(friend) => {
+              console.log('Challenge friend:', friend)
+              setShowFriends(false)
+            }}
+          />
+        </div>
+      )}
     </main>
   )
 }

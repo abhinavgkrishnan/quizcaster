@@ -13,6 +13,7 @@ interface TopicSelectionProps {
   onSelectTopic: (topic: string) => void
   onNavigate: (screen: AppScreen) => void
   user?: FarcasterUser | null
+  onFriendsClick?: () => void
 }
 
 interface Topic {
@@ -31,11 +32,10 @@ const MENU_ITEMS = [
   { icon: User, label: "Profile", screen: "profile" as const },
 ]
 
-export default function TopicSelection({ onSelectTopic, onNavigate, user }: TopicSelectionProps) {
+export default function TopicSelection({ onSelectTopic, onNavigate, user, onFriendsClick }: TopicSelectionProps) {
   const router = useRouter()
   const [topics, setTopics] = useState<Topic[]>([])
   const [loading, setLoading] = useState(true)
-  const [showFriends, setShowFriends] = useState(false)
 
   useEffect(() => {
     const fetchTopics = async () => {
@@ -150,7 +150,7 @@ export default function TopicSelection({ onSelectTopic, onNavigate, user }: Topi
                 key={item.label}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                onClick={() => isFriends ? setShowFriends(true) : onNavigate(item.screen)}
+                onClick={() => isFriends && onFriendsClick ? onFriendsClick() : onNavigate(item.screen)}
                 className={`flex flex-col items-center gap-1 px-1.5 py-2 rounded-xl transition-all min-w-0 ${
                   isActive
                     ? 'text-foreground'
@@ -166,21 +166,6 @@ export default function TopicSelection({ onSelectTopic, onNavigate, user }: Topi
           })}
         </div>
       </motion.div>
-
-      {/* Friends Modal */}
-      {showFriends && (
-        <div className="fixed inset-0 z-50 bg-black/50">
-          <FriendsList
-            user={user || null}
-            onClose={() => setShowFriends(false)}
-            onChallenge={(friend) => {
-              console.log('Challenge friend:', friend)
-              setShowFriends(false)
-              // TODO: Navigate to challenge flow
-            }}
-          />
-        </div>
-      )}
     </div>
   )
 }

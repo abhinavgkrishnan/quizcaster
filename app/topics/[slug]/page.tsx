@@ -37,7 +37,7 @@ export default function TopicPage({ params }: TopicPageProps) {
     try {
       const response = await fetch('/api/topics')
       const data = await response.json()
-      const foundTopic = data.find((t: Topic) => t.slug === slug)
+      const foundTopic = data.topics?.find((t: Topic) => t.slug === slug)
       setTopic(foundTopic || null)
     } catch (error) {
       console.error('Failed to fetch topic:', error)
@@ -47,8 +47,9 @@ export default function TopicPage({ params }: TopicPageProps) {
   }
 
   const handleFindMatch = () => {
-    // Navigate to matchmaking with topic
-    router.push(`/?topic=${slug}`)
+    // Navigate back to home - clicking topic will trigger matchmaking in parent
+    router.push('/')
+    // User will need to click topic again to start matchmaking
   }
 
   const handleChallengeFriend = (friend: any) => {

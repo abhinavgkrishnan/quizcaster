@@ -10,6 +10,7 @@ import MatchHistory from "./match-history"
 interface ProfileProps {
   user: FarcasterUser | null
   onNavigate?: (screen: AppScreen) => void
+  onFriendsClick?: () => void
 }
 
 interface UserStats {
@@ -39,7 +40,7 @@ const MENU_ITEMS = [
   { icon: User, label: "Profile", screen: "profile" as const },
 ]
 
-export default function Profile({ user, onNavigate }: ProfileProps) {
+export default function Profile({ user, onNavigate, onFriendsClick }: ProfileProps) {
   const [stats, setStats] = useState<UserStats | null>(null)
   const [loading, setLoading] = useState(true)
   const [showFlairSelector, setShowFlairSelector] = useState(false)
@@ -354,12 +355,13 @@ export default function Profile({ user, onNavigate }: ProfileProps) {
           {MENU_ITEMS.map((item) => {
             const Icon = item.icon
             const isActive = item.screen === "profile"
+            const isFriends = item.label === "Friends"
             return (
               <motion.button
                 key={item.label}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                onClick={() => onNavigate?.(item.screen)}
+                onClick={() => isFriends && onFriendsClick ? onFriendsClick() : onNavigate?.(item.screen)}
                 className={`flex flex-col items-center gap-1 px-1.5 py-2 rounded-xl transition-all min-w-0 ${
                   isActive
                     ? 'text-foreground'

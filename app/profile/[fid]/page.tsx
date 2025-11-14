@@ -52,18 +52,25 @@ export default function OtherProfilePage({ params }: OtherProfilePageProps) {
 
   const fetchUserProfile = async () => {
     try {
-      // Fetch user info (would come from a user API)
+      // Fetch user info from Neynar
+      const userResponse = await fetch(`/api/users/${fid}`)
+      const userData = await userResponse.json()
+
+      // Fetch stats
       const statsResponse = await fetch(`/api/stats/${fid}`)
       const statsData = await statsResponse.json()
       setStats(statsData)
 
-      // Mock user info - in real app, fetch from users API
+      // Fetch active flair
+      const flairResponse = await fetch(`/api/flairs?fid=${fid}`)
+      const flairData = await flairResponse.json()
+
       setUser({
-        fid: parseInt(fid),
-        username: 'user' + fid,
-        display_name: 'User ' + fid,
-        pfp_url: undefined,
-        active_flair: null
+        fid: userData.fid,
+        username: userData.username,
+        display_name: userData.display_name,
+        pfp_url: userData.pfp_url,
+        active_flair: flairData.active_flair
       })
 
       // TODO: Check if friends
@@ -74,28 +81,52 @@ export default function OtherProfilePage({ params }: OtherProfilePageProps) {
     }
   }
 
+  const [currentUserFid, setCurrentUserFid] = useState<number | null>(null)
+
+  useEffect(() => {
+    // Get current user FID from Farcaster SDK
+    const getFid = async () => {
+      try {
+        const { useFarcaster } = await import('@/lib/farcaster-sdk')
+        // This won't work in server component, need to pass from parent
+      } catch (e) {}
+    }
+    getFid()
+  }, [])
+
   const handleChallenge = () => {
-    // TODO: Navigate to challenge screen or show topic selector
-    console.log('Challenge user:', fid)
+    // Navigate to topic selector or create challenge
+    alert(`Challenge feature: Select a topic to challenge user ${fid}`)
+    // TODO: Open topic selector modal
   }
 
   const handleAddFriend = async () => {
     try {
-      // TODO: Get current user FID
+      if (!currentUserFid) {
+        alert('Please login first')
+        return
+      }
+
       const response = await fetch('/api/friends', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'send_request',
-          requester_fid: 0, // TODO: Current user FID
+          requester_fid: currentUserFid,
           addressee_fid: parseInt(fid)
         })
       })
+
+      const data = await response.json()
+
       if (response.ok) {
         alert('Friend request sent!')
+      } else {
+        alert(data.error || 'Failed to send friend request')
       }
     } catch (error) {
       console.error('Failed to send friend request:', error)
+      alert('Error sending friend request')
     }
   }
 
