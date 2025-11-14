@@ -70,7 +70,7 @@ export class GameRoomManager {
         // Fetch player data
         const { data: players } = await supabase
           .from('users')
-          .select('fid, username, display_name, pfp_url')
+          .select('fid, username, display_name, pfp_url, active_flair')
           .in('fid', [gameState.player1_fid, gameState.player2_fid]);
 
         if (!players || players.length < 2) {
@@ -84,6 +84,7 @@ export class GameRoomManager {
           username: players[0].username,
           displayName: players[0].display_name,
           pfpUrl: players[0].pfp_url || undefined,
+          activeFlair: players[0].active_flair || undefined,
         };
 
         const player2Data: PlayerData = {
@@ -91,6 +92,7 @@ export class GameRoomManager {
           username: players[1].username,
           displayName: players[1].display_name,
           pfpUrl: players[1].pfp_url || undefined,
+          activeFlair: players[1].active_flair || undefined,
         };
 
         // Fetch questions with correct answers

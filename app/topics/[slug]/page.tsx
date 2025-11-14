@@ -5,6 +5,7 @@ import { use } from "react"
 import { motion } from "framer-motion"
 import { ArrowLeft, Play, Users, Info } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { useFarcaster } from "@/lib/farcaster-sdk"
 import FriendsList from "@/components/friends-list"
 
 interface TopicPageProps {
@@ -23,6 +24,7 @@ interface Topic {
 export default function TopicPage({ params }: TopicPageProps) {
   const { slug } = use(params)
   const router = useRouter()
+  const { user } = useFarcaster()
   const [topic, setTopic] = useState<Topic | null>(null)
   const [loading, setLoading] = useState(true)
   const [showFriends, setShowFriends] = useState(false)
@@ -191,7 +193,7 @@ export default function TopicPage({ params }: TopicPageProps) {
       {showFriends && (
         <div className="fixed inset-0 z-50 bg-black/50">
           <FriendsList
-            user={null} // TODO: Pass actual user from context
+            user={user}
             onClose={() => setShowFriends(false)}
             onChallenge={(friend) => {
               handleChallengeFriend(friend)

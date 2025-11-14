@@ -376,6 +376,34 @@ export class GameRoom {
         player2Answers: this.answers.get(player2Fid) || [],
       });
 
+      // Award flairs after stats update
+      try {
+        const port = process.env.PORT || 3000;
+        await Promise.all([
+          fetch(`http://localhost:${port}/api/flairs`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              fid: player1Fid,
+              action: 'check_and_award',
+              topic: this.topic
+            })
+          }),
+          fetch(`http://localhost:${port}/api/flairs`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              fid: player2Fid,
+              action: 'check_and_award',
+              topic: this.topic
+            })
+          })
+        ]);
+        console.log('[GameRoom] Flairs checked and awarded');
+      } catch (error) {
+        console.log('[GameRoom] Flair award failed (non-critical):', error);
+      }
+
       // Cleanup Redis
       await deleteGameSession(this.matchId);
     } catch (error) {

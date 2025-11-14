@@ -34,9 +34,12 @@ const SORT_OPTIONS = [
 // Import User icon at top
 import { User, Home } from "lucide-react"
 
+// Import Users icon
+import { Users } from "lucide-react"
+
 const MENU_ITEMS = [
   { icon: Home, label: "Home", screen: "topics" as const },
-  { icon: Target, label: "Discover", screen: "topics" as const },
+  { icon: Users, label: "Friends", screen: "topics" as const },
   { icon: Trophy, label: "Leaderboard", screen: "leaderboard" as const },
   { icon: Clock, label: "Activity", screen: "topics" as const },
   { icon: User, label: "Profile", screen: "profile" as const },
@@ -231,12 +234,13 @@ export default function Leaderboard({ onNavigate }: LeaderboardProps) {
                 : 'brutal-white'
 
               return (
-                <motion.div
+                <motion.button
                   key={entry.fid}
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: index * 0.03 }}
-                  className={`${bgColor} brutal-border p-3 rounded-xl shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] flex items-center gap-3`}
+                  onClick={() => window.location.href = `/profile/${entry.fid}`}
+                  className={`${bgColor} brutal-border p-3 rounded-xl shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] flex items-center gap-3 w-full text-left hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all`}
                 >
                   {/* Rank */}
                   <div className="flex-shrink-0 w-8 text-center">
@@ -299,7 +303,7 @@ export default function Leaderboard({ onNavigate }: LeaderboardProps) {
                       </div>
                     )}
                   </div>
-                </motion.div>
+                </motion.button>
               )
             })}
           </div>
@@ -328,10 +332,7 @@ export default function Leaderboard({ onNavigate }: LeaderboardProps) {
                 }`}
               >
                 <Icon className={`w-5 h-5 shrink-0 ${isActive ? 'stroke-[2.5]' : 'stroke-[2]'}`} />
-                <span className={`text-[9px] font-semibold uppercase tracking-wider ${isActive ? 'font-bold' : ''} truncate max-w-[60px] text-center`}>
-                  {item.label}
-                </span>
-                {isActive && <div className="w-6 h-0.5 bg-foreground rounded-full" />}
+                {isActive && <div className="w-6 h-0.5 bg-foreground rounded-full mt-1" />}
               </motion.button>
             )
           })}

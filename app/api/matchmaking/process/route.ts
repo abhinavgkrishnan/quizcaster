@@ -88,6 +88,15 @@ export async function POST(request: NextRequest) {
         // Continue anyway - match exists in DB
       }
 
+      // Fetch active_flair for both players
+      const { data: players } = await supabase
+        .from('users')
+        .select('fid, active_flair')
+        .in('fid', [player1.fid, player2.fid]);
+
+      const p1Flair = players?.find(p => p.fid === player1.fid)?.active_flair
+      const p2Flair = players?.find(p => p.fid === player2.fid)?.active_flair
+
       // Notify both players via Supabase Realtime
       const matchmakingChannel = supabase.channel(`matchmaking:${topic}`);
 
@@ -102,12 +111,14 @@ export async function POST(request: NextRequest) {
               username: player1.username,
               displayName: player1.displayName,
               pfpUrl: player1.pfpUrl,
+              activeFlair: p1Flair,
             },
             player2: {
               fid: player2.fid,
               username: player2.username,
               displayName: player2.displayName,
               pfpUrl: player2.pfpUrl,
+              activeFlair: p2Flair,
             },
             topic,
           },

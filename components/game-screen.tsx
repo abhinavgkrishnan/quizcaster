@@ -210,10 +210,12 @@ export default function GameScreen({ topic, matchId, myPlayer, opponent, onGameE
           playerScore={game.myScore}
           playerLevel="Novice"
           playerAvatar={myPlayer.pfpUrl || ""}
+          playerFlair={(myPlayer as any).activeFlair}
           opponentName={opponent.displayName || opponent.username}
           opponentScore={game.opponentScore}
           opponentLevel={game.opponentOnline ? "🟢 Online" : "🔴 Offline"}
           opponentAvatar={opponent.pfpUrl || ""}
+          opponentFlair={(opponent as any).activeFlair}
           timer={Math.ceil(game.timeRemaining)}
           onMenuClick={() => setShowForfeitModal(true)}
         />

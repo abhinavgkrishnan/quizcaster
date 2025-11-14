@@ -2,13 +2,17 @@
 
 import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
+import { useRouter } from "next/navigation"
 import * as Icons from "lucide-react"
-import { Home, Search, User, Bell, Trophy } from "lucide-react"
+import { Home, Users, User, Bell, Trophy } from "lucide-react"
 import type { AppScreen } from "@/lib/types"
+import FriendsList from "./friends-list"
+import type { FarcasterUser } from "@/lib/types"
 
 interface TopicSelectionProps {
   onSelectTopic: (topic: string) => void
   onNavigate: (screen: AppScreen) => void
+  user?: FarcasterUser | null
 }
 
 interface Topic {
@@ -21,15 +25,17 @@ interface Topic {
 
 const MENU_ITEMS = [
   { icon: Home, label: "Home", screen: "topics" as const },
-  { icon: Search, label: "Discover", screen: "topics" as const },
+  { icon: Users, label: "Friends", screen: "topics" as const },
   { icon: Trophy, label: "Leaderboard", screen: "leaderboard" as const },
   { icon: Bell, label: "Activity", screen: "topics" as const },
   { icon: User, label: "Profile", screen: "profile" as const },
 ]
 
-export default function TopicSelection({ onSelectTopic, onNavigate }: TopicSelectionProps) {
+export default function TopicSelection({ onSelectTopic, onNavigate, user }: TopicSelectionProps) {
+  const router = useRouter()
   const [topics, setTopics] = useState<Topic[]>([])
   const [loading, setLoading] = useState(true)
+  const [showFriends, setShowFriends] = useState(false)
 
   useEffect(() => {
     const fetchTopics = async () => {
@@ -110,7 +116,7 @@ export default function TopicSelection({ onSelectTopic, onNavigate }: TopicSelec
                     e.currentTarget.style.transform = 'translate3d(0, 0, 0)';
                     e.currentTarget.style.boxShadow = '4px 4px 0px 0px rgba(0,0,0,1)';
                   }}
-                  onClick={() => onSelectTopic(topic.slug)}
+                  onClick={() => router.push(`/topics/${topic.slug}`)}
                   className={`relative aspect-square rounded-2xl ${colorClass} brutal-border font-bold shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all duration-200`}
                 >
                   {/* Content */}
@@ -138,12 +144,13 @@ export default function TopicSelection({ onSelectTopic, onNavigate }: TopicSelec
           {MENU_ITEMS.map((item) => {
             const Icon = item.icon
             const isActive = item.screen === "topics" && item.label === "Home"
+            const isFriends = item.label === "Friends"
             return (
               <motion.button
                 key={item.label}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                onClick={() => onNavigate(item.screen)}
+                onClick={() => isFriends ? setShowFriends(true) : onNavigate(item.screen)}
                 className={`flex flex-col items-center gap-1 px-1.5 py-2 rounded-xl transition-all min-w-0 ${
                   isActive
                     ? 'text-foreground'
@@ -151,17 +158,29 @@ export default function TopicSelection({ onSelectTopic, onNavigate }: TopicSelec
                 }`}
               >
                 <Icon className={`w-5 h-5 shrink-0 ${isActive ? 'stroke-[2.5]' : 'stroke-[2]'}`} />
-                <span className={`text-[9px] font-semibold uppercase tracking-wider ${isActive ? 'font-bold' : ''} truncate max-w-[60px] text-center`}>
-                  {item.label}
-                </span>
                 {isActive && (
-                  <div className="w-6 h-0.5 bg-foreground rounded-full" />
+                  <div className="w-6 h-0.5 bg-foreground rounded-full mt-1" />
                 )}
               </motion.button>
             )
           })}
         </div>
       </motion.div>
+
+      {/* Friends Modal */}
+      {showFriends && (
+        <div className="fixed inset-0 z-50 bg-black/50">
+          <FriendsList
+            user={user || null}
+            onClose={() => setShowFriends(false)}
+            onChallenge={(friend) => {
+              console.log('Challenge friend:', friend)
+              setShowFriends(false)
+              // TODO: Navigate to challenge flow
+            }}
+          />
+        </div>
+      )}
     </div>
   )
 }

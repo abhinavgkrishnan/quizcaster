@@ -103,6 +103,7 @@ export default function Home() {
           <TopicSelection
             onSelectTopic={handleTopicSelect}
             onNavigate={setCurrentScreen}
+            user={user}
           />
         )}
         {currentScreen === "matchmaking" && selectedTopic && (

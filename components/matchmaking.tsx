@@ -6,6 +6,7 @@ import { Swords, User, Zap, Clock, X } from "lucide-react"
 import { useMatchmaking } from "@/lib/hooks/useMatchmaking"
 import { useFarcaster } from "@/lib/farcaster-sdk"
 import type { PlayerData, MatchData } from "@/lib/types"
+import MatchFound from "./match-found"
 
 interface MatchmakingProps {
   topic: string
@@ -18,6 +19,8 @@ export default function Matchmaking({ topic, onMatchFound, onCancel }: Matchmaki
   const hasJoinedRef = useRef(false)
   const mockFidRef = useRef(999999 + Math.floor(Math.random() * 100)) // Stable random FID per component instance
   const isDevMode = process.env.NEXT_PUBLIC_DEV_MODE === 'true'
+  const [showMatchFound, setShowMatchFound] = useState(false)
+  const [foundMatchData, setFoundMatchData] = useState<any>(null)
 
   // In dev mode, use mock user with stable random FID for multi-tab testing
   const effectiveUser = user || (isDevMode ? {
@@ -28,19 +31,9 @@ export default function Matchmaking({ topic, onMatchFound, onCancel }: Matchmaki
   } : null)
 
   const handleMatchFound = (payload: any) => {
-    // Determine which player we are and who is the opponent
-    const isPlayer1 = payload.player1.fid === effectiveUser?.fid
-    const myPlayer = isPlayer1 ? payload.player1 : payload.player2
-    const opponent = isPlayer1 ? payload.player2 : payload.player1
-
-    const matchData = {
-      match_id: payload.match_id,
-      myPlayer,
-      opponent,
-    }
-
-    // Call parent immediately to switch screens (unmount this component)
-    onMatchFound(matchData)
+    // Show match-found screen first
+    setFoundMatchData(payload)
+    setShowMatchFound(true)
   }
 
   const { isSearching, queuePosition, queueSize, estimatedWaitTime, joinQueue, leaveQueue } =
@@ -74,6 +67,25 @@ export default function Matchmaking({ topic, onMatchFound, onCancel }: Matchmaki
   const handleCancel = async () => {
     await leaveQueue()
     onCancel?.()
+  }
+
+  // Show match-found screen
+  if (showMatchFound && foundMatchData) {
+    const isPlayer1 = foundMatchData.player1.fid === effectiveUser?.fid
+    const myPlayer = isPlayer1 ? foundMatchData.player1 : foundMatchData.player2
+    const opponent = isPlayer1 ? foundMatchData.player2 : foundMatchData.player1
+
+    return <MatchFound
+      player1={foundMatchData.player1}
+      player2={foundMatchData.player2}
+      onAnimationComplete={() => {
+        onMatchFound({
+          match_id: foundMatchData.match_id,
+          myPlayer,
+          opponent,
+        })
+      }}
+    />
   }
 
   return (
