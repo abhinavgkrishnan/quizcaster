@@ -7,6 +7,8 @@ export type Json =
   | Json[]
 
 export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "13.0.5"
   }
@@ -57,21 +59,21 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "async_challenges_challenged_fid_users_fid_fk"
+            foreignKeyName: "async_challenges_challenged_fid_fkey"
             columns: ["challenged_fid"]
             isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["fid"]
           },
           {
-            foreignKeyName: "async_challenges_challenger_fid_users_fid_fk"
+            foreignKeyName: "async_challenges_challenger_fid_fkey"
             columns: ["challenger_fid"]
             isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["fid"]
           },
           {
-            foreignKeyName: "async_challenges_match_id_matches_id_fk"
+            foreignKeyName: "async_challenges_match_id_fkey"
             columns: ["match_id"]
             isOneToOne: false
             referencedRelation: "matches"
@@ -79,50 +81,42 @@ export type Database = {
           },
         ]
       }
-      leaderboards: {
+      friendships: {
         Row: {
-          fid: number
+          addressee_fid: number
+          created_at: string | null
           id: string
-          leaderboard_type: string
-          matches_played: number
-          period_end: string | null
-          period_start: string | null
-          rank: number
-          total_points: number
-          total_wins: number
-          updated_at: string
-          win_rate: number | null
+          requester_fid: number
+          status: string
+          updated_at: string | null
         }
         Insert: {
-          fid: number
+          addressee_fid: number
+          created_at?: string | null
           id?: string
-          leaderboard_type: string
-          matches_played: number
-          period_end?: string | null
-          period_start?: string | null
-          rank: number
-          total_points: number
-          total_wins: number
-          updated_at?: string
-          win_rate?: number | null
+          requester_fid: number
+          status?: string
+          updated_at?: string | null
         }
         Update: {
-          fid?: number
+          addressee_fid?: number
+          created_at?: string | null
           id?: string
-          leaderboard_type?: string
-          matches_played?: number
-          period_end?: string | null
-          period_start?: string | null
-          rank?: number
-          total_points?: number
-          total_wins?: number
-          updated_at?: string
-          win_rate?: number | null
+          requester_fid?: number
+          status?: string
+          updated_at?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "leaderboards_fid_users_fid_fk"
-            columns: ["fid"]
+            foreignKeyName: "friendships_addressee_fid_fkey"
+            columns: ["addressee_fid"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["fid"]
+          },
+          {
+            foreignKeyName: "friendships_requester_fid_fkey"
+            columns: ["requester_fid"]
             isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["fid"]
@@ -192,12 +186,16 @@ export type Database = {
       }
       matches: {
         Row: {
+          async_status: string | null
           challenge_message: string | null
+          challenger_data: Json | null
           completed_at: string | null
           created_at: string
           expires_at: string | null
           id: string
+          is_async: boolean | null
           is_bot_opponent: boolean
+          last_activity_at: string | null
           match_type: string
           player1_completed_at: string | null
           player1_fid: number
@@ -206,18 +204,23 @@ export type Database = {
           player2_fid: number | null
           player2_score: number
           questions_used: Json
+          redis_session_id: string | null
           started_at: string | null
           status: string
           topic: string
           winner_fid: number | null
         }
         Insert: {
+          async_status?: string | null
           challenge_message?: string | null
+          challenger_data?: Json | null
           completed_at?: string | null
           created_at?: string
           expires_at?: string | null
           id?: string
+          is_async?: boolean | null
           is_bot_opponent?: boolean
+          last_activity_at?: string | null
           match_type: string
           player1_completed_at?: string | null
           player1_fid: number
@@ -226,18 +229,23 @@ export type Database = {
           player2_fid?: number | null
           player2_score?: number
           questions_used: Json
+          redis_session_id?: string | null
           started_at?: string | null
           status: string
           topic: string
           winner_fid?: number | null
         }
         Update: {
+          async_status?: string | null
           challenge_message?: string | null
+          challenger_data?: Json | null
           completed_at?: string | null
           created_at?: string
           expires_at?: string | null
           id?: string
+          is_async?: boolean | null
           is_bot_opponent?: boolean
+          last_activity_at?: string | null
           match_type?: string
           player1_completed_at?: string | null
           player1_fid?: number
@@ -246,6 +254,7 @@ export type Database = {
           player2_fid?: number | null
           player2_score?: number
           questions_used?: Json
+          redis_session_id?: string | null
           started_at?: string | null
           status?: string
           topic?: string
@@ -263,41 +272,6 @@ export type Database = {
             foreignKeyName: "matches_player2_fid_users_fid_fk"
             columns: ["player2_fid"]
             isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["fid"]
-          },
-        ]
-      }
-      matchmaking_queue: {
-        Row: {
-          expires_at: string
-          fid: number
-          joined_at: string
-          skill_level: number
-          status: string
-          topic: string
-        }
-        Insert: {
-          expires_at: string
-          fid: number
-          joined_at?: string
-          skill_level?: number
-          status?: string
-          topic: string
-        }
-        Update: {
-          expires_at?: string
-          fid?: number
-          joined_at?: string
-          skill_level?: number
-          status?: string
-          topic?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "matchmaking_queue_fid_users_fid_fk"
-            columns: ["fid"]
-            isOneToOne: true
             referencedRelation: "users"
             referencedColumns: ["fid"]
           },
@@ -345,6 +319,7 @@ export type Database = {
           created_at: string
           description: string | null
           display_name: string
+          flairs: Json | null
           icon_name: string | null
           is_active: boolean
           question_count: number
@@ -356,6 +331,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           display_name: string
+          flairs?: Json | null
           icon_name?: string | null
           is_active?: boolean
           question_count?: number
@@ -367,6 +343,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           display_name?: string
+          flairs?: Json | null
           icon_name?: string | null
           is_active?: boolean
           question_count?: number
@@ -483,8 +460,10 @@ export type Database = {
       }
       users: {
         Row: {
+          active_flair: Json | null
           created_at: string
           display_name: string
+          earned_flairs: Json | null
           fid: number
           last_active: string
           notification_token: string | null
@@ -494,8 +473,10 @@ export type Database = {
           username: string
         }
         Insert: {
+          active_flair?: Json | null
           created_at?: string
           display_name: string
+          earned_flairs?: Json | null
           fid: number
           last_active?: string
           notification_token?: string | null
@@ -505,8 +486,10 @@ export type Database = {
           username: string
         }
         Update: {
+          active_flair?: Json | null
           created_at?: string
           display_name?: string
+          earned_flairs?: Json | null
           fid?: number
           last_active?: string
           notification_token?: string | null
@@ -522,7 +505,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      calculate_match_stats: {
+        Args: { p_fid: number; p_match_id: string }
+        Returns: {
+          accuracy: number
+          avg_response_time_ms: number
+          questions_answered: number
+          questions_correct: number
+          total_points: number
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
@@ -615,3 +607,43 @@ export type TablesUpdate<
       ? U
       : never
     : never
+
+export type Enums<
+  DefaultSchemaEnumNameOrOptions extends
+    | keyof DefaultSchema["Enums"]
+    | { schema: keyof DatabaseWithoutInternals },
+  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    : never = never,
+> = DefaultSchemaEnumNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+    : never
+
+export type CompositeTypes<
+  PublicCompositeTypeNameOrOptions extends
+    | keyof DefaultSchema["CompositeTypes"]
+    | { schema: keyof DatabaseWithoutInternals },
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never = never,
+> = PublicCompositeTypeNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    : never
+
+export const Constants = {
+  public: {
+    Enums: {},
+  },
+} as const

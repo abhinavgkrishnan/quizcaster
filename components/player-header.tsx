@@ -9,10 +9,12 @@ interface PlayerHeaderProps {
   playerScore: number
   playerLevel: string
   playerAvatar: string
+  playerFlair?: any
   opponentName: string
   opponentScore: number
   opponentLevel: string
   opponentAvatar: string
+  opponentFlair?: any
   timer?: number
   onMenuClick?: () => void
 }
@@ -22,10 +24,12 @@ export default function PlayerHeader({
   playerScore,
   playerLevel,
   playerAvatar,
+  playerFlair,
   opponentName,
   opponentScore,
   opponentLevel,
   opponentAvatar,
+  opponentFlair,
   timer,
   onMenuClick,
 }: PlayerHeaderProps) {
@@ -75,6 +79,11 @@ export default function PlayerHeader({
         </div>
         <div className="min-w-0 flex-1">
           <p className="text-[9px] text-foreground/60 font-semibold truncate uppercase tracking-wider">{playerName}</p>
+          {playerFlair && (
+            <p className="text-[8px] text-foreground/50 truncate">
+              {playerFlair.icon} {playerFlair.name}
+            </p>
+          )}
           <AnimatePresence mode="wait">
             <motion.p
               key={playerScore}
@@ -111,6 +120,11 @@ export default function PlayerHeader({
       >
         <div className="min-w-0 flex-1 text-right">
           <p className="text-[9px] text-foreground/60 font-semibold truncate uppercase tracking-wider">{opponentName}</p>
+          {opponentFlair && (
+            <p className="text-[8px] text-foreground/50 truncate">
+              {opponentFlair.icon} {opponentFlair.name}
+            </p>
+          )}
           <AnimatePresence mode="wait">
             <motion.p
               key={opponentScore}

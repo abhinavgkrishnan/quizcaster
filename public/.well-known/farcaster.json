@@ -13,6 +13,7 @@
     "buttonTitle": "Play Quiz",
     "description": "Battle opponents worldwide in fast-paced trivia challenges. Answer questions quickly to earn more points!",
     "splashImageUrl": "https://quizcaster.ohsnap.it/splash.png",
-    "splashBackgroundColor": "#CFB8FF"
+    "splashBackgroundColor": "#CFB8FF",
+    "webhookUrl": "https://quizcaster.ohsnap.it/api/fc-webhook"
   }
 }

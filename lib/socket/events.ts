@@ -8,6 +8,7 @@ export interface PlayerData {
   username: string;
   displayName: string;
   pfpUrl?: string;
+  activeFlair?: any; // User's active flair/title
 }
 
 export interface Question {
@@ -78,6 +79,22 @@ export interface ServerToClientEvents {
     finalScores: PlayerScore[];
     isDraw: boolean;
     forfeitedBy?: number | null; // FID of player who forfeited
+    isAsync?: boolean; // Whether this is an async game
+    challengeStatus?: 'pending' | 'completed'; // Status for async games
+  }) => void;
+
+  // Async game specific events
+  async_emulation_start: (data: {
+    challengerData: any; // Challenger's game session data
+    questions: Question[];
+  }) => void;
+
+  async_emulation_answer: (data: {
+    questionNumber: number;
+    challengerAnswer: string;
+    isCorrect: boolean;
+    timeTaken: number;
+    points: number;
   }) => void;
 
   // Connection status
@@ -133,6 +150,12 @@ export interface ClientToServerEvents {
 
   // Forfeit
   forfeit_game: (data: {
+    matchId: string;
+    fid: number;
+  }) => void;
+
+  // Async game
+  start_async_emulation: (data: {
     matchId: string;
     fid: number;
   }) => void;

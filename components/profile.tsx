@@ -2,8 +2,10 @@
 
 import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
-import { User, Trophy, Target, Clock, Home, Search, Bell, TrendingUp } from "lucide-react"
+import { User, Trophy, Target, Clock, Home, Users, Bell, TrendingUp, Award, History } from "lucide-react"
 import type { FarcasterUser, AppScreen } from "@/lib/types"
+import FlairSelector from "./flair-selector"
+import MatchHistory from "./match-history"
 
 interface ProfileProps {
   user: FarcasterUser | null
@@ -22,11 +24,16 @@ interface UserStats {
     current_streak: number
     longest_streak: number
   }
+  top_topics?: Array<{
+    topic: string
+    matches_played: number
+    matches_won: number
+  }>
 }
 
 const MENU_ITEMS = [
   { icon: Home, label: "Home", screen: "topics" as const },
-  { icon: Search, label: "Discover", screen: "topics" as const },
+  { icon: Users, label: "Friends", screen: "topics" as const },
   { icon: Trophy, label: "Leaderboard", screen: "leaderboard" as const },
   { icon: Bell, label: "Activity", screen: "topics" as const },
   { icon: User, label: "Profile", screen: "profile" as const },
@@ -35,6 +42,9 @@ const MENU_ITEMS = [
 export default function Profile({ user, onNavigate }: ProfileProps) {
   const [stats, setStats] = useState<UserStats | null>(null)
   const [loading, setLoading] = useState(true)
+  const [showFlairSelector, setShowFlairSelector] = useState(false)
+  const [showMatchHistory, setShowMatchHistory] = useState(false)
+  const [activeFlair, setActiveFlair] = useState<any>(null)
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -47,6 +57,11 @@ export default function Profile({ user, onNavigate }: ProfileProps) {
         const response = await fetch(`/api/stats/${user.fid}`)
         const data = await response.json()
         setStats(data)
+
+        // Fetch active flair
+        const flairResponse = await fetch(`/api/flairs?fid=${user.fid}`)
+        const flairData = await flairResponse.json()
+        setActiveFlair(flairData.active_flair)
       } catch (error) {
         console.error('Failed to fetch stats:', error)
       } finally {
@@ -114,6 +129,48 @@ export default function Profile({ user, onNavigate }: ProfileProps) {
           >
             @{user?.username || "user"}
           </motion.p>
+          {activeFlair && (
+            <motion.div
+              initial={{ y: 10, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.4 }}
+              className="mt-2"
+            >
+              <button
+                onClick={() => setShowFlairSelector(true)}
+                className="brutal-violet brutal-border px-3 py-1 rounded-lg shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] inline-flex items-center gap-1 hover:scale-105 transition-transform"
+              >
+                <span className="text-sm">{activeFlair.icon}</span>
+                <span className="text-xs font-bold">{activeFlair.name}</span>
+              </button>
+            </motion.div>
+          )}
+        </div>
+
+        {/* Quick Actions */}
+        <div className="grid grid-cols-2 gap-3 mb-6">
+          <motion.button
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.35 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => setShowFlairSelector(true)}
+            className="brutal-beige brutal-border p-3 rounded-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] flex items-center gap-2"
+          >
+            <Award className="w-4 h-4" />
+            <span className="text-xs font-bold uppercase tracking-wider">Manage Flair</span>
+          </motion.button>
+          <motion.button
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.4 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => setShowMatchHistory(true)}
+            className="brutal-beige brutal-border p-3 rounded-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] flex items-center gap-2"
+          >
+            <History className="w-4 h-4" />
+            <span className="text-xs font-bold uppercase tracking-wider">Match History</span>
+          </motion.button>
         </div>
 
         {/* Stats Grid */}
@@ -236,8 +293,55 @@ export default function Profile({ user, onNavigate }: ProfileProps) {
               </p>
             </motion.div>
           </div>
+
+          {/* Most Played Topics */}
+          {stats?.top_topics && stats.top_topics.length > 0 && (
+            <motion.div
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 1.0 }}
+              className="brutal-white brutal-border p-4 rounded-2xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
+            >
+              <p className="text-xs font-bold uppercase tracking-wide text-foreground mb-3">Most Played Topics</p>
+              <div className="space-y-2">
+                {stats.top_topics.map((topic, idx) => (
+                  <div key={topic.topic} className="flex justify-between items-center">
+                    <span className="text-foreground/70 text-xs uppercase tracking-wide font-semibold">
+                      {idx + 1}. {topic.topic}
+                    </span>
+                    <span className="font-bold text-foreground text-sm">
+                      {topic.matches_played} games
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          )}
         </div>
       </motion.div>
+
+      {/* Modals */}
+      {showFlairSelector && (
+        <div className="fixed inset-0 z-50 bg-black/50">
+          <FlairSelector
+            fid={user?.fid || 0}
+            onClose={() => setShowFlairSelector(false)}
+            onFlairSelected={(flair) => {
+              setActiveFlair(flair)
+              setShowFlairSelector(false)
+            }}
+          />
+        </div>
+      )}
+
+      {showMatchHistory && (
+        <div className="fixed inset-0 z-50 bg-black/50">
+          <MatchHistory
+            user={user}
+            onClose={() => setShowMatchHistory(false)}
+          />
+        </div>
+      )}
 
       {/* Bottom Navigation Menu */}
       <motion.div
@@ -263,11 +367,8 @@ export default function Profile({ user, onNavigate }: ProfileProps) {
                 }`}
               >
                 <Icon className={`w-5 h-5 shrink-0 ${isActive ? 'stroke-[2.5]' : 'stroke-[2]'}`} />
-                <span className={`text-[9px] font-semibold uppercase tracking-wider ${isActive ? 'font-bold' : ''} truncate max-w-[60px] text-center`}>
-                  {item.label}
-                </span>
                 {isActive && (
-                  <div className="w-6 h-0.5 bg-foreground rounded-full" />
+                  <div className="w-6 h-0.5 bg-foreground rounded-full mt-1" />
                 )}
               </motion.button>
             )

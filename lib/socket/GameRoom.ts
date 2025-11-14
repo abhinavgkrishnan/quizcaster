@@ -293,7 +293,7 @@ export class GameRoom {
   /**
    * End game and save results
    */
-  private async endGame(): Promise<void> {
+  private async endGame(isAsync = false, asyncStatus?: string): Promise<void> {
     if (this.timer) {
       clearInterval(this.timer);
       this.timer = null;
@@ -308,6 +308,8 @@ export class GameRoom {
       winnerFid,
       finalScores: scores,
       isDraw: winnerFid === null,
+      isAsync,
+      challengeStatus: asyncStatus
     });
 
     // Save to database
@@ -441,6 +443,22 @@ export class GameRoom {
    */
   getPlayers() {
     return this.players;
+  }
+
+  /**
+   * Get game data for async challenges (challenger finished)
+   */
+  getChallengerData() {
+    const challengerFid = Array.from(this.players.keys())[0]
+    const answers = this.answers.get(challengerFid) || []
+    const score = this.scores.get(challengerFid) || 0
+
+    return {
+      score,
+      answers,
+      questions: this.questions,
+      questionIds: this.questionIds
+    }
   }
 
   /**

@@ -83,6 +83,14 @@ export async function GET(
       .select('*')
       .eq('fid', fidNumber)
 
+    // Get top topics (most played)
+    const { data: topTopics } = await supabase
+      .from('user_stats_by_topic')
+      .select('topic, matches_played, matches_won')
+      .eq('fid', fidNumber)
+      .order('matches_played', { ascending: false })
+      .limit(5)
+
     // Calculate derived metrics
     const overallData: OverallStatsResponse = overall ? {
       total_matches: overall.total_matches,
@@ -151,7 +159,8 @@ export async function GET(
 
     return NextResponse.json({
       overall: overallData,
-      by_topic: byTopic
+      by_topic: byTopic,
+      top_topics: topTopics || []
     })
   } catch (error) {
     console.error('Error fetching stats:', error)

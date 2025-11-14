@@ -27,3 +27,10 @@ export type GamePhase = 'connecting' | 'waiting' | 'ready' | 'playing' | 'answer
 
 // Import PlayerData to use in MatchData
 import type { PlayerData } from '@/lib/socket/events';
+
+/**
+ * Extended PlayerData with Flair
+ */
+export interface PlayerDataWithFlair extends PlayerData {
+  activeFlair?: any | null
+}
