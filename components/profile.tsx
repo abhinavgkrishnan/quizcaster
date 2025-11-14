@@ -331,6 +331,12 @@ export default function Profile({ user, onNavigate, onFriendsClick }: ProfilePro
               setActiveFlair(flair)
               setShowFlairSelector(false)
             }}
+            onNavigate={(screen: AppScreen) => {
+              setShowFlairSelector(false)
+              onNavigate?.(screen)
+            }}
+            currentScreen="profile"
+            onFriendsClick={onFriendsClick}
           />
         </div>
       )}
@@ -340,6 +346,12 @@ export default function Profile({ user, onNavigate, onFriendsClick }: ProfilePro
           <MatchHistory
             user={user}
             onClose={() => setShowMatchHistory(false)}
+            onNavigate={(screen: AppScreen) => {
+              setShowMatchHistory(false)
+              onNavigate?.(screen)
+            }}
+            currentScreen="profile"
+            onFriendsClick={onFriendsClick}
           />
         </div>
       )}

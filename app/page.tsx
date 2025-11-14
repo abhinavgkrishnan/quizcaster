@@ -155,6 +155,11 @@ export default function Home() {
               console.log('Challenge friend:', friend)
               setShowFriends(false)
             }}
+            onNavigate={(screen) => {
+              setShowFriends(false)
+              setCurrentScreen(screen)
+            }}
+            currentScreen={currentScreen}
           />
         </div>
       )}

@@ -23,23 +23,10 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid FID' }, { status: 400 })
     }
 
-    // Build query
+    // Build query - simplified to avoid foreign key issues
     let query = supabase
       .from('matches')
-      .select(`
-        id,
-        topic,
-        player1_fid,
-        player2_fid,
-        player1_score,
-        player2_score,
-        winner_fid,
-        status,
-        completed_at,
-        is_async,
-        player1:users!matches_player1_fid_fkey(fid, username, display_name, pfp_url, active_flair),
-        player2:users!matches_player2_fid_fkey(fid, username, display_name, pfp_url, active_flair)
-      `)
+      .select('*')
       .or(`player1_fid.eq.${fidNumber},player2_fid.eq.${fidNumber}`)
       .eq('status', 'completed')
 
@@ -63,12 +50,28 @@ export async function GET(request: NextRequest) {
 
     if (error) throw error
 
+    // Get all unique opponent FIDs
+    const opponentFids = new Set<number>()
+    matches?.forEach((match: any) => {
+      const opponentFid = match.player1_fid === fidNumber ? match.player2_fid : match.player1_fid
+      if (opponentFid) opponentFids.add(opponentFid)
+    })
+
+    // Fetch opponent data
+    const { data: opponents } = await supabase
+      .from('users')
+      .select('fid, username, display_name, pfp_url, active_flair')
+      .in('fid', Array.from(opponentFids))
+
+    const opponentMap = new Map(opponents?.map(o => [o.fid, o]) || [])
+
     // Format matches
     const formattedMatches = matches?.map((match: any) => {
       const isPlayer1 = match.player1_fid === fidNumber
       const myScore = isPlayer1 ? match.player1_score : match.player2_score
       const opponentScore = isPlayer1 ? match.player2_score : match.player1_score
-      const opponent = isPlayer1 ? match.player2 : match.player1
+      const opponentFid = isPlayer1 ? match.player2_fid : match.player1_fid
+      const opponent = opponentMap.get(opponentFid)
 
       let result = 'draw'
       if (match.winner_fid === fidNumber) result = 'win'
@@ -116,8 +119,12 @@ export async function GET(request: NextRequest) {
     })
   } catch (error) {
     console.error('Error fetching match history:', error)
+    console.error('Error details:', JSON.stringify(error, null, 2))
     return NextResponse.json(
-      { error: 'Failed to fetch match history' },
+      {
+        error: 'Failed to fetch match history',
+        details: error instanceof Error ? error.message : String(error)
+      },
       { status: 500 }
     )
   }

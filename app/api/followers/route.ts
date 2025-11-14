@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 /**
- * Get user's followers from Neynar
+ * Get user's following list from Neynar (people they follow)
+ * Makes more sense to add people you follow to your friends list
  */
 export async function GET(request: NextRequest) {
   try {
@@ -17,32 +18,47 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Neynar API key not configured' }, { status: 500 })
     }
 
-    // Fetch followers from Neynar
-    const response = await fetch(
-      `https://api.neynar.com/v2/farcaster/followers?fid=${fid}&limit=100`,
+    // Fetch users that this FID is following
+    const followingResponse = await fetch(
+      `https://api.neynar.com/v2/farcaster/following?fid=${fid}&limit=100`,
       {
         headers: {
           'accept': 'application/json',
-          'api_key': neynarApiKey
+          'x-api-key': neynarApiKey
         }
       }
     )
 
-    if (!response.ok) {
-      throw new Error('Failed to fetch followers from Neynar')
+    if (!followingResponse.ok) {
+      const errorText = await followingResponse.text()
+      console.error('Neynar API error:', errorText)
+      throw new Error('Failed to fetch following from Neynar')
     }
 
-    const data = await response.json()
+    const data = await followingResponse.json()
 
-    // Format followers
-    const followers = (data.users || []).map((user: any) => ({
-      fid: user.fid,
-      username: user.username,
-      display_name: user.display_name,
-      pfp_url: user.pfp_url
-    }))
+    // Log to debug
+    if (data.users && data.users.length > 0) {
+      console.log('Sample user structure:', JSON.stringify(data.users[0], null, 2))
+    }
 
-    return NextResponse.json({ followers })
+    // Neynar v2 following response format: items have nested 'user' object
+    const following = (data.users || []).map((item: any) => {
+      // Neynar wraps the user data in item.user
+      const user = item.user
+      if (!user) return null
+
+      return {
+        fid: user.fid,
+        username: user.username,
+        display_name: user.display_name,
+        pfp_url: user.pfp_url || user.pfp?.url
+      }
+    }).filter((u: any) => u && u.fid) // Filter out any invalid entries
+
+    console.log(`Parsed ${following.length} following users`)
+
+    return NextResponse.json({ followers: following })
   } catch (error) {
     console.error('Error fetching followers:', error)
     return NextResponse.json(

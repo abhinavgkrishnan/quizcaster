@@ -3,7 +3,8 @@
 import { useState, useEffect, useRef, useCallback } from "react"
 import { motion } from "framer-motion"
 import { Trophy, X, Filter, ChevronDown } from "lucide-react"
-import type { FarcasterUser } from "@/lib/types"
+import type { FarcasterUser, AppScreen } from "@/lib/types"
+import BottomNav from "./bottom-nav"
 
 interface Match {
   id: string
@@ -25,9 +26,12 @@ interface Match {
 interface MatchHistoryProps {
   user: FarcasterUser | null
   onClose?: () => void
+  onNavigate?: (screen: AppScreen) => void
+  currentScreen?: AppScreen
+  onFriendsClick?: () => void
 }
 
-export default function MatchHistory({ user, onClose }: MatchHistoryProps) {
+export default function MatchHistory({ user, onClose, onNavigate, currentScreen, onFriendsClick }: MatchHistoryProps) {
   const [matches, setMatches] = useState<Match[]>([])
   const [loading, setLoading] = useState(true)
   const [hasMore, setHasMore] = useState(true)
@@ -277,6 +281,15 @@ export default function MatchHistory({ user, onClose }: MatchHistoryProps) {
           )}
         </div>
       </div>
+
+      {/* Bottom Nav */}
+      {onNavigate && (
+        <BottomNav
+          currentScreen={currentScreen || "profile"}
+          onNavigate={onNavigate}
+          onFriendsClick={onFriendsClick}
+        />
+      )}
     </div>
   )
 }

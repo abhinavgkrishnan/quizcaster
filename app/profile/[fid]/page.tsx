@@ -2,9 +2,13 @@
 
 import { useEffect, useState, use } from "react"
 import { motion } from "framer-motion"
-import { User, Trophy, Target, Clock, ArrowLeft, TrendingUp, Swords, UserPlus } from "lucide-react"
+import { User, Trophy, Target, Clock, ArrowLeft, TrendingUp, Swords, UserPlus, Home, Users, Bell } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { useFarcaster } from "@/lib/farcaster-sdk"
 import MatchHistory from "@/components/match-history"
+import FriendsList from "@/components/friends-list"
+import BottomNav from "@/components/bottom-nav"
+import type { AppScreen } from "@/lib/types"
 
 interface OtherProfilePageProps {
   params: Promise<{ fid: string }>
@@ -40,11 +44,14 @@ interface UserStats {
 export default function OtherProfilePage({ params }: OtherProfilePageProps) {
   const { fid } = use(params)
   const router = useRouter()
+  const { user: currentUser } = useFarcaster()
   const [user, setUser] = useState<UserInfo | null>(null)
   const [stats, setStats] = useState<UserStats | null>(null)
   const [loading, setLoading] = useState(true)
   const [showMatchHistory, setShowMatchHistory] = useState(false)
+  const [showFriends, setShowFriends] = useState(false)
   const [isFriend, setIsFriend] = useState(false)
+  const [currentScreen, setCurrentScreen] = useState<AppScreen>("profile")
 
   useEffect(() => {
     fetchUserProfile()
@@ -102,8 +109,13 @@ export default function OtherProfilePage({ params }: OtherProfilePageProps) {
 
   const handleAddFriend = async () => {
     try {
-      if (!currentUserFid) {
-        alert('Please login first')
+      if (!currentUser?.fid) {
+        alert('Please sign in to add friends')
+        return
+      }
+
+      if (currentUser.fid === parseInt(fid)) {
+        alert('You cannot add yourself as a friend!')
         return
       }
 
@@ -112,7 +124,7 @@ export default function OtherProfilePage({ params }: OtherProfilePageProps) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'send_request',
-          requester_fid: currentUserFid,
+          requester_fid: currentUser.fid,
           addressee_fid: parseInt(fid)
         })
       })
@@ -348,9 +360,25 @@ export default function OtherProfilePage({ params }: OtherProfilePageProps) {
               pfpUrl: user.pfp_url
             }}
             onClose={() => setShowMatchHistory(false)}
+            onNavigate={(screen) => {
+              setShowMatchHistory(false)
+              router.push('/')
+            }}
+            currentScreen="profile"
+            onFriendsClick={() => {
+              setShowMatchHistory(false)
+              setShowFriends(true)
+            }}
           />
         </div>
       )}
+
+      {/* Bottom Nav */}
+      <BottomNav
+        currentScreen={currentScreen}
+        onNavigate={(screen) => router.push('/')}
+        onFriendsClick={() => setShowFriends(true)}
+      />
     </div>
   )
 }

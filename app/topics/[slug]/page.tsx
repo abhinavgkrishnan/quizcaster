@@ -28,10 +28,26 @@ export default function TopicPage({ params }: TopicPageProps) {
   const [topic, setTopic] = useState<Topic | null>(null)
   const [loading, setLoading] = useState(true)
   const [showFriends, setShowFriends] = useState(false)
+  const [leaderboard, setLeaderboard] = useState<any[]>([])
+  const [loadingLeaderboard, setLoadingLeaderboard] = useState(false)
 
   useEffect(() => {
     fetchTopic()
+    fetchLeaderboard()
   }, [slug])
+
+  const fetchLeaderboard = async () => {
+    try {
+      setLoadingLeaderboard(true)
+      const response = await fetch(`/api/leaderboard?topic=${slug}&limit=10&sortBy=winrate`)
+      const data = await response.json()
+      setLeaderboard(data.leaderboard || [])
+    } catch (error) {
+      console.error('Failed to fetch leaderboard:', error)
+    } finally {
+      setLoadingLeaderboard(false)
+    }
+  }
 
   const fetchTopic = async () => {
     try {
@@ -100,9 +116,6 @@ export default function TopicPage({ params }: TopicPageProps) {
             <h1 className="text-xl font-bold uppercase tracking-wider text-foreground">
               {topic.display_name}
             </h1>
-            <p className="text-xs text-muted-foreground">
-              {topic.question_count} questions
-            </p>
           </div>
         </div>
       </div>
@@ -174,7 +187,7 @@ export default function TopicPage({ params }: TopicPageProps) {
           </motion.button>
         </div>
 
-        {/* Leaderboard Preview (Future) */}
+        {/* Topic Leaderboard */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -184,9 +197,38 @@ export default function TopicPage({ params }: TopicPageProps) {
           <p className="text-xs font-bold uppercase tracking-wider text-foreground mb-3">
             Top Players
           </p>
-          <p className="text-xs text-muted-foreground">
-            Leaderboard coming soon...
-          </p>
+          {loadingLeaderboard ? (
+            <p className="text-xs text-muted-foreground">Loading...</p>
+          ) : leaderboard.length === 0 ? (
+            <p className="text-xs text-muted-foreground">No players yet</p>
+          ) : (
+            <div className="space-y-2">
+              {leaderboard.slice(0, 5).map((entry: any, index: number) => (
+                <button
+                  key={entry.fid}
+                  onClick={() => router.push(`/profile/${entry.fid}`)}
+                  className="w-full flex items-center gap-3 p-2 hover:bg-background/50 rounded-lg transition-colors"
+                >
+                  <span className="text-sm font-bold text-foreground/60 w-6">#{index + 1}</span>
+                  <div className="w-8 h-8 rounded-full brutal-border overflow-hidden">
+                    {entry.pfpUrl ? (
+                      <img src={entry.pfpUrl} alt={entry.displayName} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full bg-background" />
+                    )}
+                  </div>
+                  <div className="flex-1 text-left min-w-0">
+                    <p className="text-xs font-bold text-foreground truncate">{entry.displayName}</p>
+                    <p className="text-[10px] text-foreground/60 truncate">@{entry.username}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-bold text-foreground">{entry.winRate}%</p>
+                    <p className="text-[10px] text-foreground/60">{entry.wins}W</p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
         </motion.div>
       </div>
 

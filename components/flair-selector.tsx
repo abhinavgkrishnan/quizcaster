@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Award, X, Check, Lock, TrendingUp } from "lucide-react"
+import BottomNav from "./bottom-nav"
+import type { AppScreen } from "@/lib/types"
 
 interface Flair {
   id: string
@@ -21,9 +23,12 @@ interface FlairSelectorProps {
   fid: number
   onClose?: () => void
   onFlairSelected?: (flair: Flair | null) => void
+  onNavigate?: (screen: AppScreen) => void
+  currentScreen?: AppScreen
+  onFriendsClick?: () => void
 }
 
-export default function FlairSelector({ fid, onClose, onFlairSelected }: FlairSelectorProps) {
+export default function FlairSelector({ fid, onClose, onFlairSelected, onNavigate, currentScreen, onFriendsClick }: FlairSelectorProps) {
   const [earnedFlairs, setEarnedFlairs] = useState<Flair[]>([])
   const [activeFlair, setActiveFlair] = useState<Flair | null>(null)
   const [loading, setLoading] = useState(true)
@@ -281,6 +286,18 @@ export default function FlairSelector({ fid, onClose, onFlairSelected }: FlairSe
           </>
         )}
       </div>
+
+      {/* Bottom Nav */}
+      {onNavigate && (
+        <BottomNav
+          currentScreen={currentScreen || "profile"}
+          onNavigate={(screen) => {
+            onClose?.()
+            onNavigate(screen)
+          }}
+          onFriendsClick={onFriendsClick}
+        />
+      )}
     </div>
   )
 }

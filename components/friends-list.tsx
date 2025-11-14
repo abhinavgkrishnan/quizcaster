@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import { Users, X, UserPlus, Swords, Clock } from "lucide-react"
-import type { FarcasterUser } from "@/lib/types"
+import type { FarcasterUser, AppScreen } from "@/lib/types"
+import BottomNav from "./bottom-nav"
 
 interface Friend {
   fid: number
@@ -24,9 +25,11 @@ interface FriendsListProps {
   user: FarcasterUser | null
   onClose?: () => void
   onChallenge?: (friend: Friend) => void
+  onNavigate?: (screen: AppScreen) => void
+  currentScreen?: AppScreen
 }
 
-export default function FriendsList({ user, onClose, onChallenge }: FriendsListProps) {
+export default function FriendsList({ user, onClose, onChallenge, onNavigate, currentScreen }: FriendsListProps) {
   const [friends, setFriends] = useState<Friend[]>([])
   const [requests, setRequests] = useState<FriendRequest[]>([])
   const [loading, setLoading] = useState(true)
@@ -308,7 +311,7 @@ export default function FriendsList({ user, onClose, onChallenge }: FriendsListP
       {followers.length > 0 && (
         <div className="flex-none p-4 brutal-border border-x-0 border-b-0 border-t-2 bg-secondary max-h-48 overflow-y-auto">
           <p className="text-xs font-bold uppercase tracking-wider text-foreground/60 mb-3">
-            Your Followers ({followers.length})
+            People You Follow ({followers.length})
           </p>
           <div className="space-y-2">
             {followers.slice(0, 10).map((follower: any) => {
@@ -339,6 +342,18 @@ export default function FriendsList({ user, onClose, onChallenge }: FriendsListP
             })}
           </div>
         </div>
+      )}
+
+      {/* Bottom Nav */}
+      {onNavigate && (
+        <BottomNav
+          currentScreen={currentScreen || "topics"}
+          onNavigate={(screen) => {
+            onClose?.()
+            onNavigate(screen)
+          }}
+          onFriendsClick={onClose}
+        />
       )}
     </div>
   )

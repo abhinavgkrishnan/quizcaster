@@ -26,7 +26,7 @@ export async function GET(
       {
         headers: {
           'accept': 'application/json',
-          'api_key': neynarApiKey
+          'x-api-key': neynarApiKey
         }
       }
     )
