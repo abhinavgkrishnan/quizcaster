@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react"
 import { motion } from "framer-motion"
 import { Trophy, Target, Clock, TrendingUp, ChevronDown, Medal } from "lucide-react"
 import type { AppScreen } from "@/lib/types"
+import { useFarcaster } from "@/lib/farcaster-sdk"
 
 interface LeaderboardProps {
   onNavigate: (screen: AppScreen) => void
@@ -40,6 +41,7 @@ import { Users } from "lucide-react"
 // MENU_ITEMS removed - using global BottomNav from layout
 
 export default function Leaderboard({ onNavigate }: LeaderboardProps) {
+  const { user } = useFarcaster()
   const [topics, setTopics] = useState<Array<{ slug: string; display_name: string }>>([])
   const [selectedTopic, setSelectedTopic] = useState<string | null>(null)
   const [sortBy, setSortBy] = useState('winrate')
@@ -240,6 +242,7 @@ export default function Leaderboard({ onNavigate }: LeaderboardProps) {
         ) : (
           <div className="space-y-2">
             {leaderboard.map((entry, index) => {
+              const isCurrentUser = user?.fid === entry.fid
               const isTop3 = index < 3
               const bgColor = isTop3
                 ? index === 0 ? 'brutal-violet' : index === 1 ? 'brutal-beige' : 'brutal-beige-light'
@@ -254,10 +257,12 @@ export default function Leaderboard({ onNavigate }: LeaderboardProps) {
                     animation: `fadeInUp 0.4s ease-out ${index * 0.04}s forwards`,
                   }}
                   onClick={() => {
-                    sessionStorage.setItem('profileReferrer', 'leaderboard')
-                    window.location.href = `/profile/${entry.fid}`
+                    if (!isCurrentUser) {
+                      sessionStorage.setItem('profileReferrer', 'leaderboard')
+                      window.location.href = `/profile/${entry.fid}`
+                    }
                   }}
-                  className={`${bgColor} brutal-border p-3 rounded-xl shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] flex items-center gap-3 w-full text-left hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all`}
+                  className={`${bgColor} brutal-border p-3 rounded-xl shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] flex items-center gap-3 w-full text-left hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all ${isCurrentUser ? 'ring-2 ring-foreground ring-offset-2' : ''}`}
                 >
                   {/* Rank */}
                   <div className="flex-shrink-0 w-8 text-center">
@@ -281,7 +286,9 @@ export default function Leaderboard({ onNavigate }: LeaderboardProps) {
 
                   {/* Player Info */}
                   <div className="flex-1 min-w-0">
-                    <p className="font-bold text-sm text-foreground truncate">{entry.displayName}</p>
+                    <p className="font-bold text-sm text-foreground truncate">
+                      {isCurrentUser ? 'You' : entry.displayName}
+                    </p>
                     <p className="text-xs text-muted-foreground truncate">@{entry.username}</p>
                   </div>
 

@@ -123,6 +123,44 @@ export async function POST(request: NextRequest) {
       }
 
       console.log('[Friends API] Friend request created:', data)
+
+      // Send Farcaster notification to addressee
+      try {
+        const { data: users } = await supabase
+          .from('users')
+          .select('fid, username, display_name, notification_token, notification_url, notifications_enabled')
+          .in('fid', [requester_fid, addressee_fid])
+
+        const requester = users?.find(u => u.fid === requester_fid)
+        const addressee = users?.find(u => u.fid === addressee_fid)
+
+        if (addressee?.notifications_enabled && addressee.notification_token && addressee.notification_url) {
+          const requesterName = requester?.display_name || requester?.username || 'Someone'
+
+          await fetch(addressee.notification_url, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${addressee.notification_token}`
+            },
+            body: JSON.stringify({
+              notificationId: crypto.randomUUID(),
+              title: 'New Friend Request! 👋',
+              body: `${requesterName} wants to be friends!`,
+              targetUrl: `${process.env.NEXT_PUBLIC_APP_URL}/?screen=friends`,
+              tokens: [addressee.notification_token]
+            })
+          }).catch(err => {
+            console.error('Failed to send friend request notification:', err)
+          })
+
+          console.log(`[Notification] Sent friend request notification to FID ${addressee_fid}`)
+        }
+      } catch (notifError) {
+        console.error('Error sending notification:', notifError)
+        // Don't fail the request if notification fails
+      }
+
       return NextResponse.json({ success: true, friendship: data })
     }
 

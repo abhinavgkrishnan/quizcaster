@@ -318,21 +318,31 @@ export default function FriendsList({ user, onNavigate, currentScreen }: Friends
       </div>
 
       {/* Followers Section */}
-      <div className="flex-none p-4 bg-secondary border-t-2 border-black max-h-48 overflow-y-auto">
+      <div className="flex-none bg-secondary border-t-2 border-black max-h-[40vh] flex flex-col">
+        <div className="px-4 pt-4 pb-2">
+          <p className="text-sm font-bold uppercase tracking-wider text-foreground">
+            People You Follow {followers.length > 0 && `(${followers.length})`}
+          </p>
+        </div>
+        <div className="flex-1 overflow-y-auto px-4 pb-4 space-y-2" style={{ WebkitOverflowScrolling: 'touch' }}>
         {loadingFollowers ? (
           <p className="text-xs text-center text-muted-foreground">
             Loading followers...
           </p>
         ) : followers.length > 0 ? (
           <>
-            <p className="text-xs font-bold uppercase tracking-wider text-foreground/60 mb-3">
-              People You Follow ({followers.length})
-            </p>
-            <div className="space-y-2">
-              {followers.slice(0, 10).map((follower: any) => {
+            {followers.map((follower: any, index: number) => {
                 const isAlreadyFriend = friends.some(f => f.fid === follower.fid)
                 return (
-                  <div key={follower.fid} className="flex items-center justify-between">
+                  <div
+                    key={follower.fid}
+                    style={{
+                      opacity: 0,
+                      transform: 'translate3d(0, 10px, 0)',
+                      animation: `fadeInUp 0.4s ease-out ${index * 0.03}s forwards`,
+                    }}
+                    className="flex items-center justify-between brutal-white brutal-border p-3 rounded-xl shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+                  >
                     <div className="flex items-center gap-2">
                       <div className="w-8 h-8 rounded-full brutal-border overflow-hidden bg-white">
                         {follower.pfp_url ? (
@@ -355,13 +365,13 @@ export default function FriendsList({ user, onNavigate, currentScreen }: Friends
                   </div>
                 )
               })}
-            </div>
           </>
         ) : (
-          <p className="text-xs text-center text-muted-foreground">
+          <p className="text-xs text-center text-muted-foreground py-8">
             No followers found
           </p>
         )}
+        </div>
       </div>
 
     </div>
