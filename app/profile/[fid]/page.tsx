@@ -53,12 +53,36 @@ export default function OtherProfilePage({ params }: OtherProfilePageProps) {
   const [showFriends, setShowFriends] = useState(false)
   const [showTopicSelector, setShowTopicSelector] = useState(false)
   const [isFriend, setIsFriend] = useState(false)
-  const [currentScreen, setCurrentScreen] = useState<AppScreen>("profile")
   const [challengeLoading, setChallengeLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [referrer, setReferrer] = useState<AppScreen | null>(null)
 
   useEffect(() => {
     fetchUserProfile()
+    // Get referrer from session storage
+    const savedReferrer = sessionStorage.getItem('profileReferrer')
+    if (savedReferrer) {
+      setReferrer(savedReferrer as AppScreen)
+    }
   }, [fid])
+
+  const handleBack = () => {
+    const savedReferrer = sessionStorage.getItem('profileReferrer')
+    const topicSlug = sessionStorage.getItem('topicSlug')
+
+    sessionStorage.removeItem('profileReferrer')
+    sessionStorage.removeItem('topicSlug')
+
+    if (savedReferrer === 'topics' && topicSlug) {
+      // Came from specific topic page
+      router.push(`/topics/${topicSlug}`)
+    } else if (savedReferrer) {
+      // Came from main app screen
+      router.push(`/?screen=${savedReferrer}`)
+    } else {
+      router.back()
+    }
+  }
 
   const fetchUserProfile = async () => {
     try {
@@ -95,6 +119,7 @@ export default function OtherProfilePage({ params }: OtherProfilePageProps) {
       }
     } catch (error) {
       console.error('Failed to fetch profile:', error)
+      setError('Failed to load profile. Please try again.')
     } finally {
       setLoading(false)
     }
@@ -202,20 +227,60 @@ export default function OtherProfilePage({ params }: OtherProfilePageProps) {
   if (loading) {
     return (
       <div className="w-full max-w-2xl mx-auto h-screen flex items-center justify-center bg-card">
-        <p className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-          Loading...
-        </p>
+        <div className="text-center">
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+            className="w-12 h-12 rounded-full brutal-violet brutal-border flex items-center justify-center mx-auto mb-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
+          >
+            <div className="w-2 h-2 rounded-full bg-foreground" />
+          </motion.div>
+          <p className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+            Loading...
+          </p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="w-full max-w-2xl mx-auto h-screen flex items-center justify-center bg-card p-6">
+        <div className="text-center">
+          <div className="w-16 h-16 rounded-full bg-red-100 brutal-border flex items-center justify-center mx-auto mb-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+            <User className="w-8 h-8 text-red-500" />
+          </div>
+          <p className="text-sm font-bold text-red-500 mb-4">{error}</p>
+          <div className="flex gap-2 justify-center">
+            <button
+              onClick={() => {
+                setError(null)
+                setLoading(true)
+                fetchUserProfile()
+              }}
+              className="brutal-violet brutal-border px-6 py-3 rounded-xl shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] text-xs font-bold uppercase tracking-wider"
+            >
+              Retry
+            </button>
+            <button
+              onClick={() => router.back()}
+              className="brutal-beige brutal-border px-6 py-3 rounded-xl shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] text-xs font-bold uppercase tracking-wider"
+            >
+              Go Back
+            </button>
+          </div>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="w-full max-w-2xl mx-auto h-screen flex flex-col bg-card overflow-hidden">
+    <div className="w-full h-screen flex flex-col bg-card overflow-hidden">
       {/* Header */}
-      <div className="flex-none brutal-border bg-secondary border-x-0 border-t-0 border-b-2 p-4">
+      <div className="flex-none bg-secondary border-b-2 border-black px-4 py-4">
         <div className="flex items-center justify-between">
           <button
-            onClick={() => router.back()}
+            onClick={handleBack}
             className="brutal-border bg-background p-2 rounded-lg shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
           >
             <ArrowLeft className="w-4 h-4" />
@@ -250,7 +315,7 @@ export default function OtherProfilePage({ params }: OtherProfilePageProps) {
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ type: "spring", stiffness: 300, damping: 25 }}
-        className="flex-1 overflow-y-auto overflow-x-hidden px-[4%] py-6 pb-24"
+        className="flex-1 overflow-y-auto overflow-x-hidden px-4 py-6 pb-24"
         style={{ WebkitOverflowScrolling: 'touch' }}
       >
         {/* Profile Header */}

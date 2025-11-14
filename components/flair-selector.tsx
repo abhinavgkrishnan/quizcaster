@@ -108,9 +108,9 @@ export default function FlairSelector({ fid, onClose, onFlairSelected, onNavigat
   const lockedFlairs = allFlairs.filter(f => !earnedFlairIds.has(f.id))
 
   return (
-    <div className="w-full max-w-2xl mx-auto h-screen flex flex-col bg-card">
+    <div className="w-full h-screen flex flex-col bg-card">
       {/* Header */}
-      <div className="flex-none brutal-border bg-secondary border-x-0 border-t-0 border-b-2 p-4">
+      <div className="flex-none bg-secondary border-b-2 border-black px-4 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Award className="w-5 h-5" />

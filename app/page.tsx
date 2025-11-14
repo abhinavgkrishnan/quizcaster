@@ -7,6 +7,7 @@ import GameScreen from "@/components/game-screen"
 import Profile from "@/components/profile"
 import Leaderboard from "@/components/leaderboard"
 import FriendsList from "@/components/friends-list"
+import Challenges from "@/components/challenges"
 import { useFarcaster } from "@/lib/farcaster-sdk"
 import { useAppContext } from "@/lib/contexts/AppContext"
 import BottomNav from "@/components/bottom-nav"
@@ -21,17 +22,21 @@ export default function Home() {
   const { isSDKLoaded, user, isAuthenticated, signIn } = useFarcaster()
   const isDevMode = process.env.NEXT_PUBLIC_DEV_MODE === 'true'
 
-  const { currentScreen, setCurrentScreen, showFriends, setShowFriends, setIsGameScreen } = appContext
+  const { currentScreen, setCurrentScreen, setIsGameScreen } = appContext
 
-  // Check URL params for matchmaking trigger
+  // Check URL params for matchmaking trigger and screen navigation
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search)
       const matchmakingTopic = params.get('matchmaking')
+      const targetScreen = params.get('screen')
+
       if (matchmakingTopic) {
         setSelectedTopic(matchmakingTopic)
         setCurrentScreen("matchmaking")
-        // Clear URL param
+        window.history.replaceState({}, '', '/')
+      } else if (targetScreen && ['topics', 'friends', 'leaderboard', 'profile'].includes(targetScreen)) {
+        setCurrentScreen(targetScreen as AppScreen)
         window.history.replaceState({}, '', '/')
       }
     }
@@ -39,8 +44,9 @@ export default function Home() {
 
   // Update game screen state
   useEffect(() => {
-    setIsGameScreen(currentScreen === "game")
+    setIsGameScreen(currentScreen === "game" || currentScreen === "matchmaking")
   }, [currentScreen, setIsGameScreen])
+
 
   const handleTopicSelect = (topic: string) => {
     setSelectedTopic(topic)
@@ -128,7 +134,6 @@ export default function Home() {
             onSelectTopic={handleTopicSelect}
             onNavigate={setCurrentScreen}
             user={user}
-            onFriendsClick={() => setShowFriends(true)}
           />
         )}
         {currentScreen === "matchmaking" && selectedTopic && (
@@ -156,46 +161,27 @@ export default function Home() {
           <Profile
             user={user}
             onNavigate={setCurrentScreen}
-            onFriendsClick={() => setShowFriends(true)}
           />
         )}
         {currentScreen === "leaderboard" && (
           <Leaderboard
             onNavigate={setCurrentScreen}
-            onFriendsClick={() => setShowFriends(true)}
+          />
+        )}
+        {currentScreen === "friends" && (
+          <FriendsList
+            user={user}
+            onNavigate={setCurrentScreen}
+            currentScreen={currentScreen}
+          />
+        )}
+        {currentScreen === "challenges" && (
+          <Challenges
+            user={user}
+            onNavigate={setCurrentScreen}
           />
         )}
       </div>
-
-      {/* Global Friends Modal */}
-      {showFriends && (
-        <div className="fixed inset-0 z-50 bg-black/50">
-          <FriendsList
-            user={user}
-            onClose={() => setShowFriends(false)}
-            onChallenge={(friend) => {
-              console.log('Challenge friend:', friend)
-              setShowFriends(false)
-            }}
-            onNavigate={(screen) => {
-              setShowFriends(false)
-              setCurrentScreen(screen)
-            }}
-            currentScreen={currentScreen}
-          />
-        </div>
-      )}
-
-      {/* Global Bottom Nav */}
-      {!appContext.isGameScreen && (
-        <div className="fixed bottom-0 left-0 right-0 z-40">
-          <BottomNav
-            currentScreen={currentScreen}
-            onNavigate={setCurrentScreen}
-            onFriendsClick={() => setShowFriends(true)}
-          />
-        </div>
-      )}
     </main>
   )
 }

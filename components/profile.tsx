@@ -10,7 +10,6 @@ import MatchHistory from "./match-history"
 interface ProfileProps {
   user: FarcasterUser | null
   onNavigate?: (screen: AppScreen) => void
-  onFriendsClick?: () => void
 }
 
 interface UserStats {
@@ -34,7 +33,7 @@ interface UserStats {
 
 // MENU_ITEMS removed - using global BottomNav from layout
 
-export default function Profile({ user, onNavigate, onFriendsClick }: ProfileProps) {
+export default function Profile({ user, onNavigate }: ProfileProps) {
   const [stats, setStats] = useState<UserStats | null>(null)
   const [loading, setLoading] = useState(true)
   const [showFlairSelector, setShowFlairSelector] = useState(false)
@@ -80,12 +79,12 @@ export default function Profile({ user, onNavigate, onFriendsClick }: ProfilePro
   }
 
   return (
-    <div className="w-full max-w-2xl mx-auto h-screen flex flex-col bg-card overflow-hidden">
+    <div className="w-full h-screen flex flex-col bg-card overflow-hidden">
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ type: "spring", stiffness: 300, damping: 25 }}
-        className="flex-1 overflow-y-auto overflow-x-hidden px-[4%] py-6 pb-24"
+        className="flex-1 overflow-y-auto overflow-x-hidden px-4 py-6 pb-24"
         style={{ WebkitOverflowScrolling: 'touch' }}
       >
         {/* Profile Header */}
@@ -331,7 +330,6 @@ export default function Profile({ user, onNavigate, onFriendsClick }: ProfilePro
               onNavigate?.(screen)
             }}
             currentScreen="profile"
-            onFriendsClick={onFriendsClick}
           />
         </div>
       )}
@@ -346,7 +344,6 @@ export default function Profile({ user, onNavigate, onFriendsClick }: ProfilePro
               onNavigate?.(screen)
             }}
             currentScreen="profile"
-            onFriendsClick={onFriendsClick}
           />
         </div>
       )}

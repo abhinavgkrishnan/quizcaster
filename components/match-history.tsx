@@ -134,9 +134,9 @@ export default function MatchHistory({ user, onClose, onNavigate, currentScreen,
   }
 
   return (
-    <div className="w-full max-w-2xl mx-auto h-screen flex flex-col bg-card">
+    <div className="w-full h-screen flex flex-col bg-card">
       {/* Header */}
-      <div className="flex-none brutal-border bg-secondary border-x-0 border-t-0 border-b-2 p-4">
+      <div className="flex-none bg-secondary border-b-2 border-black px-4 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Trophy className="w-5 h-5" />
@@ -184,7 +184,7 @@ export default function MatchHistory({ user, onClose, onNavigate, currentScreen,
       </div>
 
       {/* Matches List */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3 pb-24" style={{ WebkitOverflowScrolling: 'touch' }}>
+      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3 pb-24" style={{ WebkitOverflowScrolling: 'touch' }}>
         {matches.length === 0 && !loading ? (
           <div className="text-center py-12 text-muted-foreground">
             <p className="text-sm font-semibold uppercase tracking-wider">No matches found</p>

@@ -80,21 +80,29 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
+    console.log('[Friends API] Request received:', JSON.stringify(body, null, 2))
+
     const { action, requester_fid, addressee_fid, friendship_id } = body
 
     if (action === 'send_request') {
       if (!requester_fid || !addressee_fid) {
+        console.error('[Friends API] Missing FIDs:', { requester_fid, addressee_fid })
         return NextResponse.json({ error: 'Both FIDs are required' }, { status: 400 })
       }
 
       // Check if already friends or request exists
-      const { data: existing } = await supabase
+      const { data: existing, error: checkError } = await supabase
         .from('friendships')
         .select('*')
         .or(`and(requester_fid.eq.${requester_fid},addressee_fid.eq.${addressee_fid}),and(requester_fid.eq.${addressee_fid},addressee_fid.eq.${requester_fid})`)
-        .single()
+        .maybeSingle()
+
+      if (checkError) {
+        console.error('[Friends API] Error checking existing friendship:', checkError)
+      }
 
       if (existing) {
+        console.log('[Friends API] Friendship already exists:', existing)
         return NextResponse.json({ error: 'Friendship already exists' }, { status: 409 })
       }
 
@@ -109,8 +117,12 @@ export async function POST(request: NextRequest) {
         .select()
         .single()
 
-      if (error) throw error
+      if (error) {
+        console.error('[Friends API] Insert error:', error)
+        throw error
+      }
 
+      console.log('[Friends API] Friend request created:', data)
       return NextResponse.json({ success: true, friendship: data })
     }
 
@@ -144,11 +156,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true })
     }
 
+    console.error('[Friends API] Invalid action:', action)
     return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
   } catch (error) {
-    console.error('Error managing friends:', error)
+    console.error('[Friends API] Full error:', error)
+    console.error('[Friends API] Error details:', {
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined
+    })
     return NextResponse.json(
-      { error: 'Failed to manage friends' },
+      {
+        error: 'Failed to manage friends',
+        details: error instanceof Error ? error.message : String(error)
+      },
       { status: 500 }
     )
   }

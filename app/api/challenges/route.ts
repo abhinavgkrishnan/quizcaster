@@ -67,11 +67,19 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
+    console.log('[Challenge API] Request received:', JSON.stringify(body, null, 2))
+
     const { action, challenger_fid, challenged_fid, topic, challenge_id, match_id } = body
 
     if (action === 'create') {
       if (!challenger_fid || !topic) {
+        console.error('[Challenge API] Missing fields:', { challenger_fid, topic, challenged_fid })
         return NextResponse.json({ error: 'Challenger FID and topic are required' }, { status: 400 })
+      }
+
+      if (!challenged_fid) {
+        console.error('[Challenge API] Missing challenged_fid')
+        return NextResponse.json({ error: 'Challenged FID is required' }, { status: 400 })
       }
 
       // Check pending challenge limit (5 max)
@@ -236,11 +244,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true })
     }
 
+    console.error('[Challenge API] Invalid action:', action)
     return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
   } catch (error) {
-    console.error('Error managing challenge:', error)
+    console.error('[Challenge API] Full error:', error)
+    console.error('[Challenge API] Error details:', {
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined
+    })
     return NextResponse.json(
-      { error: 'Failed to manage challenge' },
+      {
+        error: 'Failed to manage challenge',
+        details: error instanceof Error ? error.message : String(error)
+      },
       { status: 500 }
     )
   }

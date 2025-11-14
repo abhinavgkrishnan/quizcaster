@@ -7,7 +7,6 @@ import type { AppScreen } from "@/lib/types"
 
 interface LeaderboardProps {
   onNavigate: (screen: AppScreen) => void
-  onFriendsClick?: () => void
 }
 
 interface LeaderboardEntry {
@@ -40,7 +39,7 @@ import { Users } from "lucide-react"
 
 // MENU_ITEMS removed - using global BottomNav from layout
 
-export default function Leaderboard({ onNavigate, onFriendsClick }: LeaderboardProps) {
+export default function Leaderboard({ onNavigate }: LeaderboardProps) {
   const [topics, setTopics] = useState<Array<{ slug: string; display_name: string }>>([])
   const [selectedTopic, setSelectedTopic] = useState<string | null>(null)
   const [sortBy, setSortBy] = useState('winrate')
@@ -105,9 +104,9 @@ export default function Leaderboard({ onNavigate, onFriendsClick }: LeaderboardP
   const SortIcon = selectedSortOption.icon
 
   return (
-    <div className="w-full max-w-2xl mx-auto h-screen flex flex-col bg-card overflow-hidden">
+    <div className="w-full h-screen flex flex-col bg-card overflow-hidden">
       {/* Header */}
-      <div className="flex-none px-[4%] pt-6 pb-4 relative z-10 bg-card">
+      <div className="flex-none px-4 pt-6 pb-4 relative z-10 bg-card">
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -203,16 +202,34 @@ export default function Leaderboard({ onNavigate, onFriendsClick }: LeaderboardP
       </div>
 
       {/* Leaderboard List */}
-      <div className="flex-1 overflow-y-auto overflow-x-hidden px-[4%] pb-4 relative z-0">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden px-4 pb-24 relative z-0" style={{ WebkitOverflowScrolling: 'touch' }}>
         {loading ? (
-          <div className="flex items-center justify-center h-full">
-            <motion.div
-              animate={{ rotate: 360 }}
-              transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-              className="w-12 h-12 rounded-full brutal-violet brutal-border flex items-center justify-center shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
-            >
-              <div className="w-2 h-2 rounded-full bg-foreground" />
-            </motion.div>
+          <div className="space-y-2 pt-2">
+            {[...Array(10)].map((_, i) => (
+              <div
+                key={i}
+                className="brutal-white brutal-border p-3 rounded-xl shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] animate-pulse"
+              >
+                <div className="flex items-center gap-3">
+                  {/* Rank skeleton */}
+                  <div className="flex-shrink-0 w-8">
+                    <div className="h-6 w-6 bg-gray-200 rounded-full mx-auto" />
+                  </div>
+                  {/* Avatar skeleton */}
+                  <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gray-200" />
+                  {/* Info skeleton */}
+                  <div className="flex-1 min-w-0 space-y-2">
+                    <div className="h-4 bg-gray-200 rounded w-3/4" />
+                    <div className="h-3 bg-gray-200 rounded w-1/2" />
+                  </div>
+                  {/* Stats skeleton */}
+                  <div className="flex-shrink-0 text-right space-y-2">
+                    <div className="h-4 bg-gray-200 rounded w-16 ml-auto" />
+                    <div className="h-3 bg-gray-200 rounded w-12 ml-auto" />
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         ) : leaderboard.length === 0 ? (
           <div className="text-center py-12">
@@ -229,12 +246,17 @@ export default function Leaderboard({ onNavigate, onFriendsClick }: LeaderboardP
                 : 'brutal-white'
 
               return (
-                <motion.button
+                <button
                   key={entry.fid}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: index * 0.03 }}
-                  onClick={() => window.location.href = `/profile/${entry.fid}`}
+                  style={{
+                    opacity: 0,
+                    transform: 'translate3d(0, 10px, 0)',
+                    animation: `fadeInUp 0.4s ease-out ${index * 0.04}s forwards`,
+                  }}
+                  onClick={() => {
+                    sessionStorage.setItem('profileReferrer', 'leaderboard')
+                    window.location.href = `/profile/${entry.fid}`
+                  }}
                   className={`${bgColor} brutal-border p-3 rounded-xl shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] flex items-center gap-3 w-full text-left hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all`}
                 >
                   {/* Rank */}
@@ -298,7 +320,7 @@ export default function Leaderboard({ onNavigate, onFriendsClick }: LeaderboardP
                       </div>
                     )}
                   </div>
-                </motion.button>
+                </button>
               )
             })}
           </div>

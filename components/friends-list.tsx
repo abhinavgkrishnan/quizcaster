@@ -23,13 +23,11 @@ interface FriendRequest {
 
 interface FriendsListProps {
   user: FarcasterUser | null
-  onClose?: () => void
-  onChallenge?: (friend: Friend) => void
   onNavigate?: (screen: AppScreen) => void
   currentScreen?: AppScreen
 }
 
-export default function FriendsList({ user, onClose, onChallenge, onNavigate, currentScreen }: FriendsListProps) {
+export default function FriendsList({ user, onNavigate, currentScreen }: FriendsListProps) {
   const [friends, setFriends] = useState<Friend[]>([])
   const [requests, setRequests] = useState<FriendRequest[]>([])
   const [loading, setLoading] = useState(true)
@@ -148,28 +146,31 @@ export default function FriendsList({ user, onClose, onChallenge, onNavigate, cu
     fetchFollowers()
   }, [user?.fid])
 
-  return (
-    <div className="w-full max-w-2xl mx-auto h-screen flex flex-col bg-card">
-      {/* Header */}
-      <div className="flex-none brutal-border bg-secondary border-x-0 border-t-0 border-b-2 p-4">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <Users className="w-5 h-5" />
-            <h1 className="text-lg font-bold uppercase tracking-wider">Friends</h1>
-          </div>
-          {onClose && (
-            <motion.button
-              whileTap={{ scale: 0.95 }}
-              onClick={onClose}
-              className="brutal-border bg-background p-2 rounded-lg shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
-            >
-              <X className="w-4 h-4" />
-            </motion.button>
-          )}
-        </div>
+  const handleChallengeFriend = (friend: Friend) => {
+    // TODO: Open topic selector modal for challenge
+    console.log('Challenge friend:', friend)
+  }
 
-        {/* Tabs */}
+  return (
+    <div className="w-full h-screen flex flex-col bg-card overflow-hidden">
+      {/* Header */}
+      <div className="flex-none px-4 pt-6 pb-4">
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ type: "spring", stiffness: 300, damping: 25 }}
+        >
+          <h1 className="text-4xl font-bold text-foreground mb-2">Friends</h1>
+          <p className="text-muted-foreground text-sm font-semibold uppercase tracking-wide">
+            Connect with players
+          </p>
+        </motion.div>
+      </div>
+
+      {/* Tabs */}
+      <div className="flex-none px-4 pb-4">
         <div className="flex gap-2">
+
           <button
             onClick={() => setTab('friends')}
             className={`flex-1 py-2 px-4 rounded-lg text-xs font-bold uppercase tracking-wider transition-colors ${
@@ -248,7 +249,7 @@ export default function FriendsList({ user, onClose, onChallenge, onNavigate, cu
                     </div>
                     <motion.button
                       whileTap={{ scale: 0.95 }}
-                      onClick={() => onChallenge?.(friend)}
+                      onClick={() => handleChallengeFriend(friend)}
                       className="brutal-violet brutal-border p-2 rounded-lg shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
                     >
                       <Swords className="w-4 h-4" />
@@ -317,7 +318,7 @@ export default function FriendsList({ user, onClose, onChallenge, onNavigate, cu
       </div>
 
       {/* Followers Section */}
-      <div className="flex-none p-4 brutal-border border-x-0 border-b-0 border-t-2 bg-secondary max-h-48 overflow-y-auto">
+      <div className="flex-none p-4 bg-secondary border-t-2 border-black max-h-48 overflow-y-auto">
         {loadingFollowers ? (
           <p className="text-xs text-center text-muted-foreground">
             Loading followers...
@@ -346,7 +347,7 @@ export default function FriendsList({ user, onClose, onChallenge, onNavigate, cu
                       </div>
                     </div>
                     <button
-                      onClick={() => isAlreadyFriend ? onChallenge?.(follower) : handleSendRequest(follower.fid)}
+                      onClick={() => isAlreadyFriend ? handleChallengeFriend(follower) : handleSendRequest(follower.fid)}
                       className="brutal-violet brutal-border px-3 py-1 rounded-lg shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] text-[10px] font-bold uppercase tracking-wider"
                     >
                       {isAlreadyFriend ? 'Challenge' : 'Add'}
@@ -363,7 +364,6 @@ export default function FriendsList({ user, onClose, onChallenge, onNavigate, cu
         )}
       </div>
 
-      {/* Bottom nav removed - now in global layout */}
     </div>
   )
 }

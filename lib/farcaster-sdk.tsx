@@ -64,6 +64,21 @@ export function FarcasterProvider({ children }: { children: ReactNode }) {
 
         // Call ready to hide splash screen
         await sdk.actions.ready()
+
+        // Prompt user to add the app after a short delay
+        if (context?.user) {
+          setTimeout(async () => {
+            try {
+              const hasPrompted = localStorage.getItem('hasPromptedAddMiniApp')
+              if (!hasPrompted) {
+                await sdk.actions.addMiniApp()
+                localStorage.setItem('hasPromptedAddMiniApp', 'true')
+              }
+            } catch (e) {
+              console.log('User declined to add mini app or error occurred:', e)
+            }
+          }, 2000) // Wait 2 seconds after app loads
+        }
       } catch (error) {
         console.error("Failed to initialize Farcaster SDK:", error)
         setIsSDKLoaded(true)

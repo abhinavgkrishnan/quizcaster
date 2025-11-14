@@ -8,14 +8,14 @@ import type { AppScreen } from "@/lib/types"
 
 const MENU_ITEMS = [
   { icon: Home, label: "Home", screen: "topics" as const, key: "home" },
-  { icon: Users, label: "Friends", screen: "topics" as const, key: "friends" },
+  { icon: Users, label: "Friends", screen: "friends" as const, key: "friends" },
   { icon: Trophy, label: "Leaderboard", screen: "leaderboard" as const, key: "leaderboard" },
-  { icon: Bell, label: "Activity", screen: "topics" as const, key: "activity" },
+  { icon: Bell, label: "Challenges", screen: "challenges" as const, key: "challenges" },
   { icon: User, label: "Profile", screen: "profile" as const, key: "profile" },
 ]
 
 export default function GlobalBottomNav() {
-  const { currentScreen, setCurrentScreen, setShowFriends } = useAppContext()
+  const { currentScreen, setCurrentScreen } = useAppContext()
   const pathname = usePathname()
   const router = useRouter()
 
@@ -35,27 +35,23 @@ export default function GlobalBottomNav() {
   }
 
   return (
-    <motion.div
-      initial={{ y: 50, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      transition={{ type: "spring", stiffness: 300, damping: 25 }}
-      className="fixed bottom-0 left-0 right-0 z-40 brutal-border bg-secondary border-t-2 border-x-0 border-b-0"
-    >
-      <div className="flex items-center justify-around px-2 py-3 max-w-2xl mx-auto">
+    <div className="fixed bottom-0 left-0 right-0 z-40 bg-secondary border-t-2 border-black">
+      <div className="flex items-center justify-around px-2 py-3">
         {MENU_ITEMS.map((item) => {
           const Icon = item.icon
           const isActive =
             (item.key === "home" && currentScreen === "topics") ||
+            (item.key === "friends" && currentScreen === "friends") ||
             (item.key === "leaderboard" && currentScreen === "leaderboard") ||
+            (item.key === "challenges" && currentScreen === "challenges") ||
             (item.key === "profile" && currentScreen === "profile")
-          const isFriends = item.key === "friends"
 
           return (
             <motion.button
               key={item.key}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              onClick={() => isFriends ? setShowFriends(true) : handleNavigate(item.screen)}
+              onClick={() => handleNavigate(item.screen)}
               className={`flex flex-col items-center gap-1 px-1.5 py-2 rounded-xl transition-all min-w-0 touch-manipulation active:scale-95 active:opacity-80 ${
                 isActive
                   ? 'text-foreground'
@@ -70,6 +66,6 @@ export default function GlobalBottomNav() {
           )
         })}
       </div>
-    </motion.div>
+    </div>
   )
 }

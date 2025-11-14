@@ -6,7 +6,7 @@ import { motion } from "framer-motion"
 import { ArrowLeft, Play, Users, Info } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useFarcaster } from "@/lib/farcaster-sdk"
-import FriendsList from "@/components/friends-list"
+import FriendsListModal from "@/components/friends-list-modal"
 
 interface TopicPageProps {
   params: Promise<{ slug: string }>
@@ -127,9 +127,9 @@ export default function TopicPage({ params }: TopicPageProps) {
   }
 
   return (
-    <div className="w-full max-w-2xl mx-auto h-screen flex flex-col bg-card">
+    <div className="w-full h-screen flex flex-col bg-card">
       {/* Header */}
-      <div className="flex-none brutal-border bg-secondary border-x-0 border-t-0 border-b-2 p-4">
+      <div className="flex-none bg-secondary border-b-2 border-black px-4 py-4">
         <div className="flex items-center gap-3 mb-4">
           <button
             onClick={() => router.back()}
@@ -146,7 +146,7 @@ export default function TopicPage({ params }: TopicPageProps) {
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto p-6">
+      <div className="flex-1 overflow-y-auto px-4 py-6 pb-24" style={{ WebkitOverflowScrolling: 'touch' }}>
         {/* Description */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -231,7 +231,11 @@ export default function TopicPage({ params }: TopicPageProps) {
               {leaderboard.slice(0, 5).map((entry: any, index: number) => (
                 <button
                   key={entry.fid}
-                  onClick={() => router.push(`/profile/${entry.fid}`)}
+                  onClick={() => {
+                    sessionStorage.setItem('profileReferrer', 'topics')
+                    sessionStorage.setItem('topicSlug', slug)
+                    router.push(`/profile/${entry.fid}`)
+                  }}
                   className="w-full flex items-center gap-3 p-2 hover:bg-background/50 rounded-lg transition-colors"
                 >
                   <span className="text-sm font-bold text-foreground/60 w-6">#{index + 1}</span>
@@ -259,16 +263,14 @@ export default function TopicPage({ params }: TopicPageProps) {
 
       {/* Friends Modal */}
       {showFriendsModal && (
-        <div className="fixed inset-0 z-50 bg-black/50">
-          <FriendsList
-            user={user}
-            onClose={() => setShowFriendsModal(false)}
-            onChallenge={(friend) => {
-              handleChallengeFriend(friend)
-              setShowFriendsModal(false)
-            }}
-          />
-        </div>
+        <FriendsListModal
+          user={user}
+          onClose={() => setShowFriendsModal(false)}
+          onChallenge={(friend) => {
+            handleChallengeFriend(friend)
+            setShowFriendsModal(false)
+          }}
+        />
       )}
     </div>
   )
