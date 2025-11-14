@@ -85,7 +85,8 @@ export default function Profile({ user, onNavigate, onFriendsClick }: ProfilePro
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ type: "spring", stiffness: 300, damping: 25 }}
-        className="flex-1 overflow-y-auto overflow-x-hidden px-[4%] py-6"
+        className="flex-1 overflow-y-auto overflow-x-hidden px-[4%] py-6 pb-24"
+        style={{ WebkitOverflowScrolling: 'touch' }}
       >
         {/* Profile Header */}
         <div className="text-center mb-6">

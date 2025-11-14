@@ -67,10 +67,36 @@ export default function TopicPage({ params }: TopicPageProps) {
     window.location.href = `/?matchmaking=${slug}`
   }
 
-  const handleChallengeFriend = (friend: any) => {
-    // Create async challenge
-    // TODO: Implement challenge creation
-    console.log('Challenge friend:', friend, 'in topic:', slug)
+  const handleChallengeFriend = async (friend: any) => {
+    try {
+      if (!user?.fid) {
+        alert('Please sign in to send challenges')
+        return
+      }
+
+      const response = await fetch('/api/challenges', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'create',
+          challenger_fid: user.fid,
+          challenged_fid: friend.fid,
+          topic: slug
+        })
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        alert(`Challenge sent to ${friend.display_name}! 🎮`)
+        setShowFriendsModal(false)
+      } else {
+        alert(data.error || 'Failed to send challenge')
+      }
+    } catch (error) {
+      console.error('Challenge error:', error)
+      alert('Failed to send challenge')
+    }
   }
 
   if (loading) {

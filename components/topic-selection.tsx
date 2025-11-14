@@ -68,7 +68,7 @@ export default function TopicSelection({ onSelectTopic, onNavigate, user, onFrie
       </div>
 
       {/* Topics Grid - Scrollable */}
-      <div className="flex-1 overflow-y-auto overflow-x-hidden px-[4%] pb-4">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden px-[4%] pb-24" style={{ WebkitOverflowScrolling: 'touch' }}>
         {loading ? (
           <div className="flex items-center justify-center h-full">
             <motion.div

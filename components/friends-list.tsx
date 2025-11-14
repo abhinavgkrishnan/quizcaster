@@ -124,17 +124,25 @@ export default function FriendsList({ user, onClose, onChallenge, onNavigate, cu
 
   // Fetch followers from Neynar
   const [followers, setFollowers] = useState<any[]>([])
+  const [loadingFollowers, setLoadingFollowers] = useState(true)
 
   useEffect(() => {
     const fetchFollowers = async () => {
-      if (!user?.fid) return
+      if (!user?.fid) {
+        setLoadingFollowers(false)
+        return
+      }
       try {
+        setLoadingFollowers(true)
         const response = await fetch(`/api/followers?fid=${user.fid}`)
         const data = await response.json()
         console.log('[Friends List] Fetched followers:', data.followers?.length || 0)
         setFollowers(data.followers || [])
       } catch (error) {
         console.error('Failed to fetch followers:', error)
+        setFollowers([])
+      } finally {
+        setLoadingFollowers(false)
       }
     }
     fetchFollowers()
@@ -191,7 +199,7 @@ export default function FriendsList({ user, onClose, onChallenge, onNavigate, cu
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3">
+      <div className="flex-1 overflow-y-auto p-4 space-y-3 pb-24" style={{ WebkitOverflowScrolling: 'touch' }}>
         {tab === 'friends' && (
           <>
             {loading ? (
@@ -308,48 +316,52 @@ export default function FriendsList({ user, onClose, onChallenge, onNavigate, cu
         )}
       </div>
 
-      {/* Followers Section - Always show if we have data */}
-      {followers.length > 0 ? (
-        <div className="flex-none p-4 brutal-border border-x-0 border-b-0 border-t-2 bg-secondary max-h-48 overflow-y-auto">
-          <p className="text-xs font-bold uppercase tracking-wider text-foreground/60 mb-3">
-            People You Follow ({followers.length})
-          </p>
-          <div className="space-y-2">
-            {followers.slice(0, 10).map((follower: any) => {
-              const isAlreadyFriend = friends.some(f => f.fid === follower.fid)
-              return (
-                <div key={follower.fid} className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-full brutal-border overflow-hidden">
-                      {follower.pfp_url ? (
-                        <img src={follower.pfp_url} alt={follower.display_name} className="w-full h-full object-cover" />
-                      ) : (
-                        <div className="w-full h-full bg-background" />
-                      )}
-                    </div>
-                    <div>
-                      <p className="text-xs font-bold text-foreground">{follower.display_name}</p>
-                      <p className="text-[10px] text-foreground/60">@{follower.username}</p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => isAlreadyFriend ? onChallenge?.(follower) : handleSendRequest(follower.fid)}
-                    className="brutal-violet brutal-border px-3 py-1 rounded-lg shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] text-[10px] font-bold uppercase tracking-wider"
-                  >
-                    {isAlreadyFriend ? 'Challenge' : 'Add'}
-                  </button>
-                </div>
-              )
-            })}
-          </div>
-        </div>
-      ) : (
-        <div className="flex-none p-4 brutal-border border-x-0 border-b-0 border-t-2 bg-secondary">
+      {/* Followers Section */}
+      <div className="flex-none p-4 brutal-border border-x-0 border-b-0 border-t-2 bg-secondary max-h-48 overflow-y-auto">
+        {loadingFollowers ? (
           <p className="text-xs text-center text-muted-foreground">
             Loading followers...
           </p>
-        </div>
-      )}
+        ) : followers.length > 0 ? (
+          <>
+            <p className="text-xs font-bold uppercase tracking-wider text-foreground/60 mb-3">
+              People You Follow ({followers.length})
+            </p>
+            <div className="space-y-2">
+              {followers.slice(0, 10).map((follower: any) => {
+                const isAlreadyFriend = friends.some(f => f.fid === follower.fid)
+                return (
+                  <div key={follower.fid} className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-full brutal-border overflow-hidden bg-white">
+                        {follower.pfp_url ? (
+                          <img src={follower.pfp_url} alt={follower.display_name} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full bg-background" />
+                        )}
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-foreground">{follower.display_name}</p>
+                        <p className="text-[10px] text-foreground/60">@{follower.username}</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => isAlreadyFriend ? onChallenge?.(follower) : handleSendRequest(follower.fid)}
+                      className="brutal-violet brutal-border px-3 py-1 rounded-lg shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] text-[10px] font-bold uppercase tracking-wider"
+                    >
+                      {isAlreadyFriend ? 'Challenge' : 'Add'}
+                    </button>
+                  </div>
+                )
+              })}
+            </div>
+          </>
+        ) : (
+          <p className="text-xs text-center text-muted-foreground">
+            No followers found
+          </p>
+        )}
+      </div>
 
       {/* Bottom nav removed - now in global layout */}
     </div>

@@ -122,6 +122,43 @@ export async function POST(request: NextRequest) {
 
       if (challengeError) throw challengeError
 
+      // Send Farcaster notification to challenged user
+      try {
+        const { data: users } = await supabase
+          .from('users')
+          .select('fid, username, display_name, notification_token, notification_url, notifications_enabled')
+          .in('fid', [challenger_fid, challenged_fid])
+
+        const challenger = users?.find(u => u.fid === challenger_fid)
+        const challenged = users?.find(u => u.fid === challenged_fid)
+
+        if (challenged?.notifications_enabled && challenged.notification_token && challenged.notification_url) {
+          const challengerName = challenger?.display_name || challenger?.username || 'Someone'
+
+          await fetch(challenged.notification_url, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${challenged.notification_token}`
+            },
+            body: JSON.stringify({
+              notificationId: crypto.randomUUID(),
+              title: 'New Challenge! 🎮',
+              body: `${challengerName} challenged you to ${topic}!`,
+              targetUrl: `${process.env.NEXT_PUBLIC_APP_URL}/?match=${match.id}`,
+              tokens: [challenged.notification_token]
+            })
+          }).catch(err => {
+            console.error('Failed to send Farcaster notification:', err)
+          })
+
+          console.log(`[Notification] Sent challenge notification to FID ${challenged_fid}`)
+        }
+      } catch (notifError) {
+        console.error('Error sending notification:', notifError)
+        // Don't fail the request if notification fails
+      }
+
       return NextResponse.json({ success: true, challenge, match_id: match.id })
     }
 

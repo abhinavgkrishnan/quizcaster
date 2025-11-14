@@ -184,7 +184,7 @@ export default function MatchHistory({ user, onClose, onNavigate, currentScreen,
       </div>
 
       {/* Matches List */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3">
+      <div className="flex-1 overflow-y-auto p-4 space-y-3 pb-24" style={{ WebkitOverflowScrolling: 'touch' }}>
         {matches.length === 0 && !loading ? (
           <div className="text-center py-12 text-muted-foreground">
             <p className="text-sm font-semibold uppercase tracking-wider">No matches found</p>
@@ -196,55 +196,10 @@ export default function MatchHistory({ user, onClose, onNavigate, currentScreen,
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.05 }}
-              className="relative brutal-border p-4 rounded-2xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] overflow-hidden bg-card"
+              className="relative brutal-border p-3 rounded-2xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] overflow-hidden bg-card"
             >
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-3">
-                  {/* My PFP */}
-                  <div className="w-10 h-10 rounded-full brutal-border overflow-hidden shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
-                    {user?.pfpUrl ? (
-                      <img src={user.pfpUrl} alt={user.displayName} className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full bg-background" />
-                    )}
-                  </div>
-
-                  {/* VS Text */}
-                  <span className="text-xs font-bold uppercase tracking-wider text-foreground/60">VS</span>
-
-                  {/* Opponent PFP */}
-                  <div className="w-10 h-10 rounded-full brutal-border overflow-hidden shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
-                    {match.opponent?.pfp_url ? (
-                      <img src={match.opponent.pfp_url} alt={match.opponent.display_name} className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full bg-background" />
-                    )}
-                  </div>
-
-                  <div className="flex-1">
-                    <p className="text-xs font-bold text-foreground">
-                      @{match.opponent?.username || 'Unknown'}
-                    </p>
-                    {match.opponent?.active_flair && (
-                      <p className="text-[10px] text-foreground/60">
-                        {match.opponent.active_flair.icon} {match.opponent.active_flair.name}
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                <div className="text-right">
-                  <p className="text-xs font-bold uppercase tracking-wider text-foreground/80">
-                    {getResultText(match.result)}
-                  </p>
-                  <p className="text-[10px] text-foreground/60 uppercase tracking-wider">
-                    {match.topic}
-                  </p>
-                </div>
-              </div>
-
-              {/* Score Bar - Entire Card Background */}
-              <div className="absolute inset-0 rounded-2xl overflow-hidden opacity-30">
+              {/* Score Bar - Subtle Background */}
+              <div className="absolute inset-0 rounded-2xl overflow-hidden opacity-10">
                 <div className="flex h-full">
                   <div
                     style={{ width: `${(match.my_score / (match.my_score + match.opponent_score || 1)) * 100}%` }}
@@ -254,14 +209,54 @@ export default function MatchHistory({ user, onClose, onNavigate, currentScreen,
                 </div>
               </div>
 
-              {/* Scores Display */}
-              <div className="relative flex items-center justify-between">
-                <div className="text-3xl font-bold text-foreground">{match.my_score}</div>
-                <div className="text-3xl font-bold text-foreground">{match.opponent_score}</div>
+              {/* Header Row: PFPs and Result */}
+              <div className="relative flex items-center justify-between mb-2">
+                {/* My Side */}
+                <div className="flex flex-col items-center gap-1 flex-1">
+                  <div className="w-8 h-8 rounded-full brutal-border overflow-hidden shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] bg-white flex-shrink-0">
+                    {user?.pfpUrl ? (
+                      <img src={user.pfpUrl} alt={user.displayName} className="w-full h-full object-cover" loading="lazy" />
+                    ) : (
+                      <div className="w-full h-full bg-violet-200" />
+                    )}
+                  </div>
+                  <p className="text-[10px] font-bold text-foreground/70 uppercase">ME</p>
+                </div>
+
+                {/* Center: Result & Topic */}
+                <div className="flex flex-col items-center justify-center px-2 flex-shrink-0">
+                  <p className="text-xs font-bold uppercase tracking-wider text-foreground mb-0.5">
+                    {getResultText(match.result)}
+                  </p>
+                  <p className="text-[10px] text-foreground/60 uppercase tracking-wider">
+                    {match.topic}
+                  </p>
+                </div>
+
+                {/* Opponent Side */}
+                <div className="flex flex-col items-center gap-1 flex-1">
+                  <div className="w-8 h-8 rounded-full brutal-border overflow-hidden shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] bg-white flex-shrink-0">
+                    {match.opponent?.pfp_url ? (
+                      <img src={match.opponent.pfp_url} alt={match.opponent.display_name} className="w-full h-full object-cover" loading="lazy" />
+                    ) : (
+                      <div className="w-full h-full bg-amber-200" />
+                    )}
+                  </div>
+                  <p className="text-[10px] font-bold text-foreground/70 uppercase truncate max-w-[60px]">
+                    @{match.opponent?.username || 'Unknown'}
+                  </p>
+                </div>
+              </div>
+
+              {/* Scores Row */}
+              <div className="relative flex items-center justify-between px-4">
+                <div className="text-2xl font-bold text-foreground">{match.my_score}</div>
+                <div className="text-xs text-foreground/40 font-bold">-</div>
+                <div className="text-2xl font-bold text-foreground">{match.opponent_score}</div>
               </div>
 
               {match.is_async && (
-                <p className="text-[10px] text-foreground/60 mt-2 uppercase tracking-wider text-center">
+                <p className="text-[10px] text-foreground/60 mt-1.5 uppercase tracking-wider text-center">
                   Async Challenge
                 </p>
               )}

@@ -8,6 +8,7 @@ import { useFarcaster } from "@/lib/farcaster-sdk"
 import MatchHistory from "@/components/match-history"
 import FriendsList from "@/components/friends-list"
 import BottomNav from "@/components/bottom-nav"
+import ChallengeTopicSelector from "@/components/challenge-topic-selector"
 import type { AppScreen } from "@/lib/types"
 
 interface OtherProfilePageProps {
@@ -50,8 +51,10 @@ export default function OtherProfilePage({ params }: OtherProfilePageProps) {
   const [loading, setLoading] = useState(true)
   const [showMatchHistory, setShowMatchHistory] = useState(false)
   const [showFriends, setShowFriends] = useState(false)
+  const [showTopicSelector, setShowTopicSelector] = useState(false)
   const [isFriend, setIsFriend] = useState(false)
   const [currentScreen, setCurrentScreen] = useState<AppScreen>("profile")
+  const [challengeLoading, setChallengeLoading] = useState(false)
 
   useEffect(() => {
     fetchUserProfile()
@@ -61,6 +64,9 @@ export default function OtherProfilePage({ params }: OtherProfilePageProps) {
     try {
       // Fetch user info from Neynar
       const userResponse = await fetch(`/api/users/${fid}`)
+      if (!userResponse.ok) {
+        throw new Error('Failed to fetch user data')
+      }
       const userData = await userResponse.json()
 
       // Fetch stats
@@ -73,14 +79,20 @@ export default function OtherProfilePage({ params }: OtherProfilePageProps) {
       const flairData = await flairResponse.json()
 
       setUser({
-        fid: userData.fid,
-        username: userData.username,
-        display_name: userData.display_name,
-        pfp_url: userData.pfp_url,
-        active_flair: flairData.active_flair
+        fid: userData.fid || parseInt(fid),
+        username: userData.username || 'unknown',
+        display_name: userData.display_name || userData.username || 'User',
+        pfp_url: userData.pfp_url || null,
+        active_flair: flairData.active_flair || null
       })
 
-      // TODO: Check if friends
+      // Check if friends
+      if (currentUser?.fid) {
+        const friendsResponse = await fetch(`/api/friends?fid=${currentUser.fid}`)
+        const friendsData = await friendsResponse.json()
+        const isFriendUser = friendsData.friends?.some((f: any) => f.fid === parseInt(fid))
+        setIsFriend(isFriendUser)
+      }
     } catch (error) {
       console.error('Failed to fetch profile:', error)
     } finally {
@@ -102,9 +114,42 @@ export default function OtherProfilePage({ params }: OtherProfilePageProps) {
   }, [])
 
   const handleChallenge = () => {
-    // Navigate to topic selector or create challenge
-    alert(`Challenge feature: Select a topic to challenge user ${fid}`)
-    // TODO: Open topic selector modal
+    setShowTopicSelector(true)
+  }
+
+  const handleTopicSelected = async (topic: string) => {
+    try {
+      if (!currentUser?.fid) {
+        alert('Please sign in to send challenges')
+        return
+      }
+
+      setChallengeLoading(true)
+      const response = await fetch('/api/challenges', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'create',
+          challenger_fid: currentUser.fid,
+          challenged_fid: parseInt(fid),
+          topic
+        })
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        alert(`Challenge sent! 🎮`)
+        setShowTopicSelector(false)
+      } else {
+        alert(data.error || 'Failed to send challenge')
+      }
+    } catch (error) {
+      console.error('Failed to send challenge:', error)
+      alert('Error sending challenge')
+    } finally {
+      setChallengeLoading(false)
+    }
   }
 
   const handleAddFriend = async () => {
@@ -179,10 +224,13 @@ export default function OtherProfilePage({ params }: OtherProfilePageProps) {
             <motion.button
               whileTap={{ scale: 0.95 }}
               onClick={handleChallenge}
-              className="brutal-violet brutal-border px-4 py-2 rounded-lg shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] flex items-center gap-2"
+              disabled={challengeLoading}
+              className="brutal-violet brutal-border px-4 py-2 rounded-lg shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] flex items-center gap-2 disabled:opacity-50 touch-manipulation"
             >
               <Swords className="w-4 h-4" />
-              <span className="text-xs font-bold uppercase tracking-wider">Challenge</span>
+              <span className="text-xs font-bold uppercase tracking-wider">
+                {challengeLoading ? 'Sending...' : 'Challenge'}
+              </span>
             </motion.button>
             {!isFriend && (
               <motion.button
@@ -202,7 +250,8 @@ export default function OtherProfilePage({ params }: OtherProfilePageProps) {
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ type: "spring", stiffness: 300, damping: 25 }}
-        className="flex-1 overflow-y-auto overflow-x-hidden px-[4%] py-6"
+        className="flex-1 overflow-y-auto overflow-x-hidden px-[4%] py-6 pb-24"
+        style={{ WebkitOverflowScrolling: 'touch' }}
       >
         {/* Profile Header */}
         <div className="text-center mb-6">
@@ -349,15 +398,25 @@ export default function OtherProfilePage({ params }: OtherProfilePageProps) {
         </div>
       </motion.div>
 
+      {/* Topic Selector Modal */}
+      {showTopicSelector && (
+        <div className="fixed inset-0 z-50">
+          <ChallengeTopicSelector
+            onSelect={handleTopicSelected}
+            onClose={() => setShowTopicSelector(false)}
+          />
+        </div>
+      )}
+
       {/* Match History Modal */}
       {showMatchHistory && user && (
         <div className="fixed inset-0 z-50 bg-black/50">
           <MatchHistory
             user={{
               fid: user.fid,
-              username: user.username,
-              displayName: user.display_name,
-              pfpUrl: user.pfp_url
+              username: user.username || 'unknown',
+              displayName: user.display_name || 'User',
+              pfpUrl: user.pfp_url || undefined
             }}
             onClose={() => setShowMatchHistory(false)}
             onNavigate={(screen) => {

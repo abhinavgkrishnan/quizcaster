@@ -44,11 +44,10 @@ export default function GlobalBottomNav() {
       <div className="flex items-center justify-around px-2 py-3 max-w-2xl mx-auto">
         {MENU_ITEMS.map((item) => {
           const Icon = item.icon
-          const isActive = item.screen === currentScreen && (
+          const isActive =
             (item.key === "home" && currentScreen === "topics") ||
             (item.key === "leaderboard" && currentScreen === "leaderboard") ||
             (item.key === "profile" && currentScreen === "profile")
-          )
           const isFriends = item.key === "friends"
 
           return (
@@ -57,7 +56,7 @@ export default function GlobalBottomNav() {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => isFriends ? setShowFriends(true) : handleNavigate(item.screen)}
-              className={`flex flex-col items-center gap-1 px-1.5 py-2 rounded-xl transition-all min-w-0 ${
+              className={`flex flex-col items-center gap-1 px-1.5 py-2 rounded-xl transition-all min-w-0 touch-manipulation active:scale-95 active:opacity-80 ${
                 isActive
                   ? 'text-foreground'
                   : 'text-muted-foreground hover:text-foreground'
