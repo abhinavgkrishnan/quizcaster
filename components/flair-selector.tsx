@@ -287,17 +287,7 @@ export default function FlairSelector({ fid, onClose, onFlairSelected, onNavigat
         )}
       </div>
 
-      {/* Bottom Nav */}
-      {onNavigate && (
-        <BottomNav
-          currentScreen={currentScreen || "profile"}
-          onNavigate={(screen) => {
-            onClose?.()
-            onNavigate(screen)
-          }}
-          onFriendsClick={onFriendsClick}
-        />
-      )}
+      {/* Bottom nav removed - now in global layout */}
     </div>
   )
 }

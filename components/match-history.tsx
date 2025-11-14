@@ -196,7 +196,7 @@ export default function MatchHistory({ user, onClose, onNavigate, currentScreen,
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.05 }}
-              className={`${getResultColor(match.result)} brutal-border p-4 rounded-2xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]`}
+              className="relative brutal-border p-4 rounded-2xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] overflow-hidden bg-card"
             >
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-3">
@@ -243,19 +243,21 @@ export default function MatchHistory({ user, onClose, onNavigate, currentScreen,
                 </div>
               </div>
 
-              {/* Score Bar */}
-              <div className="relative h-8 brutal-border rounded-full overflow-hidden bg-background">
-                <div className="absolute inset-0 flex">
+              {/* Score Bar - Entire Card Background */}
+              <div className="absolute inset-0 rounded-2xl overflow-hidden opacity-30">
+                <div className="flex h-full">
                   <div
-                    style={{ width: `${(match.my_score / (match.my_score + match.opponent_score)) * 100}%` }}
-                    className="bg-violet-500 transition-all"
+                    style={{ width: `${(match.my_score / (match.my_score + match.opponent_score || 1)) * 100}%` }}
+                    className="bg-violet-600"
                   />
-                  <div className="flex-1 bg-amber-300" />
+                  <div className="flex-1 bg-amber-200" />
                 </div>
-                <div className="absolute inset-0 flex items-center justify-between px-3 text-xs font-bold">
-                  <span className="text-white mix-blend-difference">{match.my_score}</span>
-                  <span className="text-white mix-blend-difference">{match.opponent_score}</span>
-                </div>
+              </div>
+
+              {/* Scores Display */}
+              <div className="relative flex items-center justify-between">
+                <div className="text-3xl font-bold text-foreground">{match.my_score}</div>
+                <div className="text-3xl font-bold text-foreground">{match.opponent_score}</div>
               </div>
 
               {match.is_async && (
@@ -282,14 +284,7 @@ export default function MatchHistory({ user, onClose, onNavigate, currentScreen,
         </div>
       </div>
 
-      {/* Bottom Nav */}
-      {onNavigate && (
-        <BottomNav
-          currentScreen={currentScreen || "profile"}
-          onNavigate={onNavigate}
-          onFriendsClick={onFriendsClick}
-        />
-      )}
+      {/* Bottom nav removed - now in global layout */}
     </div>
   )
 }

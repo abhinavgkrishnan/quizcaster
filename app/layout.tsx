@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { FarcasterProvider } from "@/lib/farcaster-sdk";
+import { AppProvider } from "@/lib/contexts/AppContext";
+import GlobalBottomNav from "@/components/global-bottom-nav";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -57,7 +59,12 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <FarcasterProvider>
-          {children}
+          <AppProvider>
+            <div className="relative">
+              {children}
+              <GlobalBottomNav />
+            </div>
+          </AppProvider>
         </FarcasterProvider>
       </body>
     </html>

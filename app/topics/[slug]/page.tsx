@@ -27,7 +27,7 @@ export default function TopicPage({ params }: TopicPageProps) {
   const { user } = useFarcaster()
   const [topic, setTopic] = useState<Topic | null>(null)
   const [loading, setLoading] = useState(true)
-  const [showFriends, setShowFriends] = useState(false)
+  const [showFriendsModal, setShowFriendsModal] = useState(false)
   const [leaderboard, setLeaderboard] = useState<any[]>([])
   const [loadingLeaderboard, setLoadingLeaderboard] = useState(false)
 
@@ -63,9 +63,8 @@ export default function TopicPage({ params }: TopicPageProps) {
   }
 
   const handleFindMatch = () => {
-    // Navigate back to home - clicking topic will trigger matchmaking in parent
-    router.push('/')
-    // User will need to click topic again to start matchmaking
+    // Navigate to home with matchmaking trigger
+    window.location.href = `/?matchmaking=${slug}`
   }
 
   const handleChallengeFriend = (friend: any) => {
@@ -170,7 +169,7 @@ export default function TopicPage({ params }: TopicPageProps) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
             whileTap={{ scale: 0.98 }}
-            onClick={() => setShowFriends(true)}
+            onClick={() => setShowFriendsModal(true)}
             className="w-full brutal-beige brutal-border p-5 rounded-2xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] flex items-center gap-3"
           >
             <div className="w-12 h-12 rounded-full brutal-border bg-background flex items-center justify-center">
@@ -233,14 +232,14 @@ export default function TopicPage({ params }: TopicPageProps) {
       </div>
 
       {/* Friends Modal */}
-      {showFriends && (
+      {showFriendsModal && (
         <div className="fixed inset-0 z-50 bg-black/50">
           <FriendsList
             user={user}
-            onClose={() => setShowFriends(false)}
+            onClose={() => setShowFriendsModal(false)}
             onChallenge={(friend) => {
               handleChallengeFriend(friend)
-              setShowFriends(false)
+              setShowFriendsModal(false)
             }}
           />
         </div>

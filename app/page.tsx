@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import TopicSelection from "@/components/topic-selection"
 import Matchmaking from "@/components/matchmaking"
 import GameScreen from "@/components/game-screen"
@@ -8,17 +8,39 @@ import Profile from "@/components/profile"
 import Leaderboard from "@/components/leaderboard"
 import FriendsList from "@/components/friends-list"
 import { useFarcaster } from "@/lib/farcaster-sdk"
+import { useAppContext } from "@/lib/contexts/AppContext"
+import BottomNav from "@/components/bottom-nav"
 import { motion } from "framer-motion"
 import { LogIn } from "lucide-react"
 import type { AppScreen, MatchData } from "@/lib/types"
 
 export default function Home() {
-  const [currentScreen, setCurrentScreen] = useState<AppScreen>("topics")
+  const appContext = useAppContext()
   const [selectedTopic, setSelectedTopic] = useState<string | null>(null)
   const [currentMatch, setCurrentMatch] = useState<MatchData | null>(null)
-  const [showFriends, setShowFriends] = useState(false)
   const { isSDKLoaded, user, isAuthenticated, signIn } = useFarcaster()
   const isDevMode = process.env.NEXT_PUBLIC_DEV_MODE === 'true'
+
+  const { currentScreen, setCurrentScreen, showFriends, setShowFriends, setIsGameScreen } = appContext
+
+  // Check URL params for matchmaking trigger
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search)
+      const matchmakingTopic = params.get('matchmaking')
+      if (matchmakingTopic) {
+        setSelectedTopic(matchmakingTopic)
+        setCurrentScreen("matchmaking")
+        // Clear URL param
+        window.history.replaceState({}, '', '/')
+      }
+    }
+  }, [])
+
+  // Update game screen state
+  useEffect(() => {
+    setIsGameScreen(currentScreen === "game")
+  }, [currentScreen, setIsGameScreen])
 
   const handleTopicSelect = (topic: string) => {
     setSelectedTopic(topic)
@@ -160,6 +182,17 @@ export default function Home() {
               setCurrentScreen(screen)
             }}
             currentScreen={currentScreen}
+          />
+        </div>
+      )}
+
+      {/* Global Bottom Nav */}
+      {!appContext.isGameScreen && (
+        <div className="fixed bottom-0 left-0 right-0 z-40">
+          <BottomNav
+            currentScreen={currentScreen}
+            onNavigate={setCurrentScreen}
+            onFriendsClick={() => setShowFriends(true)}
           />
         </div>
       )}

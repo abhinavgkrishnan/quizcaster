@@ -131,6 +131,7 @@ export default function FriendsList({ user, onClose, onChallenge, onNavigate, cu
       try {
         const response = await fetch(`/api/followers?fid=${user.fid}`)
         const data = await response.json()
+        console.log('[Friends List] Fetched followers:', data.followers?.length || 0)
         setFollowers(data.followers || [])
       } catch (error) {
         console.error('Failed to fetch followers:', error)
@@ -307,8 +308,8 @@ export default function FriendsList({ user, onClose, onChallenge, onNavigate, cu
         )}
       </div>
 
-      {/* Followers Section */}
-      {followers.length > 0 && (
+      {/* Followers Section - Always show if we have data */}
+      {followers.length > 0 ? (
         <div className="flex-none p-4 brutal-border border-x-0 border-b-0 border-t-2 bg-secondary max-h-48 overflow-y-auto">
           <p className="text-xs font-bold uppercase tracking-wider text-foreground/60 mb-3">
             People You Follow ({followers.length})
@@ -342,19 +343,15 @@ export default function FriendsList({ user, onClose, onChallenge, onNavigate, cu
             })}
           </div>
         </div>
+      ) : (
+        <div className="flex-none p-4 brutal-border border-x-0 border-b-0 border-t-2 bg-secondary">
+          <p className="text-xs text-center text-muted-foreground">
+            Loading followers...
+          </p>
+        </div>
       )}
 
-      {/* Bottom Nav */}
-      {onNavigate && (
-        <BottomNav
-          currentScreen={currentScreen || "topics"}
-          onNavigate={(screen) => {
-            onClose?.()
-            onNavigate(screen)
-          }}
-          onFriendsClick={onClose}
-        />
-      )}
+      {/* Bottom nav removed - now in global layout */}
     </div>
   )
 }

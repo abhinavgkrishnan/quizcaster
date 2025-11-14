@@ -231,7 +231,7 @@ export default function OtherProfilePage({ params }: OtherProfilePageProps) {
             transition={{ delay: 0.2 }}
             className="text-2xl font-bold text-foreground mb-1"
           >
-            {user?.display_name || "Player"}
+            {user?.display_name}
           </motion.h1>
           <motion.p
             initial={{ y: 10, opacity: 0 }}
@@ -239,7 +239,7 @@ export default function OtherProfilePage({ params }: OtherProfilePageProps) {
             transition={{ delay: 0.3 }}
             className="text-xs text-muted-foreground font-semibold uppercase tracking-wider"
           >
-            @{user?.username || "user"}
+            @{user?.username}
           </motion.p>
           {user?.active_flair && (
             <motion.div
@@ -373,12 +373,7 @@ export default function OtherProfilePage({ params }: OtherProfilePageProps) {
         </div>
       )}
 
-      {/* Bottom Nav */}
-      <BottomNav
-        currentScreen={currentScreen}
-        onNavigate={(screen) => router.push('/')}
-        onFriendsClick={() => setShowFriends(true)}
-      />
+      {/* Bottom nav removed - now in global layout */}
     </div>
   )
 }
