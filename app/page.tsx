@@ -157,8 +157,10 @@ export default function Home() {
   }, [user])
 
   const fetchMatchAndStart = async (matchId: string) => {
+    console.log('[fetchMatchAndStart] Fetching match:', matchId)
     const response = await fetch(`/api/matches/${matchId}`)
     const matchData = await response.json()
+    console.log('[fetchMatchAndStart] Match data:', matchData)
 
     if (matchData && user) {
       const isPlayer1 = matchData.player1_fid === user.fid

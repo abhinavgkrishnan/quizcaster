@@ -212,85 +212,82 @@ export default function Challenges({ user, onNavigate }: ChallengesProps) {
                   }}
                   className="brutal-violet brutal-border p-4 rounded-2xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
                 >
-                  {/* Challenge Info */}
-                  <div className="flex items-start gap-3 mb-3">
-                    {/* User PFP */}
-                    <div className="w-16 h-16 rounded-full brutal-border overflow-hidden shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] bg-white flex-shrink-0">
-                      {(activeTab === 'received' ? challenge.challenger.pfp_url : challenge.challenged.pfp_url) ? (
-                        <img
-                          src={activeTab === 'received' ? challenge.challenger.pfp_url : challenge.challenged.pfp_url}
-                          alt={activeTab === 'received' ? challenge.challenger.display_name : challenge.challenged.display_name}
-                          className="w-full h-full object-cover"
-                          loading="lazy"
-                        />
-                      ) : (
-                        <div className="w-full h-full bg-violet-200" />
-                      )}
+                  {/* Challenge Info - New Layout */}
+                  <div className="flex items-center justify-between gap-3">
+                    {/* Left: User Info */}
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      <div className="w-14 h-14 rounded-full brutal-border overflow-hidden shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] bg-white flex-shrink-0">
+                        {(activeTab === 'received' ? challenge.challenger.pfp_url : challenge.challenged.pfp_url) ? (
+                          <img
+                            src={activeTab === 'received' ? challenge.challenger.pfp_url : challenge.challenged.pfp_url}
+                            alt={activeTab === 'received' ? challenge.challenger.display_name : challenge.challenged.display_name}
+                            className="w-full h-full object-cover"
+                            loading="lazy"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-violet-200" />
+                        )}
+                      </div>
+
+                      <div className="flex-1 min-w-0">
+                        <p className="text-lg font-bold text-foreground truncate">
+                          {activeTab === 'received' ? challenge.challenger.display_name : challenge.challenged.display_name}
+                        </p>
+                        <p className="text-sm text-foreground/60 truncate">
+                          @{activeTab === 'received' ? challenge.challenger.username : challenge.challenged.username}
+                        </p>
+                        {(activeTab === 'received' ? challenge.challenger.active_flair : challenge.challenged.active_flair) && (
+                          <p className="text-[10px] text-foreground/50 mt-0.5 truncate">
+                            {activeTab === 'received' ? challenge.challenger.active_flair.icon : challenge.challenged.active_flair.icon}{' '}
+                            {activeTab === 'received' ? challenge.challenger.active_flair.name : challenge.challenged.active_flair.name}
+                          </p>
+                        )}
+                      </div>
                     </div>
 
-                    {/* User Info & Topic */}
-                    <div className="flex-1 min-w-0">
-                      <p className="text-base font-bold text-foreground truncate">
-                        {activeTab === 'received' ? challenge.challenger.display_name : challenge.challenged.display_name}
-                      </p>
-                      <p className="text-xs text-foreground/60 truncate mb-1">
-                        @{activeTab === 'received' ? challenge.challenger.username : challenge.challenged.username}
-                      </p>
-                      {(activeTab === 'received' ? challenge.challenger.active_flair : challenge.challenged.active_flair) && (
-                        <p className="text-[10px] text-foreground/50 mb-2">
-                          {activeTab === 'received' ? challenge.challenger.active_flair.icon : challenge.challenged.active_flair.icon}{' '}
-                          {activeTab === 'received' ? challenge.challenger.active_flair.name : challenge.challenged.active_flair.name}
-                        </p>
-                      )}
-                      <div className="brutal-beige brutal-border px-3 py-1.5 rounded-lg inline-block">
-                        <p className="text-sm font-bold uppercase tracking-wide">{challenge.topic}</p>
+                    {/* Right: Topic & Actions */}
+                    <div className="flex flex-col gap-2 items-end flex-shrink-0">
+                      <div className="brutal-beige brutal-border px-4 py-2 rounded-xl">
+                        <p className="text-base font-bold uppercase tracking-wide whitespace-nowrap">{challenge.topic}</p>
                       </div>
+
+                      {activeTab === 'received' ? (
+                        <div className="flex gap-2">
+                          <motion.button
+                            whileTap={{ scale: 0.95 }}
+                            onClick={() => handleAccept(challenge)}
+                            className="brutal-white brutal-border rounded-xl px-4 py-2 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] flex items-center gap-1.5 hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all"
+                          >
+                            <div className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center">
+                              <Check className="w-3.5 h-3.5 text-white stroke-[3]" />
+                            </div>
+                            <span className="text-xs font-bold uppercase tracking-wider">Accept</span>
+                          </motion.button>
+
+                          <motion.button
+                            whileTap={{ scale: 0.95 }}
+                            onClick={() => handleDecline(challenge.id)}
+                            className="brutal-border bg-background rounded-xl p-2 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] flex items-center justify-center hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all"
+                          >
+                            <div className="w-5 h-5 rounded-full bg-red-500 flex items-center justify-center">
+                              <XIcon className="w-3.5 h-3.5 text-white stroke-[3]" />
+                            </div>
+                          </motion.button>
+                        </div>
+                      ) : (
+                        <motion.button
+                          whileTap={{ scale: 0.95 }}
+                          onClick={() => handleCancel(challenge.id)}
+                          className="brutal-white brutal-border rounded-xl px-4 py-2 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] flex items-center gap-1.5 hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all"
+                        >
+                          <div className="w-5 h-5 rounded-full bg-red-500 flex items-center justify-center">
+                            <XIcon className="w-3.5 h-3.5 text-white stroke-[3]" />
+                          </div>
+                          <span className="text-xs font-bold uppercase tracking-wider">Cancel</span>
+                        </motion.button>
+                      )}
                     </div>
                   </div>
-
-                  {/* Expiry Warning */}
-                  {isExpiringSoon && (
-                    <p className="text-[10px] text-red-500 font-semibold uppercase tracking-wider mb-3">
-                      ⚠️ Expires soon!
-                    </p>
-                  )}
-
-                  {/* Action Buttons */}
-                  {activeTab === 'received' ? (
-                    <div className="flex gap-2">
-                      <motion.button
-                        whileTap={{ scale: 0.95 }}
-                        onClick={() => handleAccept(challenge)}
-                        className="flex-1 brutal-white brutal-border rounded-full py-3 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] flex items-center justify-center gap-2 hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all"
-                      >
-                        <div className="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center">
-                          <Check className="w-4 h-4 text-white stroke-[3]" />
-                        </div>
-                        <span className="text-sm font-bold uppercase tracking-wider">Accept</span>
-                      </motion.button>
-
-                      <motion.button
-                        whileTap={{ scale: 0.95 }}
-                        onClick={() => handleDecline(challenge.id)}
-                        className="w-12 h-12 brutal-border bg-background rounded-full shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] flex items-center justify-center hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all flex-shrink-0"
-                      >
-                        <div className="w-6 h-6 rounded-full bg-red-500 flex items-center justify-center">
-                          <XIcon className="w-4 h-4 text-white stroke-[3]" />
-                        </div>
-                      </motion.button>
-                    </div>
-                  ) : (
-                    <motion.button
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => handleCancel(challenge.id)}
-                      className="w-full brutal-white brutal-border rounded-full py-3 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] flex items-center justify-center gap-2 hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all"
-                    >
-                      <div className="w-6 h-6 rounded-full bg-red-500 flex items-center justify-center">
-                        <XIcon className="w-4 h-4 text-white stroke-[3]" />
-                      </div>
-                      <span className="text-sm font-bold uppercase tracking-wider">Cancel</span>
-                    </motion.button>
-                  )}
                 </div>
               )
             })}
