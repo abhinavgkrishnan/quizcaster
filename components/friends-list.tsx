@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
-import { Users, X, UserPlus, Swords, Clock } from "lucide-react"
+import { Users, X, UserPlus, Swords, Clock, Send } from "lucide-react"
 import type { FarcasterUser, AppScreen } from "@/lib/types"
 import BottomNav from "./bottom-nav"
 
@@ -117,6 +117,25 @@ export default function FriendsList({ user, onNavigate, currentScreen }: Friends
       }
     } catch (error) {
       console.error('Failed to send request:', error)
+    }
+  }
+
+  const handleInvite = async (follower: any) => {
+    if (!user?.fid) return
+    try {
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://quizcaster.com'
+      const text = `Hey @${follower.username}! Join me on Quizcaster - test your knowledge and compete with friends! 🎮🧠`
+
+      // Use Farcaster SDK to open composer
+      const { sdk } = await import('@farcaster/miniapp-sdk')
+
+      // Build composer URL with mention
+      const composerUrl = `https://warpcast.com/~/compose?text=${encodeURIComponent(text)}&embeds[]=${encodeURIComponent(appUrl)}`
+
+      await sdk.actions.openUrl(composerUrl)
+    } catch (error) {
+      console.error('Failed to open composer:', error)
+      alert('Failed to open composer')
     }
   }
 
@@ -393,12 +412,23 @@ export default function FriendsList({ user, onNavigate, currentScreen }: Friends
                         <p className="text-[10px] text-foreground/60 truncate">@{follower.username}</p>
                       </div>
                     </button>
-                    <button
-                      onClick={() => handleSendRequest(follower.fid)}
-                      className="brutal-violet brutal-border px-3 py-1 rounded-lg shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] text-[10px] font-bold uppercase tracking-wider flex-shrink-0"
-                    >
-                      Add
-                    </button>
+                    {follower.in_database ? (
+                      <button
+                        onClick={() => handleSendRequest(follower.fid)}
+                        className="brutal-violet brutal-border px-3 py-1 rounded-lg shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] text-[10px] font-bold uppercase tracking-wider flex-shrink-0 flex items-center gap-1"
+                      >
+                        <UserPlus className="w-3 h-3" />
+                        Add
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => handleInvite(follower)}
+                        className="brutal-beige brutal-border px-3 py-1 rounded-lg shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] text-[10px] font-bold uppercase tracking-wider flex-shrink-0 flex items-center gap-1"
+                      >
+                        <Send className="w-3 h-3" />
+                        Invite
+                      </button>
+                    )}
                   </div>
                 )
               })}

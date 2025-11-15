@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react"
 import { motion } from "framer-motion"
 import confetti from "canvas-confetti"
-import { Trophy, Target, Zap, RotateCcw, Home, Swords } from "lucide-react"
+import { Trophy, Target, Zap, RotateCcw, Home, Swords, Share2 } from "lucide-react"
 import { GAME_CONFIG } from "@/lib/constants"
 
 interface GameOverProps {
@@ -22,12 +22,13 @@ interface GameOverProps {
   opponentRequestedRematch: boolean
   forfeitedBy?: number | null
   myFid: number
+  topic?: string
   onPlayAgain: () => void
   onGoHome: () => void
   onChallenge: () => void
 }
 
-export default function GameOver({ playerScore, opponentScore, playerAnswers, opponent, opponentRequestedRematch, forfeitedBy, myFid, onPlayAgain, onGoHome, onChallenge }: GameOverProps) {
+export default function GameOver({ playerScore, opponentScore, playerAnswers, opponent, opponentRequestedRematch, forfeitedBy, myFid, topic, onPlayAgain, onGoHome, onChallenge }: GameOverProps) {
   const opponentForfeited = forfeitedBy !== null && forfeitedBy !== myFid
   const iForfeited = forfeitedBy === myFid
 
@@ -36,6 +37,7 @@ export default function GameOver({ playerScore, opponentScore, playerAnswers, op
   const isDraw = !iForfeited && !opponentForfeited && playerScore === opponentScore
   const [challengeProgress, setChallengeProgress] = useState(0)
   const [challengeActive, setChallengeActive] = useState(false)
+  const [isSharing, setIsSharing] = useState(false)
 
   const stats = useMemo(() => {
     const questionsAnswered = playerAnswers.length
@@ -88,6 +90,30 @@ export default function GameOver({ playerScore, opponentScore, playerAnswers, op
   const handleChallenge = () => {
     setChallengeActive(true)
     onChallenge()
+  }
+
+  const handleShare = async () => {
+    setIsSharing(true)
+    try {
+      const result = playerWon ? '🏆 Victory!' : isDraw ? '🤝 Draw!' : '💪 Good game!'
+      const topicText = topic ? ` in ${topic}` : ''
+      const text = `${result} Just played Quizcaster${topicText}!\n\n📊 Score: ${playerScore} - ${opponentScore}\n✅ Accuracy: ${stats.accuracy}%\n⚡ Avg time: ${stats.avgTimeSeconds}s\n\nThink you can beat me? 👇`
+
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://quizcaster.com'
+
+      // Use Farcaster SDK to open composer
+      const { sdk } = await import('@farcaster/miniapp-sdk')
+
+      // Build composer URL
+      const composerUrl = `https://warpcast.com/~/compose?text=${encodeURIComponent(text)}&embeds[]=${encodeURIComponent(appUrl)}`
+
+      await sdk.actions.openUrl(composerUrl)
+    } catch (error) {
+      console.error('Share error:', error)
+      alert('Failed to open composer')
+    } finally {
+      setIsSharing(false)
+    }
   }
 
   return (
@@ -164,6 +190,23 @@ export default function GameOver({ playerScore, opponentScore, playerAnswers, op
           {/* Action Buttons */}
           <div className="w-full space-y-1.5">
             <button
+              onClick={handleShare}
+              disabled={isSharing}
+              style={{
+                transform: 'translate3d(0, 0, 0)',
+                WebkitTransform: 'translate3d(0, 0, 0)',
+                backfaceVisibility: 'hidden',
+                WebkitBackfaceVisibility: 'hidden',
+              }}
+              className={`relative w-full py-3 rounded-2xl brutal-violet brutal-border font-bold text-xs shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all duration-200 text-foreground uppercase tracking-wide ${isSharing ? 'opacity-50' : ''}`}
+            >
+              <span className="flex items-center justify-center gap-2">
+                <Share2 className="w-4 h-4" />
+                {isSharing ? 'Sharing...' : 'Share Results'}
+              </span>
+            </button>
+
+            <button
               onClick={onPlayAgain}
               style={{
                 transform: 'translate3d(0, 0, 0)',
@@ -171,10 +214,10 @@ export default function GameOver({ playerScore, opponentScore, playerAnswers, op
                 backfaceVisibility: 'hidden',
                 WebkitBackfaceVisibility: 'hidden',
               }}
-              className="relative w-full py-3 rounded-2xl brutal-violet brutal-border font-bold text-xs shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all duration-200 text-foreground uppercase tracking-wide"
+              className="relative w-full py-2.5 rounded-2xl brutal-beige brutal-border font-bold text-[10px] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all duration-200 text-foreground uppercase tracking-wide"
             >
               <span className="flex items-center justify-center gap-2">
-                <RotateCcw className="w-4 h-4" />
+                <RotateCcw className="w-3.5 h-3.5" />
                 Play Again
               </span>
             </button>
