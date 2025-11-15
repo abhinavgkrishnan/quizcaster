@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import TopicSelection from "@/components/topic-selection"
 import Matchmaking from "@/components/matchmaking"
+import MatchFound from "@/components/match-found"
 import GameScreen from "@/components/game-screen"
 import AsyncSoloGame from "@/components/async-solo-game"
 import AsyncEmulationGame from "@/components/async-emulation-game"
@@ -180,6 +181,12 @@ export default function Home() {
       // LIVE MATCH: If is_async=false and match is active, it's a live Socket.IO game
       if (matchData.is_async === false && matchData.status === 'active') {
         console.log('[fetchMatchAndStart] LIVE MATCH: Starting Socket.IO game')
+
+        // Fetch opponent data
+        const opponentFid = isPlayer1 ? matchData.player2_fid : matchData.player1_fid
+        const opponentRes = await fetch(`/api/users/${opponentFid}`)
+        const opponentData = await opponentRes.json()
+
         setCurrentMatch({
           match_id: matchId,
           myPlayer: {
@@ -189,13 +196,18 @@ export default function Home() {
             pfpUrl: user.pfpUrl
           },
           opponent: {
-            fid: isPlayer1 ? matchData.player2_fid : matchData.player1_fid,
-            username: 'Opponent',
-            displayName: 'Opponent',
-            pfpUrl: ''
+            fid: opponentData.fid,
+            username: opponentData.username,
+            displayName: opponentData.display_name,
+            pfpUrl: opponentData.pfp_url
           }
         })
-        setCurrentScreen("game")
+        setCurrentScreen("matchFound")
+
+        // Show VS screen for 3 seconds then start game
+        setTimeout(() => {
+          setCurrentScreen("game")
+        }, 3000)
         return
       }
 
@@ -234,7 +246,12 @@ export default function Home() {
               pfpUrl: emulationData.opponent.pfp_url
             }
           })
-          setCurrentScreen("game")
+          setCurrentScreen("matchFound")
+
+          // Show VS screen for 3 seconds then start emulation game
+          setTimeout(() => {
+            setCurrentScreen("game")
+          }, 3000)
           return
         }
       }
@@ -462,6 +479,13 @@ export default function Home() {
               onCancel={() => setCurrentScreen("topics")}
             />
           </div>
+        )}
+        {currentScreen === "matchFound" && selectedTopic && currentMatch && (
+          <MatchFound
+            topic={selectedTopic}
+            myPlayer={currentMatch.myPlayer}
+            opponent={currentMatch.opponent}
+          />
         )}
         {currentScreen === "game" && selectedTopic && currentMatch && (
           isEmulationMode && asyncQuestions.length > 0 && challengerAnswers.length > 0 ? (

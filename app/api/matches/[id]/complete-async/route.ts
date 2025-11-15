@@ -20,13 +20,6 @@ export async function POST(
       return NextResponse.json({ error: 'FID is required' }, { status: 400 })
     }
 
-    // Get game state from Redis
-    const gameState = await getGameState(matchId)
-
-    if (!gameState) {
-      return NextResponse.json({ error: 'Game session not found in Redis' }, { status: 404 })
-    }
-
     // Get match from Postgres
     const { data: match, error: matchError } = await supabase
       .from('matches')
@@ -40,12 +33,45 @@ export async function POST(
 
     const isPlayer1 = match.player1_fid === fid
 
-    // Mark player as completed in Redis
-    const { bothCompleted } = await markPlayerCompleted(matchId, fid)
+    // Get game state from Redis (might not exist if player1 already completed and session cleaned up)
+    const gameState = await getGameState(matchId)
 
-    // Get player's answers from Redis
-    const playerAnswers = await getPlayerAnswers(matchId, fid)
-    const score = gameState.player1_fid === fid ? gameState.player1_score : gameState.player2_score
+    let bothCompleted = false
+    let playerAnswers: any[] = []
+    let score = 0
+
+    if (gameState) {
+      // Redis session exists - use it
+      const completionResult = await markPlayerCompleted(matchId, fid)
+      bothCompleted = completionResult.bothCompleted
+      playerAnswers = await getPlayerAnswers(matchId, fid)
+      score = gameState.player1_fid === fid ? gameState.player1_score : gameState.player2_score
+    } else {
+      // No Redis session - calculate from Postgres
+      console.log('[Complete Async] No Redis session, using Postgres data')
+      const { data: answers } = await supabase
+        .from('match_answers')
+        .select('*')
+        .eq('match_id', matchId)
+        .eq('fid', fid)
+        .order('question_number')
+
+      playerAnswers = (answers || []).map(a => ({
+        question_id: a.question_id,
+        question_number: a.question_number,
+        answer: a.answer_given,
+        is_correct: a.is_correct,
+        time_taken_ms: a.time_taken_ms,
+        points_earned: a.points_earned,
+        timestamp: new Date(a.answered_at).getTime()
+      }))
+
+      score = playerAnswers.reduce((sum, a) => sum + a.points_earned, 0)
+
+      // Check if both players completed by checking Postgres
+      const otherPlayerCompleted = isPlayer1 ? match.player2_completed_at : match.player1_completed_at
+      bothCompleted = !!otherPlayerCompleted
+    }
 
     // Save answers to Postgres
     const answersToInsert: TablesInsert<'match_answers'>[] = playerAnswers.map(a => ({
@@ -76,52 +102,53 @@ export async function POST(
 
     // If both players completed (this player just finished, other already done)
     if (bothCompleted) {
-      // Get both players' answers from Redis to save to Postgres
-      const player1Answers = await getPlayerAnswers(matchId, gameState.player1_fid)
-      const player2Answers = await getPlayerAnswers(matchId, gameState.player2_fid)
+      if (gameState) {
+        // Get both players' answers from Redis to save to Postgres
+        const opponentFid = isPlayer1 ? gameState.player2_fid : gameState.player1_fid
+        const opponentAnswers = await getPlayerAnswers(matchId, opponentFid)
 
-      // Save opponent's answers to Postgres too (if they exist)
-      const opponentFid = isPlayer1 ? gameState.player2_fid : gameState.player1_fid
-      const opponentAnswers = await getPlayerAnswers(matchId, opponentFid)
-
-      if (opponentAnswers.length > 0) {
-        const opponentAnswersToInsert: TablesInsert<'match_answers'>[] = opponentAnswers.map(a => ({
-          match_id: matchId,
-          fid: opponentFid,
-          question_id: a.question_id,
-          question_number: a.question_number,
-          answer_given: a.answer,
-          is_correct: a.is_correct,
-          time_taken_ms: a.time_taken_ms,
-          points_earned: a.points_earned,
-          answered_at: new Date(a.timestamp).toISOString(),
-        }))
-        await supabase.from('match_answers').insert(opponentAnswersToInsert)
+        if (opponentAnswers.length > 0) {
+          const opponentAnswersToInsert: TablesInsert<'match_answers'>[] = opponentAnswers.map(a => ({
+            match_id: matchId,
+            fid: opponentFid,
+            question_id: a.question_id,
+            question_number: a.question_number,
+            answer_given: a.answer,
+            is_correct: a.is_correct,
+            time_taken_ms: a.time_taken_ms,
+            points_earned: a.points_earned,
+            answered_at: new Date(a.timestamp).toISOString(),
+          }))
+          await supabase.from('match_answers').insert(opponentAnswersToInsert)
+        }
       }
 
-      // Determine winner from Redis scores
+      // Get both players' scores from Postgres (already saved from answers)
+      const { data: allAnswers } = await supabase
+        .from('match_answers')
+        .select('fid, points_earned')
+        .eq('match_id', matchId)
+
+      const player1Score = allAnswers
+        ?.filter(a => a.fid === match.player1_fid)
+        .reduce((sum, a) => sum + a.points_earned, 0) || 0
+      const player2Score = allAnswers
+        ?.filter(a => a.fid === match.player2_fid)
+        .reduce((sum, a) => sum + a.points_earned, 0) || 0
+
+      // Determine winner
       let winnerFid: number | null = null
-      if (gameState.player1_score > gameState.player2_score) {
-        winnerFid = gameState.player1_fid
-      } else if (gameState.player2_score > gameState.player1_score) {
-        winnerFid = gameState.player2_fid
-      }
-
-      // Check for forfeits
-      const totalQuestions = gameState.questions.length
-      let forfeitedBy: number | null = null
-      if (player1Answers.length < totalQuestions) {
-        forfeitedBy = gameState.player1_fid
-      } else if (player2Answers.length < totalQuestions) {
-        forfeitedBy = gameState.player2_fid
+      if (player1Score > player2Score) {
+        winnerFid = match.player1_fid
+      } else if (player2Score > player1Score) {
+        winnerFid = match.player2_fid
       }
 
       updateData.status = 'completed'
       updateData.winner_fid = winnerFid
       updateData.completed_at = new Date().toISOString()
-      updateData.forfeited_by = forfeitedBy
-      updateData.player1_score = gameState.player1_score
-      updateData.player2_score = gameState.player2_score
+      updateData.player1_score = player1Score
+      updateData.player2_score = player2Score
 
       // Update associated challenge status to 'completed'
       await supabase

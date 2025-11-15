@@ -18,7 +18,7 @@ export interface MatchData {
 /**
  * Application screen/view types
  */
-export type AppScreen = "topics" | "matchmaking" | "game" | "profile" | "leaderboard" | "friends" | "challenges";
+export type AppScreen = "topics" | "matchmaking" | "matchFound" | "game" | "profile" | "leaderboard" | "friends" | "challenges";
 
 /**
  * Game phase for UI state management

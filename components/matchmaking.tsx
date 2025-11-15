@@ -76,8 +76,9 @@ export default function Matchmaking({ topic, onMatchFound, onCancel }: Matchmaki
     const opponent = isPlayer1 ? foundMatchData.player2 : foundMatchData.player1
 
     return <MatchFound
-      player1={foundMatchData.player1}
-      player2={foundMatchData.player2}
+      topic={topic}
+      myPlayer={myPlayer}
+      opponent={opponent}
       onAnimationComplete={() => {
         onMatchFound({
           match_id: foundMatchData.match_id,

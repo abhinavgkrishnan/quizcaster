@@ -6,12 +6,13 @@ import { Swords } from "lucide-react"
 import type { PlayerData } from "@/lib/socket/events"
 
 interface MatchFoundProps {
-  player1: PlayerData
-  player2: PlayerData
+  topic: string
+  myPlayer: PlayerData
+  opponent: PlayerData
   onAnimationComplete?: () => void
 }
 
-export default function MatchFound({ player1, player2, onAnimationComplete }: MatchFoundProps) {
+export default function MatchFound({ topic, myPlayer, opponent, onAnimationComplete }: MatchFoundProps) {
   useEffect(() => {
     // Auto-transition after animation
     const timer = setTimeout(() => {
@@ -49,8 +50,8 @@ export default function MatchFound({ player1, player2, onAnimationComplete }: Ma
         </motion.div>
 
         {/* Players Display */}
-        <div className="flex items-center justify-between gap-6 mb-8">
-          {/* Player 1 */}
+        <div className="flex items-center justify-between gap-4 mb-8 px-4">
+          {/* My Player */}
           <motion.div
             initial={{ x: -100, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
@@ -59,33 +60,35 @@ export default function MatchFound({ player1, player2, onAnimationComplete }: Ma
           >
             <div className="flex flex-col items-center gap-3">
               <div className="w-24 h-24 rounded-full brutal-violet brutal-border overflow-hidden shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-                {player1.pfpUrl ? (
+                {myPlayer.pfpUrl ? (
                   <img
-                    src={player1.pfpUrl}
-                    alt={player1.displayName}
+                    src={myPlayer.pfpUrl}
+                    alt={myPlayer.displayName}
                     className="w-full h-full object-cover"
                   />
                 ) : (
                   <div className="w-full h-full bg-violet-500" />
                 )}
               </div>
-              <div className="text-center">
-                <p className="text-lg font-bold text-foreground">
-                  {player1.displayName}
+              <div className="text-center min-h-[60px] flex flex-col justify-start px-2">
+                <p className="text-base font-bold text-foreground truncate max-w-[120px]">
+                  {myPlayer.displayName}
                 </p>
-                <p className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">
-                  @{player1.username}
+                <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wide truncate max-w-[120px]">
+                  @{myPlayer.username}
                 </p>
-                {player1.activeFlair && (
-                  <motion.p
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 1 }}
-                    className="text-[10px] text-foreground/70 mt-1"
-                  >
-                    {player1.activeFlair.icon} {player1.activeFlair.name}
-                  </motion.p>
-                )}
+                <div className="h-4 mt-1">
+                  {myPlayer.activeFlair && (
+                    <motion.p
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 1 }}
+                      className="text-[10px] text-foreground/70"
+                    >
+                      {myPlayer.activeFlair.icon} {myPlayer.activeFlair.name}
+                    </motion.p>
+                  )}
+                </div>
               </div>
             </div>
           </motion.div>
@@ -97,14 +100,14 @@ export default function MatchFound({ player1, player2, onAnimationComplete }: Ma
             transition={{ type: "spring", stiffness: 200, damping: 15, delay: 0.9 }}
             className="flex-none"
           >
-            <div className="brutal-beige brutal-border px-6 py-3 rounded-2xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-              <p className="text-3xl font-bold uppercase tracking-wider text-foreground">
-                VS
-              </p>
-            </div>
+            <p className="text-5xl font-black uppercase tracking-wider text-foreground" style={{
+              textShadow: '4px 4px 0px rgba(0,0,0,0.3), 2px 2px 0px rgba(0,0,0,0.2)'
+            }}>
+              VS
+            </p>
           </motion.div>
 
-          {/* Player 2 */}
+          {/* Opponent */}
           <motion.div
             initial={{ x: 100, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
@@ -113,33 +116,35 @@ export default function MatchFound({ player1, player2, onAnimationComplete }: Ma
           >
             <div className="flex flex-col items-center gap-3">
               <div className="w-24 h-24 rounded-full brutal-beige brutal-border overflow-hidden shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-                {player2.pfpUrl ? (
+                {opponent.pfpUrl ? (
                   <img
-                    src={player2.pfpUrl}
-                    alt={player2.displayName}
+                    src={opponent.pfpUrl}
+                    alt={opponent.displayName}
                     className="w-full h-full object-cover"
                   />
                 ) : (
                   <div className="w-full h-full bg-amber-300" />
                 )}
               </div>
-              <div className="text-center">
-                <p className="text-lg font-bold text-foreground">
-                  {player2.displayName}
+              <div className="text-center min-h-[60px] flex flex-col justify-start px-2">
+                <p className="text-base font-bold text-foreground truncate max-w-[120px]">
+                  {opponent.displayName}
                 </p>
-                <p className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">
-                  @{player2.username}
+                <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wide truncate max-w-[120px]">
+                  @{opponent.username}
                 </p>
-                {player2.activeFlair && (
-                  <motion.p
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 1 }}
-                    className="text-[10px] text-foreground/70 mt-1"
-                  >
-                    {player2.activeFlair.icon} {player2.activeFlair.name}
-                  </motion.p>
-                )}
+                <div className="h-4 mt-1">
+                  {opponent.activeFlair && (
+                    <motion.p
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 1 }}
+                      className="text-[10px] text-foreground/70"
+                    >
+                      {opponent.activeFlair.icon} {opponent.activeFlair.name}
+                    </motion.p>
+                  )}
+                </div>
               </div>
             </div>
           </motion.div>
