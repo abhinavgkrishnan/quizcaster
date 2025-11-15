@@ -324,7 +324,7 @@ export default function FriendsList({ user, onNavigate, currentScreen }: Friends
             People You Follow {followers.length > 0 && `(${followers.length})`}
           </p>
         </div>
-        <div className="flex-1 overflow-y-auto px-4 pb-4 space-y-2" style={{ WebkitOverflowScrolling: 'touch' }}>
+        <div className="flex-1 overflow-y-auto px-4 pb-28 space-y-2" style={{ WebkitOverflowScrolling: 'touch' }}>
         {loadingFollowers ? (
           <p className="text-xs text-center text-muted-foreground">
             Loading followers...

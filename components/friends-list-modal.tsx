@@ -48,7 +48,7 @@ export default function FriendsListModal({ user, onClose, onChallenge }: Friends
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[60] bg-black/50 flex items-end"
+      className="fixed inset-0 z-[100] bg-black/50 flex items-end"
       onClick={onClose}
     >
       <motion.div
@@ -77,7 +77,7 @@ export default function FriendsListModal({ user, onClose, onChallenge }: Friends
         </div>
 
         {/* Friends List */}
-        <div className="flex-1 overflow-y-auto px-4 py-4 space-y-2" style={{ WebkitOverflowScrolling: 'touch' }}>
+        <div className="flex-1 overflow-y-auto px-4 py-4 pb-28 space-y-2" style={{ WebkitOverflowScrolling: 'touch' }}>
           {loading ? (
             <div className="text-center py-8">
               <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">

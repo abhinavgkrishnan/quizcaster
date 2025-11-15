@@ -43,7 +43,7 @@ export default function ChallengeTopicSelector({ onSelect, onClose }: ChallengeT
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[60] bg-black/50 flex items-end"
+      className="fixed inset-0 z-[100] bg-black/50 flex items-end"
       onClick={onClose}
     >
       <motion.div
@@ -69,7 +69,7 @@ export default function ChallengeTopicSelector({ onSelect, onClose }: ChallengeT
         </div>
 
         {/* Topics Grid */}
-        <div className="flex-1 overflow-y-auto px-4 py-4" style={{ WebkitOverflowScrolling: 'touch' }}>
+        <div className="flex-1 overflow-y-auto px-4 py-4 pb-28" style={{ WebkitOverflowScrolling: 'touch' }}>
           {loading ? (
             <div className="flex items-center justify-center h-full">
               <motion.div

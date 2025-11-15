@@ -243,10 +243,7 @@ export default function Leaderboard({ onNavigate }: LeaderboardProps) {
           <div className="space-y-2">
             {leaderboard.map((entry, index) => {
               const isCurrentUser = user?.fid === entry.fid
-              const isTop3 = index < 3
-              const bgColor = isTop3
-                ? index === 0 ? 'brutal-violet' : index === 1 ? 'brutal-beige' : 'brutal-beige-light'
-                : 'brutal-white'
+              const bgColor = isCurrentUser ? 'brutal-violet' : 'bg-[#FEFFDD]'
 
               return (
                 <button
@@ -262,15 +259,11 @@ export default function Leaderboard({ onNavigate }: LeaderboardProps) {
                       window.location.href = `/profile/${entry.fid}`
                     }
                   }}
-                  className={`${bgColor} brutal-border p-3 rounded-xl shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] flex items-center gap-3 w-full text-left hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all ${isCurrentUser ? 'ring-2 ring-foreground ring-offset-2' : ''}`}
+                  className={`${bgColor} border-2 border-black p-3 rounded-xl shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] flex items-center gap-3 w-full text-left hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all ${isCurrentUser ? 'cursor-default' : ''}`}
                 >
                   {/* Rank */}
                   <div className="flex-shrink-0 w-8 text-center">
-                    {isTop3 ? (
-                      <Medal className={`w-6 h-6 ${index === 0 ? 'text-yellow-600' : index === 1 ? 'text-gray-400' : 'text-amber-700'}`} fill="currentColor" />
-                    ) : (
-                      <span className="text-lg font-bold text-foreground">#{index + 1}</span>
-                    )}
+                    <span className="text-lg font-bold text-foreground">#{index + 1}</span>
                   </div>
 
                   {/* Avatar */}
