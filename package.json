@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "bun server.js",
     "dev:old": "TURBOPACK=0 next dev",
-    "build": "TURBOPACK=0 next build",
+    "build": "bun run typecheck && TURBOPACK=0 next build",
+    "typecheck": "tsc --noEmit",
     "start": "bun server.js",
     "lint": "eslint ."
   },

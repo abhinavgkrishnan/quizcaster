@@ -65,19 +65,22 @@ export async function POST(
     if (match?.match_type === 'async_challenge') {
       // Get opponent's recorded answer for this question number
       const opponentFid = isPlayer1 ? match.player2_fid : match.player1_fid
-      const { data: opponentAnswer } = await supabase
-        .from('match_answers')
-        .select('points_earned')
-        .eq('match_id', matchId)
-        .eq('fid', opponentFid)
-        .eq('question_number', question_number)
-        .single()
 
-      if (opponentAnswer) {
-        // Update opponent score in Redis with their recorded points for this question
-        const { updatePlayerScore: updateScore } = await import('@/lib/redis/game-state')
-        await updateScore(matchId, opponentFid, opponentAnswer.points_earned)
-        finalOpponentScore = opponentScore + opponentAnswer.points_earned
+      if (opponentFid) {
+        const { data: opponentAnswer } = await supabase
+          .from('match_answers')
+          .select('points_earned')
+          .eq('match_id', matchId)
+          .eq('fid', opponentFid)
+          .eq('question_number', question_number)
+          .single()
+
+        if (opponentAnswer) {
+          // Update opponent score in Redis with their recorded points for this question
+          const { updatePlayerScore: updateScore } = await import('@/lib/redis/game-state')
+          await updateScore(matchId, opponentFid, opponentAnswer.points_earned)
+          finalOpponentScore = opponentScore + opponentAnswer.points_earned
+        }
       }
     }
 
