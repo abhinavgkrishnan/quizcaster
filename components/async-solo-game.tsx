@@ -85,7 +85,6 @@ export default function AsyncSoloGame({
   }, [currentQuestionIndex])
 
   const handleAnswer = async (answer: string, timeTaken: number) => {
-    setSaving(true)
 
     // Save answer to database - the API will check correctness
     const response = await fetch(`/api/matches/${matchId}/answer`, {
@@ -101,7 +100,6 @@ export default function AsyncSoloGame({
     })
 
     const result = await response.json()
-    setSaving(false)
 
     // Update score and show result
     const isCorrect = result.is_correct
