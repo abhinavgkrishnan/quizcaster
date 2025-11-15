@@ -167,42 +167,11 @@ export default function Home() {
 
     if (matchData && user) {
       const isPlayer1 = matchData.player1_fid === user.fid
-      setSelectedTopic(matchData.topic)
+      setSelectedTopic(matchData.topic || 'unknown')
 
-      // Check if challenger is still playing (opponent accepts while challenger is mid-game)
-      if (matchData.player1_completed_at && !matchData.player2_completed_at && !isPlayer1) {
-        // Challenger finished, opponent can play async with replay (EMULATION MODE)
-        console.log('[fetchMatchAndStart] Challenger finished, loading emulation data')
-
-        // Fetch emulation data
-        const emulationRes = await fetch(`/api/matches/${matchId}/emulation`)
-        const emulationData = await emulationRes.json()
-
-        if (emulationData && matchData.questions) {
-          setIsEmulationMode(true)
-          setIsAsyncChallenge(false)
-          setChallengerAnswers(emulationData.answers || [])
-          setAsyncQuestions(matchData.questions)
-
-          setCurrentMatch({
-            match_id: matchId,
-            myPlayer: {
-              fid: user.fid,
-              username: user.username,
-              displayName: user.displayName,
-              pfpUrl: user.pfpUrl
-            },
-            opponent: {
-              fid: emulationData.opponent.fid,
-              username: emulationData.opponent.username,
-              displayName: emulationData.opponent.display_name,
-              pfpUrl: emulationData.opponent.pfp_url
-            }
-          })
-          setCurrentScreen("game")
-        }
-      } else if (!matchData.player1_completed_at && !isPlayer1) {
-        // Challenger still playing - show "in progress" screen and poll
+      // If match is from Redis (active game) and I'm player 2, challenger is playing right now
+      if (matchData.from_redis && !isPlayer1 && matchData.status === 'active') {
+        console.log('[fetchMatchAndStart] Challenger is currently playing - show waiting screen')
         setWaitingForOpponent(true)
         setWaitingType('playing')
 
@@ -210,7 +179,8 @@ export default function Home() {
           const res = await fetch(`/api/matches/${matchId}`)
           const data = await res.json()
 
-          if (data.player1_completed_at) {
+          // When match is no longer in Redis, challenger has completed
+          if (!data.from_redis || data.player1_completed_at) {
             clearInterval(pollForCompletion)
             setWaitingForOpponent(false)
 
@@ -221,10 +191,17 @@ export default function Home() {
             if (emulationData && data.questions) {
               setIsEmulationMode(true)
               setIsAsyncChallenge(false)
-              setChallengerAnswers(emulationData.answers || [])
+              // Map API response to component format
+              const mappedAnswers = (emulationData.answers || []).map((a: any) => ({
+                questionId: data.questions[a.question_number]?.id || '',
+                answer: a.answer,
+                isCorrect: a.is_correct,
+                timeTaken: a.time_taken_ms,
+                points: a.points_earned
+              }))
+              setChallengerAnswers(mappedAnswers)
               setAsyncQuestions(data.questions)
 
-              // Challenger finished, now opponent can play
               setCurrentMatch({
                 match_id: matchId,
                 myPlayer: {
@@ -244,8 +221,51 @@ export default function Home() {
             }
           }
         }, 3000)
+        return
+      }
+
+      // Check if challenger already finished (Postgres data has player1_completed_at)
+      if (matchData.player1_completed_at && !matchData.player2_completed_at && !isPlayer1) {
+        // Challenger finished, opponent can play async with replay (EMULATION MODE)
+        console.log('[fetchMatchAndStart] Challenger finished, loading emulation data')
+
+        // Fetch emulation data
+        const emulationRes = await fetch(`/api/matches/${matchId}/emulation`)
+        const emulationData = await emulationRes.json()
+
+        if (emulationData && matchData.questions) {
+          setIsEmulationMode(true)
+          setIsAsyncChallenge(false)
+          // Map API response to component format
+          const mappedAnswers = (emulationData.answers || []).map((a: any) => ({
+            questionId: matchData.questions[a.question_number]?.id || '',
+            answer: a.answer,
+            isCorrect: a.is_correct,
+            timeTaken: a.time_taken_ms,
+            points: a.points_earned
+          }))
+          setChallengerAnswers(mappedAnswers)
+          setAsyncQuestions(matchData.questions)
+
+          setCurrentMatch({
+            match_id: matchId,
+            myPlayer: {
+              fid: user.fid,
+              username: user.username,
+              displayName: user.displayName,
+              pfpUrl: user.pfpUrl
+            },
+            opponent: {
+              fid: emulationData.opponent.fid,
+              username: emulationData.opponent.username,
+              displayName: emulationData.opponent.display_name,
+              pfpUrl: emulationData.opponent.pfp_url
+            }
+          })
+          setCurrentScreen("game")
+        }
       } else {
-        // Normal match start
+        // Normal match start (live or player1 starting async)
         setCurrentMatch({
           match_id: matchId,
           myPlayer: {

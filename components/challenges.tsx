@@ -237,12 +237,12 @@ export default function Challenges({ user, onNavigate }: ChallengesProps) {
                     transform: 'translate3d(0, 10px, 0)',
                     animation: `fadeInUp 0.4s ease-out ${index * 0.04}s forwards`,
                   }}
-                  className="brutal-violet brutal-border p-4 rounded-2xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
+                  className="brutal-violet brutal-border p-3 rounded-2xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] overflow-hidden"
                 >
                   {/* Challenge Card */}
-                  <div className="flex items-stretch justify-between gap-4">
+                  <div className="flex items-center gap-3">
                     {/* Left Column: PFP, Username, Topic stacked vertically */}
-                    <div className="flex flex-col gap-3 flex-1">
+                    <div className="flex flex-col gap-2.5 flex-1 min-w-0">
                       <div className="flex items-center gap-3">
                         <div className="w-14 h-14 rounded-full brutal-border overflow-hidden shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] bg-white flex-shrink-0">
                           {(activeTab === 'received' ? challenge.challenger.pfp_url : challenge.challenged.pfp_url) ? (
@@ -271,40 +271,40 @@ export default function Challenges({ user, onNavigate }: ChallengesProps) {
 
                     {/* Right Column: Accept/Reject buttons stacked */}
                     {activeTab === 'received' ? (
-                      <div className="flex flex-col gap-2 justify-center">
+                      <div className="flex flex-col gap-1.5 flex-shrink-0">
                         <motion.button
                           whileTap={{ scale: 0.95 }}
                           onClick={() => handleAccept(challenge)}
-                          className="brutal-white brutal-border rounded-xl px-6 py-3 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] flex items-center justify-center gap-2 min-w-[120px]"
+                          className="brutal-white brutal-border rounded-xl px-3 py-2 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] flex items-center justify-center gap-1.5 w-[100px]"
                         >
-                          <div className="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center">
-                            <Check className="w-4 h-4 text-white stroke-[3]" />
+                          <div className="w-4 h-4 rounded-full bg-green-500 flex items-center justify-center flex-shrink-0">
+                            <Check className="w-2.5 h-2.5 text-white stroke-[3]" />
                           </div>
-                          <span className="text-sm font-bold uppercase tracking-wider">Accept</span>
+                          <span className="text-[10px] font-bold uppercase tracking-wide">Accept</span>
                         </motion.button>
 
                         <motion.button
                           whileTap={{ scale: 0.95 }}
                           onClick={() => handleDecline(challenge.id)}
-                          className="brutal-white brutal-border rounded-xl px-6 py-3 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] flex items-center justify-center gap-2 min-w-[120px]"
+                          className="brutal-white brutal-border rounded-xl px-3 py-2 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] flex items-center justify-center gap-1.5 w-[100px]"
                         >
-                          <div className="w-6 h-6 rounded-full bg-red-500 flex items-center justify-center">
-                            <XIcon className="w-4 h-4 text-white stroke-[3]" />
+                          <div className="w-4 h-4 rounded-full bg-red-500 flex items-center justify-center flex-shrink-0">
+                            <XIcon className="w-2.5 h-2.5 text-white stroke-[3]" />
                           </div>
-                          <span className="text-sm font-bold uppercase tracking-wider">Reject</span>
+                          <span className="text-[10px] font-bold uppercase tracking-wide">Reject</span>
                         </motion.button>
                       </div>
                     ) : (
-                      <div className="flex items-center">
+                      <div className="flex items-center flex-shrink-0">
                         <motion.button
                           whileTap={{ scale: 0.95 }}
                           onClick={() => handleCancel(challenge.id)}
-                          className="brutal-white brutal-border rounded-xl px-6 py-3 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] flex items-center justify-center gap-2"
+                          className="brutal-white brutal-border rounded-xl px-3 py-2 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] flex items-center justify-center gap-1.5 w-[100px]"
                         >
-                          <div className="w-6 h-6 rounded-full bg-red-500 flex items-center justify-center">
-                            <XIcon className="w-4 h-4 text-white stroke-[3]" />
+                          <div className="w-4 h-4 rounded-full bg-red-500 flex items-center justify-center flex-shrink-0">
+                            <XIcon className="w-2.5 h-2.5 text-white stroke-[3]" />
                           </div>
-                          <span className="text-sm font-bold uppercase tracking-wider">Cancel</span>
+                          <span className="text-[10px] font-bold uppercase tracking-wide">Cancel</span>
                         </motion.button>
                       </div>
                     )}

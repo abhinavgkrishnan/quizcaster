@@ -8,6 +8,7 @@ type MatchAnswer = Tables<'match_answers'>
 
 interface EmulationAnswer {
   question_number: number
+  answer: string
   time_taken_ms: number
   is_correct: boolean
   points_earned: number
@@ -38,8 +39,8 @@ export async function GET(
       return NextResponse.json({ error: 'Match not found' }, { status: 404 })
     }
 
-    // Only allow emulation for async matches
-    if (match.match_type !== 'async') {
+    // Only allow emulation for async matches (async or async_challenge)
+    if (match.match_type !== 'async' && match.match_type !== 'async_challenge') {
       return NextResponse.json(
         { error: 'Emulation only available for async matches' },
         { status: 400 }
@@ -49,7 +50,7 @@ export async function GET(
     // Get player 1's answers (the challenger)
     const { data: answersData } = await supabase
       .from('match_answers')
-      .select('question_number, time_taken_ms, is_correct, points_earned')
+      .select('question_number, answer_given, time_taken_ms, is_correct, points_earned')
       .eq('match_id', matchId)
       .eq('fid', match.player1_fid)
       .order('question_number')
@@ -77,6 +78,7 @@ export async function GET(
 
     const answers: EmulationAnswer[] = (answersData || []).map((a) => ({
       question_number: a.question_number,
+      answer: a.answer_given,
       time_taken_ms: a.time_taken_ms,
       is_correct: a.is_correct,
       points_earned: a.points_earned
