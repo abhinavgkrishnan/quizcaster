@@ -146,8 +146,10 @@ export default function Home() {
         window.history.replaceState({}, '', '/')
       } else if (matchId) {
         // Direct match link (from accepting challenge)
-        fetchMatchAndStart(matchId)
-        window.history.replaceState({}, '', '/')
+        fetchMatchAndStart(matchId).then(() => {
+          // Clear URL only after match is loaded
+          window.history.replaceState({}, '', '/')
+        })
       } else if (matchmakingTopic) {
         setSelectedTopic(matchmakingTopic)
         setCurrentScreen("matchmaking")
@@ -164,14 +166,20 @@ export default function Home() {
     const response = await fetch(`/api/matches/${matchId}`)
     const matchData = await response.json()
     console.log('[fetchMatchAndStart] Match data:', matchData)
+    console.log('[fetchMatchAndStart] User FID:', user?.fid)
 
     if (matchData && user) {
       const isPlayer1 = matchData.player1_fid === user.fid
+      console.log('[fetchMatchAndStart] isPlayer1:', isPlayer1)
+      console.log('[fetchMatchAndStart] from_redis:', matchData.from_redis)
+      console.log('[fetchMatchAndStart] status:', matchData.status)
+      console.log('[fetchMatchAndStart] player1_completed_at:', matchData.player1_completed_at)
+
       setSelectedTopic(matchData.topic || 'unknown')
 
       // If match is from Redis (active game) and I'm player 2, challenger is playing right now
       if (matchData.from_redis && !isPlayer1 && matchData.status === 'active') {
-        console.log('[fetchMatchAndStart] Challenger is currently playing - show waiting screen')
+        console.log('[fetchMatchAndStart] BRANCH 1: Challenger is currently playing - show waiting screen')
         setWaitingForOpponent(true)
         setWaitingType('playing')
 
@@ -227,7 +235,7 @@ export default function Home() {
       // Check if challenger already finished (Postgres data has player1_completed_at)
       if (matchData.player1_completed_at && !matchData.player2_completed_at && !isPlayer1) {
         // Challenger finished, opponent can play async with replay (EMULATION MODE)
-        console.log('[fetchMatchAndStart] Challenger finished, loading emulation data')
+        console.log('[fetchMatchAndStart] BRANCH 2: Challenger finished, loading emulation data')
 
         // Fetch emulation data
         const emulationRes = await fetch(`/api/matches/${matchId}/emulation`)
@@ -266,6 +274,9 @@ export default function Home() {
         }
       } else {
         // Normal match start (live or player1 starting async)
+        console.log('[fetchMatchAndStart] BRANCH 3: Normal match start')
+        console.log('[fetchMatchAndStart] Setting currentMatch and going to game screen')
+
         setCurrentMatch({
           match_id: matchId,
           myPlayer: {
@@ -282,7 +293,10 @@ export default function Home() {
           }
         })
         setCurrentScreen("game")
+        console.log('[fetchMatchAndStart] Set screen to game')
       }
+    } else {
+      console.error('[fetchMatchAndStart] Missing matchData or user:', { matchData, user })
     }
   }
 
