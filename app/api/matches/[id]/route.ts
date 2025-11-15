@@ -19,7 +19,13 @@ export async function GET(
     const gameState = await getGameState(matchId);
 
     if (gameState) {
-      // Active game in Redis - fetch questions
+      // Active game in Redis - also fetch Postgres data for completion status
+      const { data: match } = await supabase
+        .from('matches')
+        .select('*')
+        .eq('id', matchId)
+        .single();
+
       const { data: questionsData, error: questionsError } = await supabase
         .from('questions')
         .select('id, question, options, image_url')
@@ -55,10 +61,17 @@ export async function GET(
       return NextResponse.json({
         match_id: matchId,
         status: gameState.status,
+        player1_fid: gameState.player1_fid,
+        player2_fid: gameState.player2_fid,
         player1_score: gameState.player1_score,
         player2_score: gameState.player2_score,
         current_question: gameState.current_question,
         questions: formattedQuestions,
+        player1_completed_at: match?.player1_completed_at || null,
+        player2_completed_at: match?.player2_completed_at || null,
+        is_async: match?.is_async || false,
+        match_type: match?.match_type || 'realtime',
+        topic: match?.topic || 'unknown',
         from_redis: true,
       });
     }

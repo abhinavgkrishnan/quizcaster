@@ -35,7 +35,7 @@ export default function Home() {
 
   // Check URL params for matchmaking trigger and screen navigation
   useEffect(() => {
-    if (typeof window !== 'undefined') {
+    if (typeof window !== 'undefined' && user) {
       const params = new URLSearchParams(window.location.search)
       const matchmakingTopic = params.get('matchmaking')
       const targetScreen = params.get('screen')
@@ -177,74 +177,16 @@ export default function Home() {
 
       setSelectedTopic(matchData.topic || 'unknown')
 
-      // If match is from Redis (active game) and I'm player 2, challenger is playing right now
-      if (matchData.from_redis && !isPlayer1 && matchData.status === 'active') {
-        console.log('[fetchMatchAndStart] BRANCH 1: Challenger is currently playing - show waiting screen')
-        setWaitingForOpponent(true)
-        setWaitingType('playing')
-
-        const pollForCompletion = setInterval(async () => {
-          const res = await fetch(`/api/matches/${matchId}`)
-          const data = await res.json()
-
-          // When match is no longer in Redis, challenger has completed
-          if (!data.from_redis || data.player1_completed_at) {
-            clearInterval(pollForCompletion)
-            setWaitingForOpponent(false)
-
-            // Fetch emulation data
-            const emulationRes = await fetch(`/api/matches/${matchId}/emulation`)
-            const emulationData = await emulationRes.json()
-
-            if (emulationData && data.questions) {
-              setIsEmulationMode(true)
-              setIsAsyncChallenge(false)
-              // Map API response to component format
-              const mappedAnswers = (emulationData.answers || []).map((a: any) => ({
-                questionId: data.questions[a.question_number]?.id || '',
-                answer: a.answer,
-                isCorrect: a.is_correct,
-                timeTaken: a.time_taken_ms,
-                points: a.points_earned
-              }))
-              setChallengerAnswers(mappedAnswers)
-              setAsyncQuestions(data.questions)
-
-              setCurrentMatch({
-                match_id: matchId,
-                myPlayer: {
-                  fid: user.fid,
-                  username: user.username,
-                  displayName: user.displayName,
-                  pfpUrl: user.pfpUrl
-                },
-                opponent: {
-                  fid: emulationData.opponent.fid,
-                  username: emulationData.opponent.username,
-                  displayName: emulationData.opponent.display_name,
-                  pfpUrl: emulationData.opponent.pfp_url
-                }
-              })
-              setCurrentScreen("game")
-            }
-          }
-        }, 3000)
-        return
-      }
-
-      // Check if challenger already finished (Postgres data has player1_completed_at)
+      // SCENARIO 3: Challenger finished (opponent accepts after challenger done)
       if (matchData.player1_completed_at && !matchData.player2_completed_at && !isPlayer1) {
-        // Challenger finished, opponent can play async with replay (EMULATION MODE)
-        console.log('[fetchMatchAndStart] BRANCH 2: Challenger finished, loading emulation data')
+        console.log('[fetchMatchAndStart] SCENARIO 3: Challenger finished! Starting emulation mode')
 
-        // Fetch emulation data
         const emulationRes = await fetch(`/api/matches/${matchId}/emulation`)
         const emulationData = await emulationRes.json()
 
-        if (emulationData && matchData.questions) {
+        if (emulationData && !emulationData.error && matchData.questions) {
           setIsEmulationMode(true)
           setIsAsyncChallenge(false)
-          // Map API response to component format
           const mappedAnswers = (emulationData.answers || []).map((a: any) => ({
             questionId: matchData.questions[a.question_number]?.id || '',
             answer: a.answer,
@@ -271,30 +213,41 @@ export default function Home() {
             }
           })
           setCurrentScreen("game")
+          return
         }
-      } else {
-        // Normal match start (live or player1 starting async)
-        console.log('[fetchMatchAndStart] BRANCH 3: Normal match start')
-        console.log('[fetchMatchAndStart] Setting currentMatch and going to game screen')
-
-        setCurrentMatch({
-          match_id: matchId,
-          myPlayer: {
-            fid: user.fid,
-            username: user.username,
-            displayName: user.displayName,
-            pfpUrl: user.pfpUrl
-          },
-          opponent: {
-            fid: isPlayer1 ? matchData.player2_fid : matchData.player1_fid,
-            username: 'Opponent',
-            displayName: 'Opponent',
-            pfpUrl: ''
-          }
-        })
-        setCurrentScreen("game")
-        console.log('[fetchMatchAndStart] Set screen to game')
       }
+
+      // SCENARIO 2: Challenger still playing (opponent accepts while challenger mid-game)
+      if (matchData.from_redis && !isPlayer1 && !matchData.player1_completed_at) {
+        console.log('[fetchMatchAndStart] SCENARIO 2: Challenger is currently playing - show alert')
+        alert('Your opponent is currently playing. Please try again in a few minutes!')
+        setCurrentScreen('challenges')
+        return
+      }
+
+      // SCENARIO 1 & LIVE: Normal match start (live Socket.IO or player1 starting async)
+      // Live matches have is_async=false, async challenges have is_async=false after 30s conversion
+      console.log('[fetchMatchAndStart] SCENARIO 1 or LIVE: Normal match start')
+      console.log('[fetchMatchAndStart] is_async:', matchData.is_async)
+      console.log('[fetchMatchAndStart] match_type:', matchData.match_type)
+
+      setCurrentMatch({
+        match_id: matchId,
+        myPlayer: {
+          fid: user.fid,
+          username: user.username,
+          displayName: user.displayName,
+          pfpUrl: user.pfpUrl
+        },
+        opponent: {
+          fid: isPlayer1 ? matchData.player2_fid : matchData.player1_fid,
+          username: 'Opponent',
+          displayName: 'Opponent',
+          pfpUrl: ''
+        }
+      })
+      setCurrentScreen("game")
+      console.log('[fetchMatchAndStart] Set screen to game')
     } else {
       console.error('[fetchMatchAndStart] Missing matchData or user:', { matchData, user })
     }
