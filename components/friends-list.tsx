@@ -123,6 +123,8 @@ export default function FriendsList({ user, onNavigate, currentScreen }: Friends
   // Fetch followers from Neynar
   const [followers, setFollowers] = useState<any[]>([])
   const [loadingFollowers, setLoadingFollowers] = useState(true)
+  const [followersCursor, setFollowersCursor] = useState<string | null>(null)
+  const [loadingMoreFollowers, setLoadingMoreFollowers] = useState(false)
 
   useEffect(() => {
     const fetchFollowers = async () => {
@@ -136,6 +138,7 @@ export default function FriendsList({ user, onNavigate, currentScreen }: Friends
         const data = await response.json()
         console.log('[Friends List] Fetched followers:', data.followers?.length || 0)
         setFollowers(data.followers || [])
+        setFollowersCursor(data.next_cursor || null)
       } catch (error) {
         console.error('Failed to fetch followers:', error)
         setFollowers([])
@@ -145,6 +148,29 @@ export default function FriendsList({ user, onNavigate, currentScreen }: Friends
     }
     fetchFollowers()
   }, [user?.fid])
+
+  const loadMoreFollowers = async () => {
+    if (!followersCursor || loadingMoreFollowers || !user?.fid) return
+
+    try {
+      setLoadingMoreFollowers(true)
+      const response = await fetch(`/api/followers?fid=${user.fid}&cursor=${followersCursor}`)
+      const data = await response.json()
+      setFollowers(prev => [...prev, ...(data.followers || [])])
+      setFollowersCursor(data.next_cursor || null)
+    } catch (error) {
+      console.error('Failed to load more followers:', error)
+    } finally {
+      setLoadingMoreFollowers(false)
+    }
+  }
+
+  const handleFollowersScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const target = e.currentTarget
+    if (target.scrollHeight - target.scrollTop <= target.clientHeight + 100) {
+      loadMoreFollowers()
+    }
+  }
 
   const handleChallengeFriend = (friend: Friend) => {
     // TODO: Open topic selector modal for challenge
@@ -327,18 +353,17 @@ export default function FriendsList({ user, onNavigate, currentScreen }: Friends
       <div className="flex-none bg-secondary border-t-2 border-black max-h-[40vh] flex flex-col">
         <div className="px-4 pt-4 pb-2">
           <p className="text-sm font-bold uppercase tracking-wider text-foreground">
-            People You Follow {followers.length > 0 && `(${followers.length})`}
+            People You Follow
           </p>
         </div>
-        <div className="flex-1 overflow-y-auto px-4 pb-28 space-y-2" style={{ WebkitOverflowScrolling: 'touch' }}>
+        <div className="flex-1 overflow-y-auto px-4 pb-28 space-y-2" style={{ WebkitOverflowScrolling: 'touch' }} onScroll={handleFollowersScroll}>
         {loadingFollowers ? (
           <p className="text-xs text-center text-muted-foreground">
             Loading followers...
           </p>
         ) : followers.length > 0 ? (
           <>
-            {followers.map((follower: any, index: number) => {
-                const isAlreadyFriend = friends.some(f => f.fid === follower.fid)
+            {followers.filter((follower: any) => !friends.some(f => f.fid === follower.fid)).map((follower: any, index: number) => {
                 return (
                   <div
                     key={follower.fid}
@@ -369,14 +394,19 @@ export default function FriendsList({ user, onNavigate, currentScreen }: Friends
                       </div>
                     </button>
                     <button
-                      onClick={() => isAlreadyFriend ? handleChallengeFriend(follower) : handleSendRequest(follower.fid)}
+                      onClick={() => handleSendRequest(follower.fid)}
                       className="brutal-violet brutal-border px-3 py-1 rounded-lg shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] text-[10px] font-bold uppercase tracking-wider flex-shrink-0"
                     >
-                      {isAlreadyFriend ? 'Challenge' : 'Add'}
+                      Add
                     </button>
                   </div>
                 )
               })}
+            {loadingMoreFollowers && (
+              <p className="text-xs text-center text-muted-foreground py-2">
+                Loading more...
+              </p>
+            )}
           </>
         ) : (
           <p className="text-xs text-center text-muted-foreground py-8">

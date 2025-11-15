@@ -37,15 +37,15 @@ export default function Home() {
       const challengeTopic = params.get('topic')
       const matchId = params.get('match')
 
-      if (challengeMatchId && challengeTopic) {
+      if (challengeMatchId && challengeTopic && user) {
         // Challenge sent - show waiting screen, poll for opponent join
         setSelectedTopic(challengeTopic)
         setWaitingForOpponent(true)
         setWaitingType('join')
 
+        const currentUser = user // Capture user in closure
         let pollInterval: NodeJS.Timeout
         let hasJoined = false
-        const startTime = Date.now()
 
         // Poll every 2 seconds to check if opponent joined
         pollInterval = setInterval(async () => {
@@ -58,15 +58,15 @@ export default function Home() {
             clearInterval(pollInterval)
             setWaitingForOpponent(false)
 
-            // Opponent joined! Start live match via matchmaking
-            const isPlayer1 = matchData.player1_fid === user?.fid
+            // Opponent joined! Start live match
+            const isPlayer1 = matchData.player1_fid === currentUser.fid
             setCurrentMatch({
               match_id: challengeMatchId,
               myPlayer: {
-                fid: user?.fid || 0,
-                username: user?.username || '',
-                displayName: user?.displayName || '',
-                pfpUrl: user?.pfpUrl || ''
+                fid: currentUser.fid,
+                username: currentUser.username,
+                displayName: currentUser.displayName,
+                pfpUrl: currentUser.pfpUrl || ''
               },
               opponent: {
                 fid: isPlayer1 ? matchData.player2_fid : matchData.player1_fid,
@@ -89,18 +89,27 @@ export default function Home() {
 
             // Brief "going async" message, then start async game
             setTimeout(async () => {
+              console.log('[Challenge] Transitioning to async game for match:', challengeMatchId)
+
+              // First clear the going async state
+              setGoingAsync(false)
+
               const response = await fetch(`/api/matches/${challengeMatchId}`)
               const matchData = await response.json()
 
-              if (matchData && user) {
-                const isPlayer1 = matchData.player1_fid === user.fid
+              console.log('[Challenge] Match data:', matchData)
+
+              if (matchData) {
+                const isPlayer1 = matchData.player1_fid === currentUser.fid
+                console.log('[Challenge] Setting up game with currentUser:', currentUser)
+
                 setCurrentMatch({
                   match_id: challengeMatchId,
                   myPlayer: {
-                    fid: user.fid,
-                    username: user.username,
-                    displayName: user.displayName,
-                    pfpUrl: user.pfpUrl
+                    fid: currentUser.fid,
+                    username: currentUser.username,
+                    displayName: currentUser.displayName,
+                    pfpUrl: currentUser.pfpUrl || ''
                   },
                   opponent: {
                     fid: isPlayer1 ? matchData.player2_fid : matchData.player1_fid,
@@ -110,7 +119,7 @@ export default function Home() {
                   }
                 })
                 setCurrentScreen("game")
-                setGoingAsync(false)
+                console.log('[Challenge] Navigated to game screen')
               }
             }, 2000)
           }

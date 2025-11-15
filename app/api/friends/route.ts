@@ -103,7 +103,45 @@ export async function POST(request: NextRequest) {
 
       if (existing) {
         console.log('[Friends API] Friendship already exists:', existing)
-        return NextResponse.json({ error: 'Friendship already exists' }, { status: 409 })
+
+        if (existing.status === 'accepted') {
+          return NextResponse.json({ error: 'Already friends' }, { status: 409 })
+        } else if (existing.status === 'pending') {
+          return NextResponse.json({ error: 'Friend request already sent' }, { status: 409 })
+        } else if (existing.status === 'declined') {
+          // If previously declined, allow sending a new request by updating status
+          const { error: updateError } = await supabase
+            .from('friendships')
+            .update({
+              status: 'pending',
+              requester_fid,
+              addressee_fid,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', existing.id)
+
+          if (updateError) {
+            console.error('[Friends API] Error updating declined friendship:', updateError)
+            throw updateError
+          }
+
+          return NextResponse.json({ success: true, friendship: existing })
+        }
+      }
+
+      // Ensure both users exist in the users table first
+      const { data: users, error: usersError } = await supabase
+        .from('users')
+        .select('fid')
+        .in('fid', [requester_fid, addressee_fid])
+
+      if (usersError) {
+        console.error('[Friends API] Error checking users:', usersError)
+      }
+
+      if (!users || users.length < 2) {
+        console.error('[Friends API] One or both users not found in database')
+        return NextResponse.json({ error: 'User not found' }, { status: 404 })
       }
 
       // Create friend request
@@ -119,6 +157,11 @@ export async function POST(request: NextRequest) {
 
       if (error) {
         console.error('[Friends API] Insert error:', error)
+        console.error('[Friends API] Error details:', {
+          message: error.message,
+          code: error.code,
+          details: error.details
+        })
         throw error
       }
 

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { supabase } from '@/lib/utils/supabase'
 
 /**
  * Get user's following list from Neynar (people they follow)
@@ -8,6 +9,7 @@ export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams
     const fid = searchParams.get('fid')
+    const cursor = searchParams.get('cursor')
 
     if (!fid) {
       return NextResponse.json({ error: 'FID is required' }, { status: 400 })
@@ -19,7 +21,10 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch users that this FID is following
-    const neynarUrl = `https://api.neynar.com/v2/farcaster/following?fid=${fid}&limit=100`
+    let neynarUrl = `https://api.neynar.com/v2/farcaster/following?fid=${fid}&limit=100`
+    if (cursor) {
+      neynarUrl += `&cursor=${cursor}`
+    }
     console.log('[Followers API] Calling Neynar:', neynarUrl)
 
     const followingResponse = await fetch(neynarUrl, {
@@ -71,7 +76,33 @@ export async function GET(request: NextRequest) {
       console.log('[Followers API] Sample parsed user:', following[0])
     }
 
-    return NextResponse.json({ followers: following })
+    // Check which followers are in our database
+    if (following.length > 0) {
+      const fids = following.map((f: any) => f.fid)
+      const { data: existingUsers } = await supabase
+        .from('users')
+        .select('fid')
+        .in('fid', fids)
+
+      const existingFids = new Set((existingUsers || []).map(u => u.fid))
+
+      // Mark which users are in our DB
+      following.forEach((f: any) => {
+        f.in_database = existingFids.has(f.fid)
+      })
+
+      // Sort: DB users first, then others
+      following.sort((a: any, b: any) => {
+        if (a.in_database && !b.in_database) return -1
+        if (!a.in_database && b.in_database) return 1
+        return 0
+      })
+    }
+
+    return NextResponse.json({
+      followers: following,
+      next_cursor: data.next?.cursor || null
+    })
   } catch (error) {
     console.error('[Followers API] Full error:', error)
     console.error('[Followers API] Error details:', {

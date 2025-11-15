@@ -91,10 +91,10 @@ export default function ChallengeTopicSelector({ onSelect, onClose }: ChallengeT
                     key={topic.slug}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.02 }}
+                    transition={{ delay: index * 0.03, duration: 0.3 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={() => onSelect(topic.slug)}
-                    className={`relative rounded-xl ${colorClass} brutal-border font-bold shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] active:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] transition-all touch-manipulation py-3 px-2`}
+                    className={`relative rounded-xl ${colorClass} brutal-border font-bold shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] active:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] transition-shadow touch-manipulation py-3 px-2`}
                   >
                     {/* Content */}
                     <div className="relative z-10 flex flex-col items-center justify-center gap-1">

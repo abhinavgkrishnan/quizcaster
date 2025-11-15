@@ -129,7 +129,7 @@ export default function FlairSelector({ fid, onClose, onFlairSelected, onNavigat
       </div>
 
       {/* Flairs List */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="flex-1 overflow-y-auto p-4 pb-28 space-y-4">
         {/* No Flair Option */}
         <motion.button
           whileTap={{ scale: 0.98 }}
