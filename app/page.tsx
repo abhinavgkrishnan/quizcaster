@@ -13,7 +13,7 @@ import { useFarcaster } from "@/lib/farcaster-sdk"
 import { useAppContext } from "@/lib/contexts/AppContext"
 import BottomNav from "@/components/bottom-nav"
 import { motion } from "framer-motion"
-import { LogIn, Clock } from "lucide-react"
+import { LogIn, Clock, X as XIcon } from "lucide-react"
 import type { AppScreen, MatchData } from "@/lib/types"
 
 export default function Home() {
@@ -39,8 +39,16 @@ export default function Home() {
       const challengeMatchId = params.get('challenge')
       const challengeTopic = params.get('topic')
       const matchId = params.get('match')
+      const mode = params.get('mode')
 
       if (challengeMatchId && challengeTopic && user) {
+        // If mode=emulation, opponent is accepting challenge
+        if (mode === 'emulation') {
+          fetchMatchAndStart(challengeMatchId)
+          window.history.replaceState({}, '', '/')
+          return
+        }
+
         // Challenge sent - show waiting screen, poll for opponent join
         setSelectedTopic(challengeTopic)
         setWaitingForOpponent(true)
@@ -342,11 +350,24 @@ export default function Home() {
               ))}
             </div>
 
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-muted-foreground mb-6">
               {waitingType === 'join'
                 ? "If they don't join, you'll play async"
                 : "Waiting for them to finish their match..."}
             </p>
+
+            <motion.button
+              whileHover={{ y: -2 }}
+              whileTap={{ y: 2 }}
+              onClick={() => {
+                setWaitingForOpponent(false)
+                setCurrentScreen('topics')
+              }}
+              className="mt-6 px-6 py-3 rounded-2xl brutal-border bg-background font-bold text-sm shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:shadow-none transition-all text-foreground uppercase tracking-wide flex items-center gap-2 mx-auto"
+            >
+              <XIcon className="w-4 h-4" />
+              Cancel
+            </motion.button>
           </motion.div>
         </div>
       </main>

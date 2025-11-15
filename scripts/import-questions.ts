@@ -11,7 +11,7 @@
  */
 
 import { readFileSync } from 'fs';
-import { supabase } from '../lib/utils/supabase';
+import { supabaseAdmin } from '../lib/utils/supabase';
 
 interface QuestionRow {
   topic: string;
@@ -26,7 +26,9 @@ interface QuestionRow {
 }
 
 function parseCSV(content: string): QuestionRow[] {
-  const lines = content.trim().split('\n');
+  // Remove UTF-8 BOM if present
+  const cleanContent = content.replace(/^\uFEFF/, '');
+  const lines = cleanContent.trim().split('\n');
   const headers = lines[0].split(',').map(h => h.trim());
 
   return lines.slice(1).map(line => {
@@ -62,9 +64,12 @@ async function importQuestions(filename: string) {
 
   console.log('🚀 Uploading to Supabase...');
 
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from('questions')
-    .insert(questions)
+    .upsert(questions, {
+      onConflict: 'topic,question',
+      ignoreDuplicates: false
+    })
     .select('id');
 
   if (error) {

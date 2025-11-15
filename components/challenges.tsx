@@ -71,20 +71,20 @@ export default function Challenges({ user, onNavigate }: ChallengesProps) {
     }
   }
 
-  const handleAccept = async (challengeId: string, matchId: string) => {
+  const handleAccept = async (challenge: Challenge) => {
     try {
       const response = await fetch('/api/challenges', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'accept',
-          challenge_id: challengeId
+          challenge_id: challenge.id
         })
       })
 
       if (response.ok) {
-        // Navigate to the match
-        router.push(`/?match=${matchId}`)
+        // Navigate to async emulation game
+        router.push(`/?challenge=${challenge.match_id}&topic=${challenge.topic}&opponent=${challenge.challenger_fid}&mode=emulation`)
         fetchChallenges()
       }
     } catch (error) {
@@ -231,12 +231,6 @@ export default function Challenges({ user, onNavigate }: ChallengesProps) {
                       )}
                     </div>
 
-                    {/* Challenge Icon */}
-                    <div className="flex-shrink-0">
-                      <div className="w-10 h-10 rounded-full brutal-border bg-background flex items-center justify-center shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
-                        <Swords className="w-5 h-5 text-foreground" />
-                      </div>
-                    </div>
                   </div>
 
                   {/* Topic */}
@@ -259,7 +253,7 @@ export default function Challenges({ user, onNavigate }: ChallengesProps) {
                     <div className="flex gap-2">
                       <motion.button
                         whileTap={{ scale: 0.95 }}
-                        onClick={() => handleAccept(challenge.id, challenge.match_id)}
+                        onClick={() => handleAccept(challenge)}
                         className="flex-1 brutal-white brutal-border rounded-full py-3 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] flex items-center justify-center gap-2 hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all"
                       >
                         <div className="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center">

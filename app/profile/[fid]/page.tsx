@@ -534,6 +534,7 @@ export default function OtherProfilePage({ params }: OtherProfilePageProps) {
               setShowMatchHistory(false)
               setShowFriends(true)
             }}
+            isOwnProfile={false}
           />
         </div>
       )}

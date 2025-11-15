@@ -31,9 +31,10 @@ interface MatchHistoryProps {
   onNavigate?: (screen: AppScreen) => void
   currentScreen?: AppScreen
   onFriendsClick?: () => void
+  isOwnProfile?: boolean
 }
 
-export default function MatchHistory({ user, onClose, onNavigate, currentScreen, onFriendsClick }: MatchHistoryProps) {
+export default function MatchHistory({ user, onClose, onNavigate, currentScreen, onFriendsClick, isOwnProfile = true }: MatchHistoryProps) {
   const [matches, setMatches] = useState<Match[]>([])
   const [loading, setLoading] = useState(true)
   const [hasMore, setHasMore] = useState(true)
@@ -222,15 +223,15 @@ export default function MatchHistory({ user, onClose, onNavigate, currentScreen,
             const hasForfeit = iForfeited || opponentForfeited
 
             return (
-            <motion.button
+            <motion.div
               key={match.id}
               style={{
                 opacity: 0,
                 transform: 'translate3d(0, 10px, 0)',
                 animation: `fadeInUp 0.4s ease-out ${index * 0.03}s forwards`,
               }}
-              onClick={() => handleMatchClick(match)}
-              className="relative brutal-border p-3 rounded-2xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] overflow-hidden bg-card w-full text-left hover:scale-[1.02] transition-transform active:scale-[0.98]"
+              onClick={isOwnProfile ? () => handleMatchClick(match) : undefined}
+              className={`relative brutal-border p-3 rounded-2xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] overflow-hidden bg-card w-full ${isOwnProfile ? 'cursor-pointer hover:scale-[1.02] active:scale-[0.98]' : ''} transition-transform`}
             >
               {/* Score Bar - Subtle Background */}
               <div className="absolute inset-0 rounded-2xl overflow-hidden opacity-10">
@@ -294,7 +295,7 @@ export default function MatchHistory({ user, onClose, onNavigate, currentScreen,
                   Async Challenge
                 </p>
               )}
-            </motion.button>
+            </motion.div>
             )
           })
         )}

@@ -39,66 +39,85 @@ export default function ChallengeSentScreen({
         className="w-full"
       >
         {/* Icon */}
-        <div className="mb-6 text-center">
-          <div className="w-24 h-24 rounded-full brutal-violet brutal-border flex items-center justify-center mx-auto shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] mb-4">
-            <span className="text-5xl">📤</span>
+        <div className="mb-3 text-center">
+          <div className="w-16 h-16 rounded-full brutal-violet brutal-border flex items-center justify-center mx-auto shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] mb-3">
+            <Clock className="w-8 h-8 text-foreground" />
           </div>
-          <h1 className="text-3xl font-bold uppercase tracking-tight text-foreground mb-2">
+          <h2 className="text-2xl font-bold uppercase tracking-tight text-foreground mb-1">
             Challenge Sent!
-          </h1>
-          <p className="text-sm text-muted-foreground uppercase tracking-wide">
+          </h2>
+          <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-semibold mb-3">
             Waiting for {opponentName}
           </p>
         </div>
 
-        {/* Your Score */}
-        <div className="brutal-violet brutal-border p-6 rounded-2xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] mb-6">
-          <p className="text-xs text-foreground/60 uppercase tracking-wider mb-1 text-center">Your Score</p>
-          <p className="text-5xl font-bold text-foreground text-center">{playerScore}</p>
+        {/* Scores */}
+        <div className="grid grid-cols-2 gap-2 mb-2.5 w-full">
+          <div className="brutal-violet brutal-border p-2.5 rounded-2xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+            <p className="text-[8px] text-foreground/60 mb-0.5 font-bold uppercase tracking-wider">Your Score</p>
+            <p className="text-2xl font-bold text-foreground">{playerScore}</p>
+          </div>
+          <div className="brutal-beige brutal-border p-2.5 rounded-2xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+            <p className="text-[8px] text-foreground/60 mb-0.5 font-bold uppercase tracking-wider">Opponent</p>
+            <p className="text-2xl font-bold text-foreground">-</p>
+          </div>
         </div>
 
         {/* Stats */}
-        <div className="brutal-white brutal-border p-5 rounded-2xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] mb-6">
-          <div className="flex items-center gap-2 mb-3">
-            <TrendingUp className="w-4 h-4 text-foreground" />
-            <p className="text-xs font-bold uppercase tracking-wider text-foreground">Stats</p>
+        <div className="brutal-white brutal-border p-2.5 rounded-2xl mb-2.5 w-full shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+          <div className="flex items-center gap-1.5 mb-1.5">
+            <TrendingUp className="w-3.5 h-3.5 text-foreground" />
+            <p className="text-[10px] text-foreground font-bold uppercase tracking-wide">Stats</p>
           </div>
-
-          <div className="space-y-2">
+          <div className="space-y-1">
             <div className="flex justify-between items-center">
-              <span className="text-xs text-muted-foreground uppercase tracking-wide">Questions</span>
-              <span className="text-sm font-bold text-foreground">{correctAnswers}/{totalQuestions}</span>
+              <span className="text-foreground/70 text-[9px] uppercase tracking-wide font-semibold">Questions</span>
+              <span className="font-bold text-foreground text-[10px]">{correctAnswers} / {totalQuestions}</span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-xs text-muted-foreground uppercase tracking-wide">Avg. Time</span>
-              <span className="text-sm font-bold text-foreground">{avgTime}s</span>
+              <span className="text-foreground/70 text-[9px] uppercase tracking-wide font-semibold">Avg. Time</span>
+              <span className="font-bold text-foreground text-[10px]">{avgTime}s</span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-xs text-muted-foreground uppercase tracking-wide">Accuracy</span>
-              <span className="text-sm font-bold text-foreground">{accuracy}%</span>
+              <span className="text-foreground/70 text-[9px] uppercase tracking-wide font-semibold">Accuracy</span>
+              <span className="font-bold text-foreground text-[10px]">{accuracy}%</span>
             </div>
           </div>
         </div>
 
         {/* Actions */}
-        <div className="w-full space-y-3">
-          <motion.button
-            whileTap={{ scale: 0.95 }}
+        <div className="w-full space-y-1.5">
+          <button
             onClick={onPlayAgain}
-            className="w-full py-4 rounded-2xl brutal-beige brutal-border font-bold text-sm shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all text-foreground uppercase tracking-wide flex items-center justify-center gap-2"
+            style={{
+              transform: 'translate3d(0, 0, 0)',
+              WebkitTransform: 'translate3d(0, 0, 0)',
+              backfaceVisibility: 'hidden',
+              WebkitBackfaceVisibility: 'hidden',
+            }}
+            className="relative w-full py-2.5 rounded-2xl brutal-beige brutal-border font-bold text-[10px] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all duration-200 text-foreground uppercase tracking-wide"
           >
-            <RotateCcw className="w-4 h-4" />
-            Play Again
-          </motion.button>
+            <span className="flex items-center justify-center gap-2">
+              <RotateCcw className="w-3.5 h-3.5" />
+              Play Again
+            </span>
+          </button>
 
-          <motion.button
-            whileTap={{ scale: 0.95 }}
+          <button
             onClick={onGoHome}
-            className="w-full py-4 rounded-2xl brutal-white brutal-border font-bold text-sm shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all text-foreground uppercase tracking-wide flex items-center justify-center gap-2"
+            style={{
+              transform: 'translate3d(0, 0, 0)',
+              WebkitTransform: 'translate3d(0, 0, 0)',
+              backfaceVisibility: 'hidden',
+              WebkitBackfaceVisibility: 'hidden',
+            }}
+            className="relative w-full py-2.5 rounded-2xl brutal-border bg-background font-bold text-[10px] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all duration-200 text-foreground uppercase tracking-wide"
           >
-            <Home className="w-4 h-4" />
-            Home
-          </motion.button>
+            <span className="flex items-center justify-center gap-2">
+              <Home className="w-3.5 h-3.5" />
+              Home
+            </span>
+          </button>
         </div>
       </motion.div>
     </div>

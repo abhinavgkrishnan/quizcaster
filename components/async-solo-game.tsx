@@ -36,6 +36,7 @@ export default function AsyncSoloGame({
   const [isComplete, setIsComplete] = useState(false)
   const [show2xBadge, setShow2xBadge] = useState(false)
   const [gameInitialized, setGameInitialized] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   // Initialize Redis session on mount
   useEffect(() => {
@@ -87,7 +88,7 @@ export default function AsyncSoloGame({
 
   // Timer countdown
   useEffect(() => {
-    if (lastAnswerResult) return
+    if (lastAnswerResult || isSubmitting) return
 
     setTimeRemaining(GAME_CONFIG.QUESTION_TIME_LIMIT)
     const interval = setInterval(() => {
@@ -102,10 +103,13 @@ export default function AsyncSoloGame({
     }, 1000)
 
     return () => clearInterval(interval)
-  }, [currentQuestionIndex])
+  }, [currentQuestionIndex, lastAnswerResult, isSubmitting])
 
   const handleAnswer = async (answer: string, timeTaken: number) => {
+    if (isSubmitting) return // Prevent duplicate submissions
+
     try {
+      setIsSubmitting(true)
       // Stop timer
       setTimeRemaining(0)
 
@@ -161,6 +165,7 @@ export default function AsyncSoloGame({
       // Show result briefly then move to next question or end game
       setTimeout(() => {
         setLastAnswerResult(null)
+        setIsSubmitting(false)
 
         if (isFinalQuestion) {
           console.log('[AsyncSolo] Completing game')
@@ -172,6 +177,7 @@ export default function AsyncSoloGame({
       }, 1500)
     } catch (error) {
       console.error('[AsyncSolo] Error in handleAnswer:', error)
+      setIsSubmitting(false)
     }
   }
 
