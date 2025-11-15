@@ -177,6 +177,28 @@ export default function Home() {
 
       setSelectedTopic(matchData.topic || 'unknown')
 
+      // LIVE MATCH: If is_async=false and match is active, it's a live Socket.IO game
+      if (matchData.is_async === false && matchData.status === 'active') {
+        console.log('[fetchMatchAndStart] LIVE MATCH: Starting Socket.IO game')
+        setCurrentMatch({
+          match_id: matchId,
+          myPlayer: {
+            fid: user.fid,
+            username: user.username,
+            displayName: user.displayName,
+            pfpUrl: user.pfpUrl
+          },
+          opponent: {
+            fid: isPlayer1 ? matchData.player2_fid : matchData.player1_fid,
+            username: 'Opponent',
+            displayName: 'Opponent',
+            pfpUrl: ''
+          }
+        })
+        setCurrentScreen("game")
+        return
+      }
+
       // SCENARIO 3: Challenger finished (opponent accepts after challenger done)
       if (matchData.player1_completed_at && !matchData.player2_completed_at && !isPlayer1) {
         console.log('[fetchMatchAndStart] SCENARIO 3: Challenger finished! Starting emulation mode')

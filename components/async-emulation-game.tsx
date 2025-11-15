@@ -6,6 +6,7 @@ import confetti from "canvas-confetti"
 import GameQuestion from "./game-question"
 import GameOver from "./game-over"
 import PlayerHeader from "./player-header"
+import ScoreBars from "./score-bars"
 import type { PlayerData, Question } from "@/lib/socket/events"
 import { GAME_CONFIG } from "@/lib/constants"
 import { calculatePoints } from "@/lib/utils/scoring"
@@ -41,9 +42,8 @@ export default function AsyncEmulationGame({
   const [myScore, setMyScore] = useState(0)
   const [challengerScore, setChallengerScore] = useState(0)
   const [myAnswers, setMyAnswers] = useState<any[]>([])
-  const [showingChallengerAnswer, setShowingChallengerAnswer] = useState(false)
   const [gameComplete, setGameComplete] = useState(false)
-  const [lastAnswerResult, setLastAnswerResult] = useState<{ isCorrect: boolean } | null>(null)
+  const [lastAnswerResult, setLastAnswerResult] = useState<{ isCorrect: boolean; correctAnswer: string } | null>(null)
   const [gameInitialized, setGameInitialized] = useState(false)
   const [timeRemaining, setTimeRemaining] = useState<number>(GAME_CONFIG.QUESTION_TIME_LIMIT)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -78,7 +78,7 @@ export default function AsyncEmulationGame({
 
   // Timer countdown - wait for options to load before starting
   useEffect(() => {
-    if (lastAnswerResult || isSubmitting || showingChallengerAnswer) return
+    if (lastAnswerResult || isSubmitting) return
 
     setTimeRemaining(GAME_CONFIG.QUESTION_TIME_LIMIT)
 
@@ -103,13 +103,14 @@ export default function AsyncEmulationGame({
       clearTimeout(startTimer)
       if (interval) clearInterval(interval)
     }
-  }, [currentQuestionIndex, lastAnswerResult, isSubmitting, showingChallengerAnswer])
+  }, [currentQuestionIndex, lastAnswerResult, isSubmitting])
 
   const handleAnswer = async (answer: string, timeTaken: number) => {
-    if (isSubmitting) return // Prevent duplicate submissions
+    if (isSubmitting) return
     setIsSubmitting(true)
     setTimeRemaining(0)
-    // Save answer via API to get correct validation
+
+    // Save answer via API
     const response = await fetch(`/api/matches/${matchId}/answer-async`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -125,50 +126,37 @@ export default function AsyncEmulationGame({
     const result = await response.json()
     const isCorrect = result.isCorrect || false
     const points = result.points || 0
+    const correctAnswer = result.correct_answer || ''
 
-    // Use scores from API (calculated from database) - both player and challenger
+    // Update scores from API - challenger score updates from their recorded answers
     setMyScore(result.playerScore || 0)
     setChallengerScore(result.opponentScore || 0)
 
     // Store my answer
-    const myAnswer = {
-      isCorrect,
-      timeTaken,
-      points
-    }
-    setMyAnswers(prev => [...prev, myAnswer])
+    setMyAnswers(prev => [...prev, { isCorrect, timeTaken, points }])
 
     // Show result
-    setLastAnswerResult({ isCorrect })
+    setLastAnswerResult({ isCorrect, correctAnswer })
 
-    // Confetti if correct
     if (isCorrect) {
       confetti({
         particleCount: 30,
         spread: 50,
-        origin: { y: 0.7 },
-        colors: ['#CFB8FF', '#FEFFDD', '#000000']
+        origin: { y: 0.7 }
       })
     }
 
-    // After showing my result, show challenger's answer
+    // Show result briefly then move to next question or end
     setTimeout(() => {
-      setShowingChallengerAnswer(true)
+      setLastAnswerResult(null)
+      setIsSubmitting(false)
 
-      // Then move to next question or end game
-      setTimeout(() => {
-        setShowingChallengerAnswer(false)
-        setLastAnswerResult(null)
-        setIsSubmitting(false)
-
-        if (currentQuestionIndex < questions.length - 1) {
-          setCurrentQuestionIndex(prev => prev + 1)
-        } else {
-          // Game complete
-          completeGame()
-        }
-      }, 2000) // Show challenger answer for 2 seconds
-    }, 1500) // Show my result for 1.5 seconds first
+      if (currentQuestionIndex < questions.length - 1) {
+        setCurrentQuestionIndex(prev => prev + 1)
+      } else {
+        completeGame()
+      }
+    }, 1500)
   }
 
   const completeGame = async () => {
@@ -221,120 +209,73 @@ export default function AsyncEmulationGame({
 
   return (
     <div className="relative w-full h-screen bg-muted overflow-hidden">
-      {/* Main Game Layout */}
-      <div className="flex flex-col h-full px-[4%] py-4">
-        {/* Header with scores */}
-        <div className="mb-4">
+      <div className="w-full max-w-md mx-auto px-[4%] py-[3%] h-full flex flex-col">
+        {/* Score bars */}
+        <ScoreBars playerScore={myScore} opponentScore={challengerScore} />
+
+        {/* Player header */}
+        <div className="relative z-10 mb-2 flex-shrink-0">
           <PlayerHeader
-            playerName={myPlayer.username}
+            playerName={myPlayer.displayName || myPlayer.username}
             playerScore={myScore}
-            playerLevel="Player"
-            playerAvatar={myPlayer.pfpUrl || ''}
-            playerFlair={myPlayer.activeFlair}
-            opponentName={challenger.username}
+            playerLevel="Novice"
+            playerAvatar={myPlayer.pfpUrl || ""}
+            playerFlair={(myPlayer as any).activeFlair}
+            opponentName={challenger.displayName || challenger.username}
             opponentScore={challengerScore}
             opponentLevel="Challenger"
-            opponentAvatar={challenger.pfpUrl || ''}
-            opponentFlair={challenger.activeFlair}
+            opponentAvatar={challenger.pfpUrl || ""}
+            opponentFlair={(challenger as any).activeFlair}
             timer={Math.ceil(timeRemaining)}
             onMenuClick={() => {}}
           />
         </div>
 
-        {/* Question progress */}
-        <div className="flex justify-center gap-1.5 mb-4">
-          {questions.map((_, idx) => (
-            <div
-              key={idx}
-              className={`h-1 rounded-full transition-all ${
-                idx < currentQuestionIndex
-                  ? 'w-4 bg-violet-500'
-                  : idx === currentQuestionIndex
-                  ? 'w-8 bg-violet-500'
-                  : 'w-4 bg-foreground/20'
-              }`}
-            />
-          ))}
-        </div>
+        {/* Question Counter with 2X Badge */}
+        <div className="relative z-10 text-center mb-1.5 flex-shrink-0">
+          <div className="flex items-center justify-center gap-2">
+            <motion.div
+              key={currentQuestionIndex}
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="inline-block brutal-white brutal-border px-4 py-2 rounded-full shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+            >
+              <p className="text-[10px] font-bold text-foreground uppercase tracking-wider">
+                Question {currentQuestionIndex + 1} of {questions.length}
+              </p>
+            </motion.div>
 
-        {/* Async indicator */}
-        <div className="text-center mb-4">
-          <p className="text-xs text-muted-foreground uppercase tracking-wider">
-            Async Challenge • Question {currentQuestionIndex + 1}/{questions.length}
-            {isFinalQuestion && ' • 2X POINTS'}
-          </p>
+            {/* 2X Badge for Final Question */}
+            <AnimatePresence>
+              {show2xBadge && (
+                <motion.div
+                  initial={{ scale: 3, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0, opacity: 0 }}
+                  className="brutal-violet brutal-border px-3 py-1.5 rounded-full shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+                >
+                  <p className="text-[10px] font-bold text-foreground uppercase tracking-wider">
+                    2X Points
+                  </p>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
         </div>
 
         {/* Question */}
-        <div className="flex-1 flex items-start justify-center overflow-hidden">
-          {!showingChallengerAnswer ? (
-            <GameQuestion
-              key={`question-${currentQuestion.id}`}
-              question={currentQuestion}
-              onAnswer={handleAnswer}
-              isDisabled={showingChallengerAnswer}
-              showResult={lastAnswerResult !== null}
-              wasCorrect={lastAnswerResult?.isCorrect ?? null}
-              correctAnswer={lastAnswerResult ? challengerAnswers[currentQuestionIndex]?.answer : undefined}
-              timeRemaining={timeRemaining}
-            />
-          ) : (
-            <ChallengerAnswerReveal
-              challengerName={challenger.displayName}
-              challengerAnswer={challengerAnswers[currentQuestionIndex]}
-            />
-          )}
+        <div className="relative z-10 flex-1">
+          <GameQuestion
+            question={currentQuestion}
+            onAnswer={handleAnswer}
+            isDisabled={false}
+            showResult={lastAnswerResult !== null}
+            wasCorrect={lastAnswerResult?.isCorrect || null}
+            correctAnswer={lastAnswerResult?.correctAnswer}
+            timeRemaining={timeRemaining}
+          />
         </div>
       </div>
     </div>
-  )
-}
-
-// Component to show challenger's answer
-function ChallengerAnswerReveal({
-  challengerName,
-  challengerAnswer
-}: {
-  challengerName: string
-  challengerAnswer: ChallengerAnswer
-}) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.9 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.9 }}
-      className="w-full max-w-md"
-    >
-      <div className={`brutal-border p-6 rounded-2xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] ${
-        challengerAnswer.isCorrect ? 'brutal-violet' : 'brutal-beige'
-      }`}>
-        <p className="text-xs font-bold uppercase tracking-wider text-foreground/60 mb-2 text-center">
-          {challengerName}'s Answer
-        </p>
-        <p className="text-xl font-bold text-foreground mb-2 text-center">
-          "{challengerAnswer.answer}"
-        </p>
-        <div className="flex items-center justify-center gap-4 pt-3 border-t brutal-border-thin">
-          <div className="text-center">
-            <p className="text-xs text-foreground/60 uppercase tracking-wider">Result</p>
-            <p className="text-sm font-bold text-foreground">
-              {challengerAnswer.isCorrect ? '✓ Correct' : '✗ Wrong'}
-            </p>
-          </div>
-          <div className="text-center">
-            <p className="text-xs text-foreground/60 uppercase tracking-wider">Points</p>
-            <p className="text-sm font-bold text-foreground">
-              +{challengerAnswer.points}
-            </p>
-          </div>
-          <div className="text-center">
-            <p className="text-xs text-foreground/60 uppercase tracking-wider">Time</p>
-            <p className="text-sm font-bold text-foreground">
-              {(challengerAnswer.timeTaken / 1000).toFixed(1)}s
-            </p>
-          </div>
-        </div>
-      </div>
-    </motion.div>
   )
 }

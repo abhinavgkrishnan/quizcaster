@@ -33,7 +33,7 @@ export async function POST(
     const isCorrect = answer === question.correct_answer
     const points = isCorrect ? calculatePoints(time_taken_ms) : 0
 
-    // Save answer to Redis (temporary storage, like live games)
+    // Save answer to Redis
     const answerData: PlayerAnswer = {
       question_id,
       question_number,
@@ -46,18 +46,46 @@ export async function POST(
 
     await savePlayerAnswer(matchId, fid, answerData)
 
-    // Update score in Redis (fast!)
-    const { playerScore, opponentScore } = await updatePlayerScore(
+    // Update player score in Redis
+    const { playerScore, opponentScore, isPlayer1 } = await updatePlayerScore(
       matchId,
       fid,
       points
     )
 
+    // In emulation mode, update opponent score with their recorded answer for this question
+    const { data: match } = await supabase
+      .from('matches')
+      .select('match_type, player1_fid, player2_fid')
+      .eq('id', matchId)
+      .single()
+
+    let finalOpponentScore = opponentScore
+
+    if (match?.match_type === 'async_challenge') {
+      // Get opponent's recorded answer for this question number
+      const opponentFid = isPlayer1 ? match.player2_fid : match.player1_fid
+      const { data: opponentAnswer } = await supabase
+        .from('match_answers')
+        .select('points_earned')
+        .eq('match_id', matchId)
+        .eq('fid', opponentFid)
+        .eq('question_number', question_number)
+        .single()
+
+      if (opponentAnswer) {
+        // Update opponent score in Redis with their recorded points for this question
+        const { updatePlayerScore: updateScore } = await import('@/lib/redis/game-state')
+        await updateScore(matchId, opponentFid, opponentAnswer.points_earned)
+        finalOpponentScore = opponentScore + opponentAnswer.points_earned
+      }
+    }
+
     return NextResponse.json({
-      isCorrect: isCorrect,
-      points: points,
+      isCorrect,
+      points,
       playerScore,
-      opponentScore,
+      opponentScore: finalOpponentScore,
       questionNum: question_number,
       correct_answer: question.correct_answer
     })

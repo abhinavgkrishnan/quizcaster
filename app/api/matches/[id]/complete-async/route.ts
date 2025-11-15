@@ -123,6 +123,12 @@ export async function POST(
       updateData.player1_score = gameState.player1_score
       updateData.player2_score = gameState.player2_score
 
+      // Update associated challenge status to 'completed'
+      await supabase
+        .from('async_challenges')
+        .update({ status: 'completed' })
+        .eq('match_id', matchId)
+
       // Send notification to challenger that opponent has completed
       const challengerFid = isPlayer1 ? match.player2_fid : match.player1_fid
 
