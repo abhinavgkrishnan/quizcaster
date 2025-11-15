@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import TopicSelection from "@/components/topic-selection"
 import Matchmaking from "@/components/matchmaking"
 import GameScreen from "@/components/game-screen"
+import AsyncSoloGame from "@/components/async-solo-game"
 import Profile from "@/components/profile"
 import Leaderboard from "@/components/leaderboard"
 import FriendsList from "@/components/friends-list"
@@ -26,6 +27,8 @@ export default function Home() {
   const [waitingForOpponent, setWaitingForOpponent] = useState(false)
   const [waitingType, setWaitingType] = useState<'join' | 'playing'>('join')
   const [goingAsync, setGoingAsync] = useState(false)
+  const [isAsyncChallenge, setIsAsyncChallenge] = useState(false)
+  const [asyncQuestions, setAsyncQuestions] = useState<any[]>([])
 
   // Check URL params for matchmaking trigger and screen navigation
   useEffect(() => {
@@ -87,39 +90,20 @@ export default function Home() {
             setWaitingForOpponent(false)
             setGoingAsync(true)
 
-            // Brief "going async" message, then initialize and start async game
+            // Brief "going async" message, then start async game
             setTimeout(async () => {
-              console.log('[Challenge] Transitioning to async game for match:', challengeMatchId)
-
-              // First clear the going async state
               setGoingAsync(false)
 
-              // For async challenges, we need to initialize the game in Redis
-              // This creates the game state so the socket game can work
-              const initResponse = await fetch(`/api/matches/${challengeMatchId}/start`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  fid: currentUser.fid
-                })
-              })
-
-              if (!initResponse.ok) {
-                console.error('[Challenge] Failed to initialize match:', await initResponse.text())
-              }
-
-              const initData = await initResponse.json()
-              console.log('[Challenge] Init response:', initData)
-
-              // Now fetch match data
+              // Fetch match data with questions
               const response = await fetch(`/api/matches/${challengeMatchId}`)
               const matchData = await response.json()
 
-              console.log('[Challenge] Match data:', matchData)
-
-              if (matchData) {
+              if (matchData && matchData.questions) {
                 const isPlayer1 = matchData.player1_fid === currentUser.fid
-                console.log('[Challenge] Setting up game with currentUser:', currentUser)
+
+                // Set async challenge mode
+                setIsAsyncChallenge(true)
+                setAsyncQuestions(matchData.questions)
 
                 setCurrentMatch({
                   match_id: challengeMatchId,
@@ -137,7 +121,6 @@ export default function Home() {
                   }
                 })
                 setCurrentScreen("game")
-                console.log('[Challenge] Navigated to game screen')
               }
             }, 2000)
           }
@@ -415,16 +398,27 @@ export default function Home() {
           </div>
         )}
         {currentScreen === "game" && selectedTopic && currentMatch && (
-          <GameScreen
-            key={currentMatch.match_id}
-            topic={selectedTopic}
-            matchId={currentMatch.match_id}
-            myPlayer={currentMatch.myPlayer}
-            opponent={currentMatch.opponent}
-            onGameEnd={handleGameEnd}
-            onPlayAgain={handlePlayAgain}
-            onRematchReady={handleRematchReady}
-          />
+          isAsyncChallenge && asyncQuestions.length > 0 ? (
+            <AsyncSoloGame
+              matchId={currentMatch.match_id}
+              myPlayer={currentMatch.myPlayer}
+              opponent={currentMatch.opponent}
+              topic={selectedTopic}
+              questions={asyncQuestions}
+              onGameEnd={handleGameEnd}
+            />
+          ) : (
+            <GameScreen
+              key={currentMatch.match_id}
+              topic={selectedTopic}
+              matchId={currentMatch.match_id}
+              myPlayer={currentMatch.myPlayer}
+              opponent={currentMatch.opponent}
+              onGameEnd={handleGameEnd}
+              onPlayAgain={handlePlayAgain}
+              onRematchReady={handleRematchReady}
+            />
+          )
         )}
         {currentScreen === "profile" && (
           <Profile
