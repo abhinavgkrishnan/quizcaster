@@ -118,6 +118,8 @@ export async function GET(
       player1_fid: match.player1_fid,
       player2_fid: match.player2_fid,
       questions: formattedQuestions,
+      is_async: match.is_async || false,
+      match_type: match.match_type,
       from_redis: false,
     });
   } catch (error) {

@@ -87,13 +87,31 @@ export default function Home() {
             setWaitingForOpponent(false)
             setGoingAsync(true)
 
-            // Brief "going async" message, then start async game
+            // Brief "going async" message, then initialize and start async game
             setTimeout(async () => {
               console.log('[Challenge] Transitioning to async game for match:', challengeMatchId)
 
               // First clear the going async state
               setGoingAsync(false)
 
+              // For async challenges, we need to initialize the game in Redis
+              // This creates the game state so the socket game can work
+              const initResponse = await fetch(`/api/matches/${challengeMatchId}/start`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  fid: currentUser.fid
+                })
+              })
+
+              if (!initResponse.ok) {
+                console.error('[Challenge] Failed to initialize match:', await initResponse.text())
+              }
+
+              const initData = await initResponse.json()
+              console.log('[Challenge] Init response:', initData)
+
+              // Now fetch match data
               const response = await fetch(`/api/matches/${challengeMatchId}`)
               const matchData = await response.json()
 

@@ -93,6 +93,23 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Maximum 5 pending challenges allowed' }, { status: 429 })
       }
 
+      // Get random questions for this topic
+      const { data: questionResults, error: questionsError } = await supabase
+        .from('questions')
+        .select('id')
+        .eq('topic', topic)
+        .eq('is_active', true)
+
+      if (questionsError) throw questionsError
+
+      if (!questionResults || questionResults.length < 10) {
+        return NextResponse.json({ error: 'Not enough questions for this topic' }, { status: 400 })
+      }
+
+      // Randomly select 10 questions
+      const shuffled = questionResults.sort(() => Math.random() - 0.5)
+      const selectedQuestions = shuffled.slice(0, 10).map(q => q.id)
+
       // Create match first
       const { data: match, error: matchError } = await supabase
         .from('matches')
@@ -104,7 +121,7 @@ export async function POST(request: NextRequest) {
           status: 'waiting',
           is_async: true,
           async_status: 'waiting_for_opponent',
-          questions_used: []
+          questions_used: selectedQuestions
         })
         .select()
         .single()
