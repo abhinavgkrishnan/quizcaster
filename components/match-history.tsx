@@ -22,6 +22,7 @@ interface Match {
   }
   completed_at: string
   is_async: boolean
+  forfeited_by?: number | null
 }
 
 interface MatchHistoryProps {
@@ -215,12 +216,19 @@ export default function MatchHistory({ user, onClose, onNavigate, currentScreen,
             <p className="text-sm font-semibold uppercase tracking-wider">No matches found</p>
           </div>
         ) : (
-          matches.map((match, index) => (
+          matches.map((match, index) => {
+            const iForfeited = match.forfeited_by === user?.fid
+            const opponentForfeited = match.forfeited_by === match.opponent?.fid
+            const hasForfeit = iForfeited || opponentForfeited
+
+            return (
             <motion.button
               key={match.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.05 }}
+              style={{
+                opacity: 0,
+                transform: 'translate3d(0, 10px, 0)',
+                animation: `fadeInUp 0.4s ease-out ${index * 0.03}s forwards`,
+              }}
               onClick={() => handleMatchClick(match)}
               className="relative brutal-border p-3 rounded-2xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] overflow-hidden bg-card w-full text-left hover:scale-[1.02] transition-transform active:scale-[0.98]"
             >
@@ -252,7 +260,7 @@ export default function MatchHistory({ user, onClose, onNavigate, currentScreen,
                 {/* Center: Result & Topic */}
                 <div className="flex flex-col items-center justify-center px-2 flex-shrink-0">
                   <p className="text-xs font-bold uppercase tracking-wider text-foreground mb-0.5">
-                    {getResultText(match.result)}
+                    {iForfeited ? 'DEFEAT (FORFEIT)' : opponentForfeited ? 'VICTORY (FORFEIT)' : getResultText(match.result)}
                   </p>
                   <p className="text-[10px] text-foreground/60 uppercase tracking-wider">
                     {match.topic}
@@ -287,7 +295,8 @@ export default function MatchHistory({ user, onClose, onNavigate, currentScreen,
                 </p>
               )}
             </motion.button>
-          ))
+            )
+          })
         )}
 
         {/* Loading indicator / Observer target */}

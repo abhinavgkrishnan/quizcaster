@@ -155,9 +155,25 @@ export default function GameOver({ playerScore, opponentScore, playerAnswers, op
           </div>
 
           {/* Result Text */}
-          <h2 className="text-2xl font-bold mb-1 text-foreground uppercase tracking-tight">
+          <motion.h2
+            className={`text-2xl font-bold mb-1 uppercase tracking-tight ${
+              playerWon ? 'bg-gradient-to-r from-[#FFB5E8] via-[#E8B5FF] to-[#D5B5FF] bg-clip-text text-transparent' : isDraw ? 'text-gray-500' : 'text-[#FEFFDD]'
+            }`}
+            animate={playerWon ? {
+              opacity: [0.75, 1, 0.75],
+              scale: [0.98, 1.02, 0.98]
+            } : {}}
+            transition={playerWon ? {
+              duration: 2.5,
+              repeat: Infinity,
+              ease: "easeInOut"
+            } : {}}
+            style={playerWon ? {
+              filter: 'drop-shadow(0 0 8px rgba(232, 181, 255, 0.4))'
+            } : {}}
+          >
             {playerWon ? "Victory!" : isDraw ? "Draw!" : "Defeat"}
-          </h2>
+          </motion.h2>
 
           <p className="text-muted-foreground text-[10px] mb-3 uppercase tracking-wide font-semibold">
             {opponentForfeited

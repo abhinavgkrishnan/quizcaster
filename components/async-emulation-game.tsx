@@ -44,21 +44,31 @@ export default function AsyncEmulationGame({
   const [showingChallengerAnswer, setShowingChallengerAnswer] = useState(false)
   const [gameComplete, setGameComplete] = useState(false)
   const [lastAnswerResult, setLastAnswerResult] = useState<{ isCorrect: boolean } | null>(null)
+  const [gameInitialized, setGameInitialized] = useState(false)
 
-  // Calculate challenger's current score up to current question
+  // Initialize Redis session on mount
   useEffect(() => {
-    const score = challengerAnswers
-      .slice(0, currentQuestionIndex + 1)
-      .reduce((sum, a) => sum + a.points, 0)
-    setChallengerScore(score)
-  }, [currentQuestionIndex, challengerAnswers])
+    const initGame = async () => {
+      try {
+        await fetch(`/api/matches/${matchId}/start-async`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fid: myPlayer.fid })
+        })
+        setGameInitialized(true)
+      } catch (error) {
+        console.error('[AsyncEmulation] Failed to initialize game:', error)
+      }
+    }
+    initGame()
+  }, [matchId, myPlayer.fid])
 
   const currentQuestion = questions[currentQuestionIndex]
   const isFinalQuestion = currentQuestionIndex === questions.length - 1
 
   const handleAnswer = async (answer: string, timeTaken: number) => {
     // Save answer via API to get correct validation
-    const response = await fetch(`/api/matches/${matchId}/answer`, {
+    const response = await fetch(`/api/matches/${matchId}/answer-async`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -71,11 +81,12 @@ export default function AsyncEmulationGame({
     })
 
     const result = await response.json()
-    const isCorrect = result.is_correct || false
-    const points = result.points_earned || 0
+    const isCorrect = result.isCorrect || false
+    const points = result.points || 0
 
-    // Update my score
-    setMyScore(prev => prev + points)
+    // Use scores from API (calculated from database) - both player and challenger
+    setMyScore(result.playerScore || 0)
+    setChallengerScore(result.opponentScore || 0)
 
     // Store my answer
     const myAnswer = {
@@ -120,14 +131,13 @@ export default function AsyncEmulationGame({
   const completeGame = async () => {
     setGameComplete(true)
 
-    // Mark opponent completion and trigger stats update + notification
+    // Mark opponent completion and trigger stats update + notification (score calculated from DB)
     try {
       await fetch(`/api/matches/${matchId}/complete-async`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          fid: myPlayer.fid,
-          score: myScore
+          fid: myPlayer.fid
         })
       })
     } catch (error) {

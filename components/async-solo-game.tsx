@@ -35,9 +35,29 @@ export default function AsyncSoloGame({
   const [opponentData, setOpponentData] = useState(opponent)
   const [isComplete, setIsComplete] = useState(false)
   const [show2xBadge, setShow2xBadge] = useState(false)
+  const [gameInitialized, setGameInitialized] = useState(false)
 
-  const currentQuestion = questions[currentQuestionIndex]
-  const isFinalQuestion = currentQuestionIndex === questions.length - 1
+  // Initialize Redis session on mount
+  useEffect(() => {
+    const initGame = async () => {
+      try {
+        await fetch(`/api/matches/${matchId}/start-async`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fid: myPlayer.fid })
+        })
+        setGameInitialized(true)
+      } catch (error) {
+        console.error('[AsyncSolo] Failed to initialize game:', error)
+      }
+    }
+    initGame()
+  }, [matchId, myPlayer.fid])
+
+  // Safety check for question index
+  const safeIndex = Math.min(currentQuestionIndex, questions.length - 1)
+  const currentQuestion = questions[safeIndex]
+  const isFinalQuestion = safeIndex === questions.length - 1
 
   // Fetch actual opponent data
   useEffect(() => {
@@ -85,68 +105,83 @@ export default function AsyncSoloGame({
   }, [currentQuestionIndex])
 
   const handleAnswer = async (answer: string, timeTaken: number) => {
-    // Stop timer
-    setTimeRemaining(0)
+    try {
+      // Stop timer
+      setTimeRemaining(0)
 
-    // Save answer to database - the API will check correctness
-    const response = await fetch(`/api/matches/${matchId}/answer`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        fid: myPlayer.fid,
-        question_id: currentQuestion.id,
-        question_number: currentQuestionIndex,
-        answer,
-        time_taken_ms: timeTaken
+      console.log('[AsyncSolo] Submitting answer for Q', safeIndex + 1, 'isFinal:', isFinalQuestion)
+
+      // Save answer to database
+      const response = await fetch(`/api/matches/${matchId}/answer-async`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fid: myPlayer.fid,
+          question_id: currentQuestion.id,
+          question_number: safeIndex,
+          answer,
+          time_taken_ms: timeTaken
+        })
       })
-    })
 
-    const result = await response.json()
-
-    // Update score and show result
-    const isCorrect = result.is_correct || false
-    const points = result.points_earned || 0
-    const correctAnswer = result.correct_answer || ''
-
-    const newScore = myScore + points
-    setMyScore(newScore)
-    setLastAnswerResult({ isCorrect, correctAnswer })
-
-    const answerData = {
-      isCorrect,
-      timeTaken,
-      points
-    }
-    setMyAnswers(prev => [...prev, answerData])
-
-    if (isCorrect) {
-      confetti({
-        particleCount: 30,
-        spread: 50,
-        origin: { y: 0.7 }
-      })
-    }
-
-    // Show result briefly then move to next question or end game
-    setTimeout(() => {
-      setLastAnswerResult(null)
-
-      if (isFinalQuestion) {
-        completeGame()
-      } else {
-        setCurrentQuestionIndex(prev => prev + 1)
+      if (!response.ok) {
+        console.error('[AsyncSolo] Answer API error:', await response.text())
+        return
       }
-    }, 1500)
+
+      const result = await response.json()
+      console.log('[AsyncSolo] Answer result:', result)
+
+      const isCorrect = result.isCorrect || false
+      const points = result.points || 0
+      const correctAnswer = result.correct_answer || ''
+
+      // Use scores from API (calculated from Redis) instead of client-side calculation
+      setMyScore(result.playerScore || 0)
+      // Opponent score stays 0 in solo async (opponent hasn't played yet)
+      setLastAnswerResult({ isCorrect, correctAnswer })
+
+      const answerData = {
+        isCorrect,
+        timeTaken,
+        points
+      }
+      setMyAnswers(prev => [...prev, answerData])
+
+      if (isCorrect) {
+        confetti({
+          particleCount: 30,
+          spread: 50,
+          origin: { y: 0.7 }
+        })
+      }
+
+      console.log('[AsyncSolo] Is final?', isFinalQuestion, 'Current:', currentQuestionIndex, 'Total:', questions.length)
+
+      // Show result briefly then move to next question or end game
+      setTimeout(() => {
+        setLastAnswerResult(null)
+
+        if (isFinalQuestion) {
+          console.log('[AsyncSolo] Completing game')
+          completeGame()
+        } else {
+          console.log('[AsyncSolo] Moving to next question')
+          setCurrentQuestionIndex(prev => prev + 1)
+        }
+      }, 1500)
+    } catch (error) {
+      console.error('[AsyncSolo] Error in handleAnswer:', error)
+    }
   }
 
   const completeGame = async () => {
-    // Mark match and update stats
+    // Mark match and update stats (score is calculated from answers in DB)
     await fetch(`/api/matches/${matchId}/complete-async`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        fid: myPlayer.fid,
-        score: myScore
+        fid: myPlayer.fid
       })
     })
 
@@ -204,7 +239,7 @@ export default function AsyncSoloGame({
               className="inline-block brutal-white brutal-border px-4 py-2 rounded-full shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
             >
               <p className="text-[10px] font-bold text-foreground uppercase tracking-wider">
-                Question {currentQuestionIndex + 1} of {questions.length}
+                Question {safeIndex + 1} of {questions.length}
               </p>
             </motion.div>
 

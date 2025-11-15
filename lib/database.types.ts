@@ -192,6 +192,7 @@ export type Database = {
           completed_at: string | null
           created_at: string
           expires_at: string | null
+          forfeited_by: number | null
           id: string
           is_async: boolean | null
           is_bot_opponent: boolean
@@ -214,6 +215,7 @@ export type Database = {
           async_status?: string | null
           challenge_message?: string | null
           challenger_data?: Json | null
+          forfeited_by?: number | null
           completed_at?: string | null
           created_at?: string
           expires_at?: string | null
@@ -242,6 +244,7 @@ export type Database = {
           completed_at?: string | null
           created_at?: string
           expires_at?: string | null
+          forfeited_by?: number | null
           id?: string
           is_async?: boolean | null
           is_bot_opponent?: boolean

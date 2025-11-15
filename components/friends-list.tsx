@@ -5,6 +5,7 @@ import { motion } from "framer-motion"
 import { Users, X, UserPlus, Swords, Clock, Send } from "lucide-react"
 import type { FarcasterUser, AppScreen } from "@/lib/types"
 import BottomNav from "./bottom-nav"
+import ChallengeTopicSelector from "./challenge-topic-selector"
 
 interface Friend {
   fid: number
@@ -32,6 +33,8 @@ export default function FriendsList({ user, onNavigate, currentScreen }: Friends
   const [requests, setRequests] = useState<FriendRequest[]>([])
   const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState<'friends' | 'requests'>('friends')
+  const [selectedFriend, setSelectedFriend] = useState<Friend | null>(null)
+  const [showTopicSelector, setShowTopicSelector] = useState(false)
 
   useEffect(() => {
     if (user?.fid) {
@@ -192,8 +195,39 @@ export default function FriendsList({ user, onNavigate, currentScreen }: Friends
   }
 
   const handleChallengeFriend = (friend: Friend) => {
-    // TODO: Open topic selector modal for challenge
-    console.log('Challenge friend:', friend)
+    setSelectedFriend(friend)
+    setShowTopicSelector(true)
+  }
+
+  const handleTopicSelected = async (topic: string) => {
+    if (!user?.fid || !selectedFriend) return
+
+    try {
+      const response = await fetch('/api/challenges', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'create',
+          challenger_fid: user.fid,
+          challenged_fid: selectedFriend.fid,
+          topic
+        })
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        setShowTopicSelector(false)
+        setSelectedFriend(null)
+        // Navigate to the async game
+        window.location.href = `/?challenge=${data.match_id}&topic=${topic}&opponent=${selectedFriend.fid}`
+      } else {
+        alert(data.error || 'Failed to send challenge')
+      }
+    } catch (error) {
+      console.error('Failed to send challenge:', error)
+      alert('Failed to send challenge')
+    }
   }
 
   return (
@@ -446,6 +480,18 @@ export default function FriendsList({ user, onNavigate, currentScreen }: Friends
         </div>
       </div>
 
+      {/* Topic Selector Modal */}
+      {showTopicSelector && selectedFriend && (
+        <div className="fixed inset-0 z-50">
+          <ChallengeTopicSelector
+            onSelect={handleTopicSelected}
+            onClose={() => {
+              setShowTopicSelector(false)
+              setSelectedFriend(null)
+            }}
+          />
+        </div>
+      )}
     </div>
   )
 }

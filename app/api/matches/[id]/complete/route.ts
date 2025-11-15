@@ -77,6 +77,18 @@ export async function POST(
         // Continue anyway - we'll try to save what we can
       }
 
+      // Check for forfeits
+      const totalQuestions = gameState.questions.length
+      const player1Forfeited = player1Answers.length < totalQuestions
+      const player2Forfeited = player2Answers.length < totalQuestions
+
+      let forfeitedBy: number | null = null
+      if (player1Forfeited) {
+        forfeitedBy = gameState.player1_fid
+      } else if (player2Forfeited) {
+        forfeitedBy = gameState.player2_fid
+      }
+
       // Determine winner
       let winnerFid: number | null
       if (gameState.player1_score > gameState.player2_score) {
@@ -93,6 +105,7 @@ export async function POST(
           status: MATCH_STATUS.COMPLETED,
           completed_at: new Date().toISOString(),
           winner_fid: winnerFid,
+          forfeited_by: forfeitedBy,
         })
         .eq('id', matchId)
 

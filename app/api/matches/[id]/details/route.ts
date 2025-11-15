@@ -66,20 +66,13 @@ export async function GET(
       result = 'loss'
     }
 
-    // Check if either player forfeited
-    const questionsLength = Array.isArray(match.questions_used) ? match.questions_used.length : 10
-    const forfeitedBy =
-      myAnswers.length < questionsLength ? fidNumber :
-      opponentAnswers.length < questionsLength ? (opponentFid || null) :
-      null
-
     return NextResponse.json({
       match_id: matchId,
       topic: match.topic,
       my_score: myScore,
       opponent_score: opponentScore,
       result,
-      forfeited_by: forfeitedBy,
+      forfeited_by: match.forfeited_by,
       opponent: {
         fid: opponent?.fid,
         username: opponent?.username || 'Unknown',

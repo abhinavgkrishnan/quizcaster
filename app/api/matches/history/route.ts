@@ -91,7 +91,8 @@ export async function GET(request: NextRequest) {
           active_flair: opponent?.active_flair
         },
         completed_at: match.completed_at,
-        is_async: match.is_async || false
+        is_async: match.is_async || false,
+        forfeited_by: match.forfeited_by || null
       }
     }) || []
 
