@@ -212,81 +212,71 @@ export default function Challenges({ user, onNavigate }: ChallengesProps) {
                   }}
                   className="brutal-violet brutal-border p-4 rounded-2xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
                 >
-                  {/* Challenge Info - New Layout */}
-                  <div className="flex items-center justify-between gap-3">
-                    {/* Left: User Info */}
-                    <div className="flex items-center gap-3 flex-1 min-w-0">
-                      <div className="w-14 h-14 rounded-full brutal-border overflow-hidden shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] bg-white flex-shrink-0">
-                        {(activeTab === 'received' ? challenge.challenger.pfp_url : challenge.challenged.pfp_url) ? (
-                          <img
-                            src={activeTab === 'received' ? challenge.challenger.pfp_url : challenge.challenged.pfp_url}
-                            alt={activeTab === 'received' ? challenge.challenger.display_name : challenge.challenged.display_name}
-                            className="w-full h-full object-cover"
-                            loading="lazy"
-                          />
-                        ) : (
-                          <div className="w-full h-full bg-violet-200" />
-                        )}
+                  {/* Challenge Card */}
+                  <div className="flex items-stretch justify-between gap-4">
+                    {/* Left Column: PFP, Username, Topic stacked vertically */}
+                    <div className="flex flex-col gap-2 flex-1">
+                      <div className="flex items-center gap-3">
+                        <div className="w-14 h-14 rounded-full brutal-border overflow-hidden shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] bg-white flex-shrink-0">
+                          {(activeTab === 'received' ? challenge.challenger.pfp_url : challenge.challenged.pfp_url) ? (
+                            <img
+                              src={activeTab === 'received' ? challenge.challenger.pfp_url : challenge.challenged.pfp_url}
+                              alt={activeTab === 'received' ? challenge.challenger.display_name : challenge.challenged.display_name}
+                              className="w-full h-full object-cover"
+                              loading="lazy"
+                            />
+                          ) : (
+                            <div className="w-full h-full bg-violet-200" />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-lg font-bold text-foreground truncate">{activeTab === 'received' ? challenge.challenger.display_name : challenge.challenged.display_name}</p>
+                          <p className="text-sm text-foreground/60 truncate">@{activeTab === 'received' ? challenge.challenger.username : challenge.challenged.username}</p>
+                        </div>
                       </div>
-
-                      <div className="flex-1 min-w-0">
-                        <p className="text-lg font-bold text-foreground truncate">
-                          {activeTab === 'received' ? challenge.challenger.display_name : challenge.challenged.display_name}
-                        </p>
-                        <p className="text-sm text-foreground/60 truncate">
-                          @{activeTab === 'received' ? challenge.challenger.username : challenge.challenged.username}
-                        </p>
-                        {(activeTab === 'received' ? challenge.challenger.active_flair : challenge.challenged.active_flair) && (
-                          <p className="text-[10px] text-foreground/50 mt-0.5 truncate">
-                            {activeTab === 'received' ? challenge.challenger.active_flair.icon : challenge.challenged.active_flair.icon}{' '}
-                            {activeTab === 'received' ? challenge.challenger.active_flair.name : challenge.challenged.active_flair.name}
-                          </p>
-                        )}
+                      <div className="brutal-beige brutal-border px-5 py-2.5 rounded-full text-center">
+                        <p className="text-lg font-bold uppercase tracking-wide">{challenge.topic}</p>
                       </div>
                     </div>
 
-                    {/* Right: Topic & Actions */}
-                    <div className="flex flex-col gap-2 items-end flex-shrink-0">
-                      <div className="brutal-beige brutal-border px-4 py-2 rounded-xl">
-                        <p className="text-base font-bold uppercase tracking-wide whitespace-nowrap">{challenge.topic}</p>
+                    {/* Right Column: Accept/Reject buttons stacked */}
+                    {activeTab === 'received' ? (
+                      <div className="flex flex-col gap-2 justify-center">
+                        <motion.button
+                          whileTap={{ scale: 0.95 }}
+                          onClick={() => handleAccept(challenge)}
+                          className="brutal-white brutal-border rounded-xl px-6 py-3 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] flex items-center justify-center gap-2 min-w-[120px]"
+                        >
+                          <div className="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center">
+                            <Check className="w-4 h-4 text-white stroke-[3]" />
+                          </div>
+                          <span className="text-sm font-bold uppercase tracking-wider">Accept</span>
+                        </motion.button>
+
+                        <motion.button
+                          whileTap={{ scale: 0.95 }}
+                          onClick={() => handleDecline(challenge.id)}
+                          className="brutal-border bg-background rounded-full w-12 h-12 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] flex items-center justify-center mx-auto"
+                        >
+                          <div className="w-7 h-7 rounded-full bg-red-500 flex items-center justify-center">
+                            <XIcon className="w-4 h-4 text-white stroke-[3]" />
+                          </div>
+                        </motion.button>
                       </div>
-
-                      {activeTab === 'received' ? (
-                        <div className="flex gap-2">
-                          <motion.button
-                            whileTap={{ scale: 0.95 }}
-                            onClick={() => handleAccept(challenge)}
-                            className="brutal-white brutal-border rounded-xl px-4 py-2 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] flex items-center gap-1.5 hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all"
-                          >
-                            <div className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center">
-                              <Check className="w-3.5 h-3.5 text-white stroke-[3]" />
-                            </div>
-                            <span className="text-xs font-bold uppercase tracking-wider">Accept</span>
-                          </motion.button>
-
-                          <motion.button
-                            whileTap={{ scale: 0.95 }}
-                            onClick={() => handleDecline(challenge.id)}
-                            className="brutal-border bg-background rounded-xl p-2 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] flex items-center justify-center hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all"
-                          >
-                            <div className="w-5 h-5 rounded-full bg-red-500 flex items-center justify-center">
-                              <XIcon className="w-3.5 h-3.5 text-white stroke-[3]" />
-                            </div>
-                          </motion.button>
-                        </div>
-                      ) : (
+                    ) : (
+                      <div className="flex items-center">
                         <motion.button
                           whileTap={{ scale: 0.95 }}
                           onClick={() => handleCancel(challenge.id)}
-                          className="brutal-white brutal-border rounded-xl px-4 py-2 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] flex items-center gap-1.5 hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all"
+                          className="brutal-white brutal-border rounded-xl px-6 py-3 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] flex items-center justify-center gap-2"
                         >
-                          <div className="w-5 h-5 rounded-full bg-red-500 flex items-center justify-center">
-                            <XIcon className="w-3.5 h-3.5 text-white stroke-[3]" />
+                          <div className="w-6 h-6 rounded-full bg-red-500 flex items-center justify-center">
+                            <XIcon className="w-4 h-4 text-white stroke-[3]" />
                           </div>
-                          <span className="text-xs font-bold uppercase tracking-wider">Cancel</span>
+                          <span className="text-sm font-bold uppercase tracking-wider">Cancel</span>
                         </motion.button>
-                      )}
-                    </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               )

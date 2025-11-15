@@ -5,6 +5,7 @@ import TopicSelection from "@/components/topic-selection"
 import Matchmaking from "@/components/matchmaking"
 import GameScreen from "@/components/game-screen"
 import AsyncSoloGame from "@/components/async-solo-game"
+import AsyncEmulationGame from "@/components/async-emulation-game"
 import Profile from "@/components/profile"
 import Leaderboard from "@/components/leaderboard"
 import FriendsList from "@/components/friends-list"
@@ -29,6 +30,8 @@ export default function Home() {
   const [goingAsync, setGoingAsync] = useState(false)
   const [isAsyncChallenge, setIsAsyncChallenge] = useState(false)
   const [asyncQuestions, setAsyncQuestions] = useState<any[]>([])
+  const [isEmulationMode, setIsEmulationMode] = useState(false)
+  const [challengerAnswers, setChallengerAnswers] = useState<any[]>([])
 
   // Check URL params for matchmaking trigger and screen navigation
   useEffect(() => {
@@ -168,23 +171,36 @@ export default function Home() {
 
       // Check if challenger is still playing (opponent accepts while challenger is mid-game)
       if (matchData.player1_completed_at && !matchData.player2_completed_at && !isPlayer1) {
-        // Challenger finished, opponent can play async with replay
-        setCurrentMatch({
-          match_id: matchId,
-          myPlayer: {
-            fid: user.fid,
-            username: user.username,
-            displayName: user.displayName,
-            pfpUrl: user.pfpUrl
-          },
-          opponent: {
-            fid: matchData.player1_fid,
-            username: 'Challenger',
-            displayName: 'Challenger',
-            pfpUrl: ''
-          }
-        })
-        setCurrentScreen("game")
+        // Challenger finished, opponent can play async with replay (EMULATION MODE)
+        console.log('[fetchMatchAndStart] Challenger finished, loading emulation data')
+
+        // Fetch emulation data
+        const emulationRes = await fetch(`/api/matches/${matchId}/emulation`)
+        const emulationData = await emulationRes.json()
+
+        if (emulationData && matchData.questions) {
+          setIsEmulationMode(true)
+          setIsAsyncChallenge(false)
+          setChallengerAnswers(emulationData.answers || [])
+          setAsyncQuestions(matchData.questions)
+
+          setCurrentMatch({
+            match_id: matchId,
+            myPlayer: {
+              fid: user.fid,
+              username: user.username,
+              displayName: user.displayName,
+              pfpUrl: user.pfpUrl
+            },
+            opponent: {
+              fid: emulationData.opponent.fid,
+              username: emulationData.opponent.username,
+              displayName: emulationData.opponent.display_name,
+              pfpUrl: emulationData.opponent.pfp_url
+            }
+          })
+          setCurrentScreen("game")
+        }
       } else if (!matchData.player1_completed_at && !isPlayer1) {
         // Challenger still playing - show "in progress" screen and poll
         setWaitingForOpponent(true)
@@ -197,23 +213,35 @@ export default function Home() {
           if (data.player1_completed_at) {
             clearInterval(pollForCompletion)
             setWaitingForOpponent(false)
-            // Challenger finished, now opponent can play
-            setCurrentMatch({
-              match_id: matchId,
-              myPlayer: {
-                fid: user.fid,
-                username: user.username,
-                displayName: user.displayName,
-                pfpUrl: user.pfpUrl
-              },
-              opponent: {
-                fid: data.player1_fid,
-                username: 'Challenger',
-                displayName: 'Challenger',
-                pfpUrl: ''
-              }
-            })
-            setCurrentScreen("game")
+
+            // Fetch emulation data
+            const emulationRes = await fetch(`/api/matches/${matchId}/emulation`)
+            const emulationData = await emulationRes.json()
+
+            if (emulationData && data.questions) {
+              setIsEmulationMode(true)
+              setIsAsyncChallenge(false)
+              setChallengerAnswers(emulationData.answers || [])
+              setAsyncQuestions(data.questions)
+
+              // Challenger finished, now opponent can play
+              setCurrentMatch({
+                match_id: matchId,
+                myPlayer: {
+                  fid: user.fid,
+                  username: user.username,
+                  displayName: user.displayName,
+                  pfpUrl: user.pfpUrl
+                },
+                opponent: {
+                  fid: emulationData.opponent.fid,
+                  username: emulationData.opponent.username,
+                  displayName: emulationData.opponent.display_name,
+                  pfpUrl: emulationData.opponent.pfp_url
+                }
+              })
+              setCurrentScreen("game")
+            }
           }
         }, 3000)
       } else {
@@ -427,7 +455,17 @@ export default function Home() {
           </div>
         )}
         {currentScreen === "game" && selectedTopic && currentMatch && (
-          isAsyncChallenge && asyncQuestions.length > 0 ? (
+          isEmulationMode && asyncQuestions.length > 0 && challengerAnswers.length > 0 ? (
+            <AsyncEmulationGame
+              matchId={currentMatch.match_id}
+              myPlayer={currentMatch.myPlayer}
+              challenger={currentMatch.opponent}
+              topic={selectedTopic}
+              questions={asyncQuestions}
+              challengerAnswers={challengerAnswers}
+              onGameEnd={handleGameEnd}
+            />
+          ) : isAsyncChallenge && asyncQuestions.length > 0 ? (
             <AsyncSoloGame
               matchId={currentMatch.match_id}
               myPlayer={currentMatch.myPlayer}
