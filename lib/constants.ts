@@ -3,6 +3,8 @@
  * Central location for all game-related configuration values
  */
 
+export { TEXT } from './constants/text'
+
 export const GAME_CONFIG = {
   // Match Configuration
   QUESTIONS_PER_MATCH: 10,

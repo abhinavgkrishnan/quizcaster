@@ -3,6 +3,7 @@
 import { motion } from "framer-motion"
 import { Home, Target, Clock, TrendingUp, RotateCcw } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { TEXT } from "@/lib/constants"
 
 interface ChallengeSentScreenProps {
   playerScore: number
@@ -44,21 +45,21 @@ export default function ChallengeSentScreen({
             <Clock className="w-8 h-8 text-foreground" />
           </div>
           <h2 className="text-2xl font-bold uppercase tracking-tight text-foreground mb-1">
-            Challenge Sent!
+            {TEXT.CHALLENGE.SENT}
           </h2>
           <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-semibold mb-3">
-            Waiting for {opponentName}
+            {TEXT.CHALLENGE.WAITING_FOR(opponentName)}
           </p>
         </div>
 
         {/* Scores */}
         <div className="grid grid-cols-2 gap-2 mb-2.5 w-full">
           <div className="brutal-violet brutal-border p-2.5 rounded-2xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-            <p className="text-[8px] text-foreground/60 mb-0.5 font-bold uppercase tracking-wider">Your Score</p>
+            <p className="text-[8px] text-foreground/60 mb-0.5 font-bold uppercase tracking-wider">{TEXT.STATS.YOUR_SCORE}</p>
             <p className="text-2xl font-bold text-foreground">{playerScore}</p>
           </div>
           <div className="brutal-beige brutal-border p-2.5 rounded-2xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-            <p className="text-[8px] text-foreground/60 mb-0.5 font-bold uppercase tracking-wider">Opponent</p>
+            <p className="text-[8px] text-foreground/60 mb-0.5 font-bold uppercase tracking-wider">{TEXT.STATS.OPPONENT}</p>
             <p className="text-2xl font-bold text-foreground">-</p>
           </div>
         </div>
@@ -99,7 +100,7 @@ export default function ChallengeSentScreen({
           >
             <span className="flex items-center justify-center gap-2">
               <RotateCcw className="w-3.5 h-3.5" />
-              Play Again
+              {TEXT.BUTTONS.PLAY_AGAIN}
             </span>
           </button>
 
@@ -115,7 +116,7 @@ export default function ChallengeSentScreen({
           >
             <span className="flex items-center justify-center gap-2">
               <Home className="w-3.5 h-3.5" />
-              Home
+              {TEXT.BUTTONS.HOME}
             </span>
           </button>
         </div>

@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react"
 import { motion } from "framer-motion"
 import confetti from "canvas-confetti"
 import { Trophy, Target, Zap, RotateCcw, Home, Swords, Share2, ArrowLeft } from "lucide-react"
-import { GAME_CONFIG } from "@/lib/constants"
+import { GAME_CONFIG, TEXT } from "@/lib/constants"
 
 interface GameOverProps {
   playerScore: number
@@ -97,9 +97,9 @@ export default function GameOver({ playerScore, opponentScore, playerAnswers, op
   const handleShare = async () => {
     setIsSharing(true)
     try {
-      const result = playerWon ? '🏆 Victory!' : isDraw ? '🤝 Draw!' : '💪 Good game!'
-      const topicText = topic ? ` in ${topic}` : ''
-      const text = `${result} Just played Quizcaster${topicText}!\n\n📊 Score: ${playerScore} - ${opponentScore}\n✅ Accuracy: ${stats.accuracy}%\n⚡ Avg time: ${stats.avgTimeSeconds}s\n\nThink you can beat me? 👇`
+      const result = playerWon ? TEXT.SHARE.VICTORY : isDraw ? TEXT.SHARE.DRAW : TEXT.SHARE.DEFEAT
+      const scoreText = `${playerScore} - ${opponentScore}`
+      const text = TEXT.SHARE.CAST_TEMPLATE(result, topic, scoreText, stats.accuracy, stats.avgTimeSeconds)
 
       const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://quizcaster.com'
 
@@ -128,7 +128,7 @@ export default function GameOver({ playerScore, opponentScore, playerAnswers, op
             className="brutal-border bg-background p-2 rounded-lg shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] flex items-center gap-2"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span className="text-xs font-bold uppercase tracking-wider">Back</span>
+            <span className="text-xs font-bold uppercase tracking-wider">{TEXT.BUTTONS.BACK}</span>
           </button>
         </div>
       )}
@@ -172,25 +172,25 @@ export default function GameOver({ playerScore, opponentScore, playerAnswers, op
               filter: 'drop-shadow(0 0 8px rgba(232, 181, 255, 0.4))'
             } : {}}
           >
-            {playerWon ? "Victory!" : isDraw ? "Draw!" : "Defeat"}
+            {playerWon ? TEXT.RESULTS.VICTORY : isDraw ? TEXT.RESULTS.DRAW : TEXT.RESULTS.DEFEAT}
           </motion.h2>
 
           <p className="text-muted-foreground text-[10px] mb-3 uppercase tracking-wide font-semibold">
             {opponentForfeited
-              ? `${opponent.displayName} forfeited!`
+              ? TEXT.RESULTS.OPPONENT_FORFEITED(opponent.displayName)
               : iForfeited
-              ? "You forfeited"
-              : playerWon ? "Outstanding!" : isDraw ? "Evenly matched!" : "Try again!"}
+              ? TEXT.RESULTS.YOU_FORFEITED
+              : playerWon ? TEXT.RESULTS.VICTORY_SUBTITLE : isDraw ? TEXT.RESULTS.DRAW_SUBTITLE : TEXT.RESULTS.DEFEAT_SUBTITLE}
           </p>
 
           {/* Scores */}
           <div className="grid grid-cols-2 gap-2 mb-2.5 w-full">
             <div className="brutal-violet brutal-border p-2.5 rounded-2xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-              <p className="text-[8px] text-foreground/60 mb-0.5 font-bold uppercase tracking-wider">Your Score</p>
+              <p className="text-[8px] text-foreground/60 mb-0.5 font-bold uppercase tracking-wider">{TEXT.STATS.YOUR_SCORE}</p>
               <p className="text-2xl font-bold text-foreground">{playerScore}</p>
             </div>
             <div className="brutal-beige brutal-border p-2.5 rounded-2xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-              <p className="text-[8px] text-foreground/60 mb-0.5 font-bold uppercase tracking-wider">Opponent</p>
+              <p className="text-[8px] text-foreground/60 mb-0.5 font-bold uppercase tracking-wider">{TEXT.STATS.OPPONENT}</p>
               <p className="text-2xl font-bold text-foreground">{opponentScore}</p>
             </div>
           </div>
@@ -234,7 +234,7 @@ export default function GameOver({ playerScore, opponentScore, playerAnswers, op
             >
               <span className="flex items-center justify-center gap-2">
                 <Share2 className="w-4 h-4" />
-                {isSharing ? 'Sharing...' : 'Share Results'}
+                {isSharing ? TEXT.BUTTONS.SHARING : TEXT.BUTTONS.SHARE_RESULTS}
               </span>
             </button>
 
@@ -252,7 +252,7 @@ export default function GameOver({ playerScore, opponentScore, playerAnswers, op
                 >
                   <span className="flex items-center justify-center gap-2">
                     <RotateCcw className="w-3.5 h-3.5" />
-                    Play Again
+                    {TEXT.BUTTONS.PLAY_AGAIN}
                   </span>
                 </button>
 
@@ -302,7 +302,7 @@ export default function GameOver({ playerScore, opponentScore, playerAnswers, op
                     <span className="truncate" style={{ maxWidth: 'calc(100% - 80px)' }}>
                       {opponentRequestedRematch && !challengeActive
                         ? `${opponent.displayName} wants rematch!`
-                        : `Challenge ${opponent.displayName}`}
+                        : `${TEXT.BUTTONS.CHALLENGE} ${opponent.displayName}`}
                     </span>
                     {challengeActive && (
                       <span className="text-[9px] flex-shrink-0">({Math.ceil(10 - (challengeProgress / 10))}s)</span>
@@ -322,7 +322,7 @@ export default function GameOver({ playerScore, opponentScore, playerAnswers, op
                 >
                   <span className="flex items-center justify-center gap-2">
                     <Home className="w-3.5 h-3.5" />
-                    Home
+                    {TEXT.BUTTONS.HOME}
                   </span>
                 </button>
               </>

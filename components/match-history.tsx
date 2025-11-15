@@ -6,6 +6,7 @@ import { Trophy, X, Filter, ChevronDown } from "lucide-react"
 import type { FarcasterUser, AppScreen } from "@/lib/types"
 import BottomNav from "./bottom-nav"
 import GameOver from "./game-over"
+import { TEXT } from "@/lib/constants"
 
 interface Match {
   id: string
@@ -131,9 +132,9 @@ export default function MatchHistory({ user, onClose, onNavigate, currentScreen,
 
   const getResultText = (result: string) => {
     switch (result) {
-      case 'win': return 'VICTORY'
-      case 'loss': return 'DEFEAT'
-      case 'draw': return 'DRAW'
+      case 'win': return TEXT.MATCH_HISTORY.VICTORY_LABEL
+      case 'loss': return TEXT.MATCH_HISTORY.DEFEAT_LABEL
+      case 'draw': return TEXT.MATCH_HISTORY.DRAW_LABEL
       default: return 'UNKNOWN'
     }
   }
@@ -261,7 +262,7 @@ export default function MatchHistory({ user, onClose, onNavigate, currentScreen,
                 {/* Center: Result & Topic */}
                 <div className="flex flex-col items-center justify-center px-2 flex-shrink-0">
                   <p className="text-xs font-bold uppercase tracking-wider text-foreground mb-0.5">
-                    {iForfeited ? 'DEFEAT (FORFEIT)' : opponentForfeited ? 'VICTORY (FORFEIT)' : getResultText(match.result)}
+                    {iForfeited ? TEXT.MATCH_HISTORY.DEFEAT_FORFEIT : opponentForfeited ? TEXT.MATCH_HISTORY.VICTORY_FORFEIT : getResultText(match.result)}
                   </p>
                   <p className="text-[10px] text-foreground/60 uppercase tracking-wider">
                     {match.topic}

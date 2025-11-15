@@ -226,8 +226,9 @@ export default function OtherProfilePage({ params }: OtherProfilePageProps) {
   const handleInvite = async () => {
     if (!user) return
     try {
+      const { TEXT } = await import('@/lib/constants')
       const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://quizcaster.com'
-      const text = `Hey @${user.username}! Join me on Quizcaster - test your knowledge and compete with friends! 🎮🧠`
+      const text = TEXT.INVITE.MESSAGE(user.username)
 
       // Use Farcaster SDK to open composer
       const { sdk } = await import('@farcaster/miniapp-sdk')

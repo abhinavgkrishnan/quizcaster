@@ -6,6 +6,7 @@ import { Users, X, UserPlus, Swords, Clock, Send } from "lucide-react"
 import type { FarcasterUser, AppScreen } from "@/lib/types"
 import BottomNav from "./bottom-nav"
 import ChallengeTopicSelector from "./challenge-topic-selector"
+import { TEXT } from "@/lib/constants"
 
 interface Friend {
   fid: number
@@ -127,7 +128,7 @@ export default function FriendsList({ user, onNavigate, currentScreen }: Friends
     if (!user?.fid) return
     try {
       const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://quizcaster.com'
-      const text = `Hey @${follower.username}! Join me on Quizcaster - test your knowledge and compete with friends! 🎮🧠`
+      const text = TEXT.INVITE.MESSAGE(follower.username)
 
       // Use Farcaster SDK to open composer
       const { sdk } = await import('@farcaster/miniapp-sdk')
