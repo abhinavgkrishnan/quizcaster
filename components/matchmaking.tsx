@@ -12,19 +12,15 @@ interface MatchmakingProps {
   topic: string
   onMatchFound: (matchData: MatchData) => void
   onCancel?: () => void
-  challengeMatchId?: string | null
-  challengeOpponentFid?: string | null
 }
 
-export default function Matchmaking({ topic, onMatchFound, onCancel, challengeMatchId, challengeOpponentFid }: MatchmakingProps) {
+export default function Matchmaking({ topic, onMatchFound, onCancel }: MatchmakingProps) {
   const { user } = useFarcaster()
   const hasJoinedRef = useRef(false)
   const mockFidRef = useRef(999999 + Math.floor(Math.random() * 100)) // Stable random FID per component instance
   const isDevMode = process.env.NEXT_PUBLIC_DEV_MODE === 'true'
   const [showMatchFound, setShowMatchFound] = useState(false)
   const [foundMatchData, setFoundMatchData] = useState<any>(null)
-  const [waitingForOpponent, setWaitingForOpponent] = useState(false)
-  const [goingAsync, setGoingAsync] = useState(false)
 
   // In dev mode, use mock user with stable random FID for multi-tab testing
   const effectiveUser = user || (isDevMode ? {
@@ -33,49 +29,6 @@ export default function Matchmaking({ topic, onMatchFound, onCancel, challengeMa
     displayName: `Dev Player ${mockFidRef.current}`,
     pfpUrl: ''
   } : null)
-
-  // Handle challenge flow - wait 30 seconds then go async
-  useEffect(() => {
-    if (challengeMatchId && !hasJoinedRef.current) {
-      hasJoinedRef.current = true
-      setWaitingForOpponent(true)
-
-      // Wait 30 seconds then transition to async
-      const timeout = setTimeout(() => {
-        setWaitingForOpponent(false)
-        setGoingAsync(true)
-
-        // Transition to async game after brief message
-        setTimeout(() => {
-          if (effectiveUser) {
-            onMatchFound({
-              match_id: challengeMatchId,
-              myPlayer: {
-                fid: effectiveUser.fid,
-                username: effectiveUser.username,
-                displayName: effectiveUser.displayName,
-                pfpUrl: effectiveUser.pfpUrl || '',
-                score: 0,
-                answers: [],
-                ready: true
-              },
-              opponent: {
-                fid: parseInt(challengeOpponentFid || '0'),
-                username: 'opponent',
-                displayName: 'Opponent',
-                pfpUrl: '',
-                score: 0,
-                answers: [],
-                ready: false
-              }
-            })
-          }
-        }, 2000)
-      }, 30000)
-
-      return () => clearTimeout(timeout)
-    }
-  }, [challengeMatchId, challengeOpponentFid])
 
   const handleMatchFound = (payload: any) => {
     // Show match-found screen first
@@ -91,13 +44,8 @@ export default function Matchmaking({ topic, onMatchFound, onCancel, challengeMa
       handleMatchFound
     )
 
-  // Join queue on mount ONCE (skip if challenge mode)
+  // Join queue on mount ONCE
   useEffect(() => {
-    if (challengeMatchId) {
-      // Skip regular matchmaking in challenge mode
-      return
-    }
-
     if (hasJoinedRef.current) {
       return
     }
@@ -114,7 +62,7 @@ export default function Matchmaking({ topic, onMatchFound, onCancel, challengeMa
       hasJoinedRef.current = false
       leaveQueue()
     }
-  }, [challengeMatchId]) // Add challengeMatchId to deps
+  }, []) // Empty deps - only run once on mount
 
   const handleCancel = async () => {
     await leaveQueue()
