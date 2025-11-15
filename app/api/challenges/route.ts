@@ -82,6 +82,17 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Challenged FID is required' }, { status: 400 })
       }
 
+      // Verify both users exist in database
+      const { data: users, error: usersError } = await supabase
+        .from('users')
+        .select('fid')
+        .in('fid', [challenger_fid, challenged_fid])
+
+      if (usersError || !users || users.length < 2) {
+        console.error('[Challenge API] User not in database')
+        return NextResponse.json({ error: 'User not found in QuizCaster' }, { status: 404 })
+      }
+
       // Check pending challenge limit (5 max)
       const { count } = await supabase
         .from('async_challenges')

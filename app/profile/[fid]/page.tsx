@@ -2,7 +2,7 @@
 
 import { useEffect, useState, use } from "react"
 import { motion } from "framer-motion"
-import { User, Trophy, Target, Clock, ArrowLeft, TrendingUp, Swords, UserPlus, Home, Users, Bell } from "lucide-react"
+import { User, Trophy, Target, Clock, ArrowLeft, TrendingUp, Swords, UserPlus, Home, Users, Bell, Send } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useFarcaster } from "@/lib/farcaster-sdk"
 import MatchHistory from "@/components/match-history"
@@ -56,6 +56,7 @@ export default function OtherProfilePage({ params }: OtherProfilePageProps) {
   const [challengeLoading, setChallengeLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [referrer, setReferrer] = useState<AppScreen | null>(null)
+  const [userInDatabase, setUserInDatabase] = useState(false)
 
   useEffect(() => {
     fetchUserProfile()
@@ -92,6 +93,10 @@ export default function OtherProfilePage({ params }: OtherProfilePageProps) {
         throw new Error('Failed to fetch user data')
       }
       const userData = await userResponse.json()
+
+      // Check if user exists in our database
+      const inDb = userData.in_database || false
+      setUserInDatabase(inDb)
 
       // Fetch stats
       const statsResponse = await fetch(`/api/stats/${fid}`)
@@ -139,6 +144,10 @@ export default function OtherProfilePage({ params }: OtherProfilePageProps) {
   }, [])
 
   const handleChallenge = () => {
+    if (!userInDatabase) {
+      alert('This user hasn\'t played Quizcaster yet. Invite them first!')
+      return
+    }
     setShowTopicSelector(true)
   }
 
@@ -211,6 +220,25 @@ export default function OtherProfilePage({ params }: OtherProfilePageProps) {
     } catch (error) {
       console.error('Failed to send friend request:', error)
       alert('Error sending friend request')
+    }
+  }
+
+  const handleInvite = async () => {
+    if (!user) return
+    try {
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://quizcaster.com'
+      const text = `Hey @${user.username}! Join me on Quizcaster - test your knowledge and compete with friends! 🎮🧠`
+
+      // Use Farcaster SDK to open composer
+      const { sdk } = await import('@farcaster/miniapp-sdk')
+
+      // Build composer URL with mention
+      const composerUrl = `https://warpcast.com/~/compose?text=${encodeURIComponent(text)}&embeds[]=${encodeURIComponent(appUrl)}`
+
+      await sdk.actions.openUrl(composerUrl)
+    } catch (error) {
+      console.error('Failed to open composer:', error)
+      alert('Failed to open composer')
     }
   }
 
@@ -300,14 +328,25 @@ export default function OtherProfilePage({ params }: OtherProfilePageProps) {
               </span>
             </motion.button>
             {!isFriend && (
-              <motion.button
-                whileTap={{ scale: 0.95 }}
-                onClick={handleAddFriend}
-                className="brutal-beige brutal-border px-4 py-2 rounded-lg shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] flex items-center gap-2"
-              >
-                <UserPlus className="w-4 h-4" />
-                <span className="text-xs font-bold uppercase tracking-wider">Add Friend</span>
-              </motion.button>
+              userInDatabase ? (
+                <motion.button
+                  whileTap={{ scale: 0.95 }}
+                  onClick={handleAddFriend}
+                  className="brutal-beige brutal-border px-4 py-2 rounded-lg shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] flex items-center gap-2"
+                >
+                  <UserPlus className="w-4 h-4" />
+                  <span className="text-xs font-bold uppercase tracking-wider">Add Friend</span>
+                </motion.button>
+              ) : (
+                <motion.button
+                  whileTap={{ scale: 0.95 }}
+                  onClick={handleInvite}
+                  className="brutal-beige brutal-border px-4 py-2 rounded-lg shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] flex items-center gap-2"
+                >
+                  <Send className="w-4 h-4" />
+                  <span className="text-xs font-bold uppercase tracking-wider">Invite</span>
+                </motion.button>
+              )
             )}
           </div>
         </div>

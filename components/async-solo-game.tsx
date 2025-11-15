@@ -1,10 +1,13 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { motion } from "framer-motion"
+import { motion, AnimatePresence } from "framer-motion"
 import confetti from "canvas-confetti"
+import GameQuestion from "./game-question"
+import ScoreBars from "./score-bars"
+import PlayerHeader from "./player-header"
+import GameOver from "./game-over"
 import type { PlayerData, Question } from "@/lib/types"
-import { calculatePoints } from "@/lib/utils/scoring"
 import { GAME_CONFIG } from "@/lib/constants"
 
 interface AsyncSoloGameProps {
@@ -27,11 +30,59 @@ export default function AsyncSoloGame({
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
   const [myScore, setMyScore] = useState(0)
   const [myAnswers, setMyAnswers] = useState<any[]>([])
-  const [lastAnswerResult, setLastAnswerResult] = useState<{ isCorrect: boolean } | null>(null)
-  const [saving, setSaving] = useState(false)
+  const [lastAnswerResult, setLastAnswerResult] = useState<{ isCorrect: boolean; correctAnswer: string } | null>(null)
+  const [timeRemaining, setTimeRemaining] = useState<number>(GAME_CONFIG.QUESTION_TIME_LIMIT)
+  const [opponentData, setOpponentData] = useState(opponent)
+  const [isComplete, setIsComplete] = useState(false)
+  const [show2xBadge, setShow2xBadge] = useState(false)
 
   const currentQuestion = questions[currentQuestionIndex]
   const isFinalQuestion = currentQuestionIndex === questions.length - 1
+
+  // Fetch actual opponent data
+  useEffect(() => {
+    const fetchOpponent = async () => {
+      if (opponent.fid) {
+        const response = await fetch(`/api/users/${opponent.fid}`)
+        if (response.ok) {
+          const data = await response.json()
+          setOpponentData({
+            fid: data.fid,
+            username: data.username,
+            displayName: data.display_name,
+            pfpUrl: data.pfp_url
+          })
+        }
+      }
+    }
+    fetchOpponent()
+  }, [opponent.fid])
+
+  // Show 2x badge on final question
+  useEffect(() => {
+    if (isFinalQuestion && !show2xBadge) {
+      setShow2xBadge(true)
+    }
+  }, [isFinalQuestion])
+
+  // Timer countdown
+  useEffect(() => {
+    if (lastAnswerResult) return
+
+    setTimeRemaining(GAME_CONFIG.QUESTION_TIME_LIMIT)
+    const interval = setInterval(() => {
+      setTimeRemaining(prev => {
+        if (prev <= 1) {
+          clearInterval(interval)
+          handleAnswer('', GAME_CONFIG.QUESTION_TIME_LIMIT * 1000)
+          return 0
+        }
+        return prev - 1
+      })
+    }, 1000)
+
+    return () => clearInterval(interval)
+  }, [currentQuestionIndex])
 
   const handleAnswer = async (answer: string, timeTaken: number) => {
     setSaving(true)
@@ -54,10 +105,11 @@ export default function AsyncSoloGame({
 
     // Update score and show result
     const isCorrect = result.is_correct
-    const points = result.points_earned
+    const points = result.points_earned || 0
+    const correctAnswer = result.correct_answer || ''
 
     setMyScore(prev => prev + points)
-    setLastAnswerResult({ isCorrect })
+    setLastAnswerResult({ isCorrect, correctAnswer })
 
     const answerData = {
       questionId: currentQuestion.id,
@@ -100,136 +152,99 @@ export default function AsyncSoloGame({
       })
     })
 
-    onGameEnd()
+    setIsComplete(true)
+  }
+
+  // Show game over screen
+  if (isComplete) {
+    return (
+      <div className="relative w-full h-screen flex items-center justify-center overflow-hidden bg-muted">
+        <GameOver
+          playerScore={myScore}
+          opponentScore={0}
+          playerAnswers={myAnswers}
+          opponent={opponentData}
+          opponentRequestedRematch={false}
+          forfeitedBy={null}
+          myFid={myPlayer.fid}
+          onPlayAgain={() => {}}
+          onGoHome={onGameEnd}
+          onChallenge={() => {}}
+        />
+      </div>
+    )
   }
 
   return (
-    <div className="w-full h-screen flex flex-col bg-card">
-      {/* Player Headers */}
-      <div className="flex-none">
-        <div className="flex items-center justify-between p-4 bg-secondary border-b-2 border-black">
-          {/* My Player */}
-          <div className="flex items-center gap-2">
-            <div className="w-10 h-10 rounded-full brutal-border overflow-hidden bg-white">
-              {myPlayer.pfpUrl ? (
-                <img src={myPlayer.pfpUrl} alt={myPlayer.displayName} className="w-full h-full object-cover" />
-              ) : (
-                <div className="w-full h-full bg-violet-200" />
-              )}
-            </div>
-            <div>
-              <p className="text-sm font-bold text-foreground">{myPlayer.displayName}</p>
-              <p className="text-lg font-bold text-foreground">{myScore}</p>
-            </div>
-          </div>
+    <div className="relative w-full h-screen bg-muted overflow-hidden">
+      <div className="w-full max-w-md mx-auto px-[4%] py-[3%] h-full flex flex-col">
+        {/* Score bars */}
+        <ScoreBars playerScore={myScore} opponentScore={0} />
 
-          {/* VS */}
-          <div className="text-xs font-bold text-muted-foreground uppercase">VS</div>
-
-          {/* Opponent */}
-          <div className="flex items-center gap-2">
-            <div>
-              <p className="text-sm font-bold text-foreground text-right">{opponent.displayName}</p>
-              <p className="text-xs font-bold text-muted-foreground text-right uppercase tracking-wide">Waiting</p>
-            </div>
-            <div className="w-10 h-10 rounded-full brutal-border overflow-hidden bg-white">
-              {opponent.pfpUrl ? (
-                <img src={opponent.pfpUrl} alt={opponent.displayName} className="w-full h-full object-cover" />
-              ) : (
-                <div className="w-full h-full bg-gray-200" />
-              )}
-            </div>
-          </div>
+        {/* Player header */}
+        <div className="relative z-10 mb-2 flex-shrink-0">
+          <PlayerHeader
+            playerName={myPlayer.displayName || myPlayer.username}
+            playerScore={myScore}
+            playerLevel="Novice"
+            playerAvatar={myPlayer.pfpUrl || ""}
+            playerFlair={(myPlayer as any).activeFlair}
+            opponentName={opponentData.displayName || opponentData.username}
+            opponentScore={0}
+            opponentLevel="Waiting"
+            opponentAvatar={opponentData.pfpUrl || ""}
+            opponentFlair={(opponentData as any).activeFlair}
+            timer={Math.ceil(timeRemaining)}
+            onMenuClick={() => {}}
+          />
         </div>
 
-        {/* Progress Bar */}
-        <div className="px-4 py-2 bg-secondary border-b-2 border-black">
-          <div className="flex items-center justify-between mb-1">
-            <span className="text-xs font-bold uppercase tracking-wide">
-              Question {currentQuestionIndex + 1}/{questions.length}
-            </span>
-            {isFinalQuestion && (
-              <span className="text-xs font-bold uppercase tracking-wide text-violet-600">
-                Final Question - 2x Points!
-              </span>
-            )}
-          </div>
-          <div className="w-full h-2 brutal-border rounded-full overflow-hidden bg-white">
-            <div
-              className="h-full brutal-violet transition-all duration-300"
-              style={{ width: `${((currentQuestionIndex + 1) / questions.length) * 100}%` }}
-            />
-          </div>
-        </div>
-      </div>
+        {/* Question Counter with 2X Badge */}
+        <div className="relative z-10 text-center mb-1.5 flex-shrink-0">
+          <div className="flex items-center justify-center gap-2">
+            <motion.div
+              key={currentQuestionIndex}
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="inline-block brutal-white brutal-border px-4 py-2 rounded-full shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+            >
+              <p className="text-[10px] font-bold text-foreground uppercase tracking-wider">
+                Question {currentQuestionIndex + 1} of {questions.length}
+              </p>
+            </motion.div>
 
-      {/* Question - using same GameQuestion component */}
-      <div className="flex-1 overflow-hidden">
-        {currentQuestion && (
-          <motion.div
-            key={currentQuestion.id}
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="h-full flex flex-col p-4"
-          >
-            {/* Question Text */}
-            <div className="flex-none mb-6">
-              <h2 className="text-xl font-bold text-foreground mb-2">
-                {currentQuestion.question}
-              </h2>
-              {currentQuestion.imageUrl && (
-                <img
-                  src={currentQuestion.imageUrl}
-                  alt="Question"
-                  className="w-full max-h-48 object-contain rounded-lg brutal-border"
-                />
-              )}
-            </div>
-
-            {/* Options */}
-            <div className="flex-1 space-y-3 overflow-y-auto">
-              {currentQuestion.options.map((option, index) => (
-                <motion.button
-                  key={index}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => {
-                    const endTime = Date.now()
-                    const timeTaken = 5000 // Placeholder - implement timer
-                    handleAnswer(option, timeTaken)
-                  }}
-                  disabled={saving || lastAnswerResult !== null}
-                  className={`w-full brutal-white brutal-border p-4 rounded-xl shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] text-left font-bold hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all ${
-                    saving || lastAnswerResult !== null ? 'opacity-50 cursor-not-allowed' : ''
-                  }`}
+            {/* 2X Badge for Final Question */}
+            <AnimatePresence>
+              {show2xBadge && (
+                <motion.div
+                  initial={{ scale: 3, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0, opacity: 0 }}
+                  className="brutal-violet brutal-border px-3 py-1.5 rounded-full shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
                 >
-                  {option}
-                </motion.button>
-              ))}
-            </div>
-
-            {/* Result Feedback */}
-            {lastAnswerResult && (
-              <motion.div
-                initial={{ scale: 0.8, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                className={`absolute inset-0 flex items-center justify-center ${
-                  lastAnswerResult.isCorrect ? 'bg-green-500/20' : 'bg-red-500/20'
-                }`}
-              >
-                <div className={`brutal-border rounded-2xl p-8 ${
-                  lastAnswerResult.isCorrect ? 'brutal-violet' : 'bg-red-100'
-                }`}>
-                  <p className="text-3xl font-bold text-foreground">
-                    {lastAnswerResult.isCorrect ? '✓ Correct!' : '✗ Wrong'}
+                  <p className="text-[10px] font-bold text-foreground uppercase tracking-wider">
+                    2X Points
                   </p>
-                </div>
-              </motion.div>
-            )}
-          </motion.div>
-        )}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        </div>
+
+        {/* Question */}
+        <div className="relative z-10 flex-1">
+          {currentQuestion && (
+            <GameQuestion
+              question={currentQuestion}
+              onAnswer={handleAnswer}
+              isDisabled={false}
+              showResult={lastAnswerResult !== null}
+              wasCorrect={lastAnswerResult?.isCorrect || null}
+              correctAnswer={lastAnswerResult?.correctAnswer}
+              timeRemaining={timeRemaining}
+            />
+          )}
+        </div>
       </div>
     </div>
   )

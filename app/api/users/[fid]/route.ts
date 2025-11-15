@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { supabase } from '@/lib/utils/supabase'
 
 /**
  * Get user data by FID using Neynar
@@ -49,13 +50,23 @@ export async function GET(
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
+    // Check if user exists in our database
+    const { data: dbUser } = await supabase
+      .from('users')
+      .select('fid')
+      .eq('fid', fidNumber)
+      .single()
+
+    const inDatabase = !!dbUser
+
     return NextResponse.json({
       fid: user.fid,
       username: user.username,
       display_name: user.display_name,
       pfp_url: user.pfp_url,
       follower_count: user.follower_count,
-      following_count: user.following_count
+      following_count: user.following_count,
+      in_database: inDatabase
     })
   } catch (error) {
     console.error('[User API] Error:', error)
