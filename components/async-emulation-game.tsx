@@ -45,6 +45,9 @@ export default function AsyncEmulationGame({
   const [gameComplete, setGameComplete] = useState(false)
   const [lastAnswerResult, setLastAnswerResult] = useState<{ isCorrect: boolean } | null>(null)
   const [gameInitialized, setGameInitialized] = useState(false)
+  const [timeRemaining, setTimeRemaining] = useState<number>(GAME_CONFIG.QUESTION_TIME_LIMIT)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [show2xBadge, setShow2xBadge] = useState(false)
 
   // Initialize Redis session on mount
   useEffect(() => {
@@ -66,7 +69,46 @@ export default function AsyncEmulationGame({
   const currentQuestion = questions[currentQuestionIndex]
   const isFinalQuestion = currentQuestionIndex === questions.length - 1
 
+  // Show 2x badge on final question
+  useEffect(() => {
+    if (isFinalQuestion && !show2xBadge) {
+      setShow2xBadge(true)
+    }
+  }, [isFinalQuestion])
+
+  // Timer countdown - wait for options to load before starting
+  useEffect(() => {
+    if (lastAnswerResult || isSubmitting || showingChallengerAnswer) return
+
+    setTimeRemaining(GAME_CONFIG.QUESTION_TIME_LIMIT)
+
+    // Wait for options to load (OPTIONS_LOAD_DELAY + TIMER_START_BUFFER)
+    const totalDelay = GAME_CONFIG.OPTIONS_LOAD_DELAY + GAME_CONFIG.TIMER_START_BUFFER
+    let interval: NodeJS.Timeout
+
+    const startTimer = setTimeout(() => {
+      interval = setInterval(() => {
+        setTimeRemaining(prev => {
+          if (prev <= 1) {
+            clearInterval(interval)
+            handleAnswer('', GAME_CONFIG.QUESTION_TIME_LIMIT * 1000)
+            return 0
+          }
+          return prev - 1
+        })
+      }, 1000)
+    }, totalDelay)
+
+    return () => {
+      clearTimeout(startTimer)
+      if (interval) clearInterval(interval)
+    }
+  }, [currentQuestionIndex, lastAnswerResult, isSubmitting, showingChallengerAnswer])
+
   const handleAnswer = async (answer: string, timeTaken: number) => {
+    if (isSubmitting) return // Prevent duplicate submissions
+    setIsSubmitting(true)
+    setTimeRemaining(0)
     // Save answer via API to get correct validation
     const response = await fetch(`/api/matches/${matchId}/answer-async`, {
       method: 'POST',
@@ -117,6 +159,7 @@ export default function AsyncEmulationGame({
       setTimeout(() => {
         setShowingChallengerAnswer(false)
         setLastAnswerResult(null)
+        setIsSubmitting(false)
 
         if (currentQuestionIndex < questions.length - 1) {
           setCurrentQuestionIndex(prev => prev + 1)
@@ -193,6 +236,7 @@ export default function AsyncEmulationGame({
             opponentLevel="Challenger"
             opponentAvatar={challenger.pfpUrl || ''}
             opponentFlair={challenger.activeFlair}
+            timer={Math.ceil(timeRemaining)}
             onMenuClick={() => {}}
           />
         </div>
@@ -232,7 +276,7 @@ export default function AsyncEmulationGame({
               showResult={lastAnswerResult !== null}
               wasCorrect={lastAnswerResult?.isCorrect ?? null}
               correctAnswer={lastAnswerResult ? challengerAnswers[currentQuestionIndex]?.answer : undefined}
-              timeRemaining={GAME_CONFIG.QUESTION_TIME_LIMIT}
+              timeRemaining={timeRemaining}
             />
           ) : (
             <ChallengerAnswerReveal

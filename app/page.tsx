@@ -44,10 +44,13 @@ export default function Home() {
       if (challengeMatchId && challengeTopic && user) {
         // If mode=emulation, opponent is accepting challenge
         if (mode === 'emulation') {
+          console.log('[Page] Mode=emulation detected, fetching match:', challengeMatchId)
           fetchMatchAndStart(challengeMatchId)
           window.history.replaceState({}, '', '/')
           return
         }
+
+        console.log('[Page] Challenge flow - waiting for opponent:', challengeMatchId)
 
         // Challenge sent - show waiting screen, poll for opponent join
         setSelectedTopic(challengeTopic)
@@ -63,14 +66,17 @@ export default function Home() {
           const response = await fetch(`/api/matches/${challengeMatchId}`)
           const matchData = await response.json()
 
-          // Check if opponent joined (status changed from 'waiting')
-          if (matchData.status !== 'waiting' && matchData.status !== 'declined') {
+          // Check if opponent joined (status changed to 'active' and is_async is false = live game)
+          if (matchData.status === 'active' && matchData.is_async === false) {
             hasJoined = true
             clearInterval(pollInterval)
             setWaitingForOpponent(false)
 
-            // Opponent joined! Start live match
+            console.log('[Page] Opponent accepted within 30s! Starting LIVE game')
+
+            // Opponent joined! Start live Socket.IO match
             const isPlayer1 = matchData.player1_fid === currentUser.fid
+            setIsAsyncChallenge(false) // This is now a live game
             setCurrentMatch({
               match_id: challengeMatchId,
               myPlayer: {

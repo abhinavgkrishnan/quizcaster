@@ -86,23 +86,33 @@ export default function AsyncSoloGame({
     }
   }, [isFinalQuestion])
 
-  // Timer countdown
+  // Timer countdown - wait for options to load before starting
   useEffect(() => {
     if (lastAnswerResult || isSubmitting) return
 
     setTimeRemaining(GAME_CONFIG.QUESTION_TIME_LIMIT)
-    const interval = setInterval(() => {
-      setTimeRemaining(prev => {
-        if (prev <= 1) {
-          clearInterval(interval)
-          handleAnswer('', GAME_CONFIG.QUESTION_TIME_LIMIT * 1000)
-          return 0
-        }
-        return prev - 1
-      })
-    }, 1000)
 
-    return () => clearInterval(interval)
+    // Wait for options to load (OPTIONS_LOAD_DELAY + TIMER_START_BUFFER)
+    const totalDelay = GAME_CONFIG.OPTIONS_LOAD_DELAY + GAME_CONFIG.TIMER_START_BUFFER
+    let interval: NodeJS.Timeout
+
+    const startTimer = setTimeout(() => {
+      interval = setInterval(() => {
+        setTimeRemaining(prev => {
+          if (prev <= 1) {
+            clearInterval(interval)
+            handleAnswer('', GAME_CONFIG.QUESTION_TIME_LIMIT * 1000)
+            return 0
+          }
+          return prev - 1
+        })
+      }, 1000)
+    }, totalDelay)
+
+    return () => {
+      clearTimeout(startTimer)
+      if (interval) clearInterval(interval)
+    }
   }, [currentQuestionIndex, lastAnswerResult, isSubmitting])
 
   const handleAnswer = async (answer: string, timeTaken: number) => {

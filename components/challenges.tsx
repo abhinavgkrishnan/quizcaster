@@ -83,9 +83,22 @@ export default function Challenges({ user, onNavigate }: ChallengesProps) {
       })
 
       if (response.ok) {
-        // Navigate to async emulation game
-        router.push(`/?challenge=${challenge.match_id}&topic=${challenge.topic}&opponent=${challenge.challenger_fid}&mode=emulation`)
+        const data = await response.json()
+        console.log('[Challenges] Accepting challenge:', data)
+
+        if (data.is_live) {
+          // Live game - navigate directly to match (Socket.IO)
+          console.log('[Challenges] Starting LIVE game:', challenge.match_id)
+          router.push(`/?match=${challenge.match_id}`)
+        } else {
+          // Async game - navigate to emulation
+          console.log('[Challenges] Starting ASYNC emulation:', challenge.match_id)
+          router.push(`/?challenge=${challenge.match_id}&topic=${challenge.topic}&opponent=${challenge.challenger_fid}&mode=emulation`)
+        }
         fetchChallenges()
+      } else {
+        console.error('[Challenges] Accept failed:', await response.text())
+        alert('Failed to accept challenge')
       }
     } catch (error) {
       console.error('Failed to accept challenge:', error)
@@ -200,9 +213,9 @@ export default function Challenges({ user, onNavigate }: ChallengesProps) {
                   className="brutal-violet brutal-border p-4 rounded-2xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
                 >
                   {/* Challenge Info */}
-                  <div className="flex items-center gap-3 mb-4">
+                  <div className="flex items-start gap-3 mb-3">
                     {/* User PFP */}
-                    <div className="w-12 h-12 rounded-full brutal-border overflow-hidden shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] bg-white flex-shrink-0">
+                    <div className="w-16 h-16 rounded-full brutal-border overflow-hidden shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] bg-white flex-shrink-0">
                       {(activeTab === 'received' ? challenge.challenger.pfp_url : challenge.challenged.pfp_url) ? (
                         <img
                           src={activeTab === 'received' ? challenge.challenger.pfp_url : challenge.challenged.pfp_url}
@@ -215,29 +228,23 @@ export default function Challenges({ user, onNavigate }: ChallengesProps) {
                       )}
                     </div>
 
-                    {/* User Info */}
+                    {/* User Info & Topic */}
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold text-foreground truncate">
+                      <p className="text-base font-bold text-foreground truncate">
                         {activeTab === 'received' ? challenge.challenger.display_name : challenge.challenged.display_name}
                       </p>
-                      <p className="text-xs text-foreground/60 truncate">
+                      <p className="text-xs text-foreground/60 truncate mb-1">
                         @{activeTab === 'received' ? challenge.challenger.username : challenge.challenged.username}
                       </p>
                       {(activeTab === 'received' ? challenge.challenger.active_flair : challenge.challenged.active_flair) && (
-                        <p className="text-[10px] text-foreground/50 mt-0.5">
+                        <p className="text-[10px] text-foreground/50 mb-2">
                           {activeTab === 'received' ? challenge.challenger.active_flair.icon : challenge.challenged.active_flair.icon}{' '}
                           {activeTab === 'received' ? challenge.challenger.active_flair.name : challenge.challenged.active_flair.name}
                         </p>
                       )}
-                    </div>
-
-                  </div>
-
-                  {/* Topic */}
-                  <div className="mb-4">
-                    <p className="text-xs text-foreground/60 uppercase tracking-wider mb-1">Challenge Topic</p>
-                    <div className="brutal-beige brutal-border px-3 py-2 rounded-lg inline-block">
-                      <p className="text-sm font-bold uppercase tracking-wide">{challenge.topic}</p>
+                      <div className="brutal-beige brutal-border px-3 py-1.5 rounded-lg inline-block">
+                        <p className="text-sm font-bold uppercase tracking-wide">{challenge.topic}</p>
+                      </div>
                     </div>
                   </div>
 

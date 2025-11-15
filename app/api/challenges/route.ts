@@ -203,6 +203,23 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Challenge ID is required' }, { status: 400 })
       }
 
+      // Get challenge details to check timing
+      const { data: challengeData } = await supabase
+        .from('async_challenges')
+        .select('*, match_id')
+        .eq('id', challenge_id)
+        .single()
+
+      if (!challengeData) {
+        return NextResponse.json({ error: 'Challenge not found' }, { status: 404 })
+      }
+
+      // Check if accepted within 30 seconds
+      const createdAt = new Date(challengeData.created_at).getTime()
+      const now = Date.now()
+      const acceptedWithin30Seconds = (now - createdAt) < 30000
+
+      // Update challenge status
       const { error } = await supabase
         .from('async_challenges')
         .update({
@@ -213,14 +230,52 @@ export async function POST(request: NextRequest) {
 
       if (error) throw error
 
-      // Get match_id to return
-      const { data: challenge } = await supabase
-        .from('async_challenges')
-        .select('match_id')
-        .eq('id', challenge_id)
-        .single()
+      // If accepted within 30s, convert to live match
+      if (acceptedWithin30Seconds) {
+        // Get match and questions
+        const { data: match } = await supabase
+          .from('matches')
+          .select('*')
+          .eq('id', challengeData.match_id)
+          .single()
 
-      return NextResponse.json({ success: true, match_id: challenge?.match_id })
+        if (match) {
+          const questionIds = Array.isArray(match.questions_used)
+            ? match.questions_used
+            : JSON.parse(match.questions_used as string)
+
+          // Create Redis/Socket session for live game
+          const { createGameSession } = await import('@/lib/redis/game-state')
+          await createGameSession(
+            challengeData.match_id,
+            match.player1_fid,
+            match.player2_fid || 0,
+            questionIds
+          )
+
+          // Update match to be live (not async)
+          await supabase
+            .from('matches')
+            .update({
+              is_async: false,
+              status: 'active',
+              started_at: new Date().toISOString()
+            })
+            .eq('id', challengeData.match_id)
+
+          return NextResponse.json({
+            success: true,
+            match_id: challengeData.match_id,
+            is_live: true
+          })
+        }
+      }
+
+      return NextResponse.json({
+        success: true,
+        match_id: challengeData.match_id,
+        is_live: false
+      })
     }
 
     if (action === 'decline') {
