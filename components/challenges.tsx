@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import { Bell, Check, X as XIcon, Swords } from "lucide-react"
+import * as Icons from "lucide-react"
 import type { FarcasterUser, AppScreen } from "@/lib/types"
 import { useRouter } from "next/navigation"
 
@@ -31,6 +32,13 @@ interface Challenge {
   }
 }
 
+interface Topic {
+  slug: string
+  display_name: string
+  icon_name: string | null
+  color_class: string | null
+}
+
 interface ChallengesProps {
   user: FarcasterUser | null
   onNavigate?: (screen: AppScreen) => void
@@ -42,12 +50,24 @@ export default function Challenges({ user, onNavigate }: ChallengesProps) {
   const [sentChallenges, setSentChallenges] = useState<Challenge[]>([])
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<'received' | 'sent'>('received')
+  const [topics, setTopics] = useState<Topic[]>([])
 
   useEffect(() => {
     if (user?.fid) {
       fetchChallenges()
+      fetchTopics()
     }
   }, [user?.fid])
+
+  const fetchTopics = async () => {
+    try {
+      const response = await fetch('/api/topics')
+      const data = await response.json()
+      setTopics(data.topics || [])
+    } catch (error) {
+      console.error('Failed to fetch topics:', error)
+    }
+  }
 
   const fetchChallenges = async () => {
     if (!user?.fid) return
@@ -86,16 +106,18 @@ export default function Challenges({ user, onNavigate }: ChallengesProps) {
         const data = await response.json()
         console.log('[Challenges] Accepting challenge:', data)
 
+        // Use window.location.href to trigger full page navigation
+        // This ensures the useEffect in page.tsx runs and handles the match logic
         if (data.is_live) {
           // Live game - navigate directly to match (Socket.IO)
           console.log('[Challenges] Starting LIVE game:', challenge.match_id)
-          router.push(`/?match=${challenge.match_id}`)
+          window.location.href = `/?match=${challenge.match_id}`
         } else {
-          // Async game - navigate to emulation
-          console.log('[Challenges] Starting ASYNC emulation:', challenge.match_id)
-          router.push(`/?challenge=${challenge.match_id}&topic=${challenge.topic}&opponent=${challenge.challenger_fid}&mode=emulation`)
+          // Async game - let page.tsx fetchMatchAndStart handle the logic
+          // It will check if challenger finished and start emulation or show waiting screen
+          console.log('[Challenges] Starting ASYNC game:', challenge.match_id)
+          window.location.href = `/?match=${challenge.match_id}`
         }
-        fetchChallenges()
       } else {
         console.error('[Challenges] Accept failed:', await response.text())
         alert('Failed to accept challenge')
@@ -202,6 +224,11 @@ export default function Challenges({ user, onNavigate }: ChallengesProps) {
             {(activeTab === 'received' ? receivedChallenges : sentChallenges).map((challenge, index) => {
               const isExpiringSoon = new Date(challenge.expires_at).getTime() - Date.now() < 3600000 // 1 hour
 
+              // Get topic data for icon and color
+              const topicData = topics.find(t => t.slug === challenge.topic)
+              const TopicIcon = topicData?.icon_name ? (Icons as any)[topicData.icon_name] : Icons.HelpCircle
+              const topicColor = topicData?.color_class || 'brutal-beige'
+
               return (
                 <div
                   key={challenge.id}
@@ -215,7 +242,7 @@ export default function Challenges({ user, onNavigate }: ChallengesProps) {
                   {/* Challenge Card */}
                   <div className="flex items-stretch justify-between gap-4">
                     {/* Left Column: PFP, Username, Topic stacked vertically */}
-                    <div className="flex flex-col gap-2 flex-1">
+                    <div className="flex flex-col gap-3 flex-1">
                       <div className="flex items-center gap-3">
                         <div className="w-14 h-14 rounded-full brutal-border overflow-hidden shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] bg-white flex-shrink-0">
                           {(activeTab === 'received' ? challenge.challenger.pfp_url : challenge.challenged.pfp_url) ? (
@@ -234,8 +261,11 @@ export default function Challenges({ user, onNavigate }: ChallengesProps) {
                           <p className="text-sm text-foreground/60 truncate">@{activeTab === 'received' ? challenge.challenger.username : challenge.challenged.username}</p>
                         </div>
                       </div>
-                      <div className="brutal-beige brutal-border px-5 py-2.5 rounded-full text-center">
-                        <p className="text-lg font-bold uppercase tracking-wide">{challenge.topic}</p>
+
+                      {/* Topic Card - matching topic-selection style */}
+                      <div className={`${topicColor} brutal-border rounded-xl shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] p-3 flex items-center justify-center gap-2`}>
+                        <TopicIcon className="w-6 h-6 stroke-[2.5] text-foreground" />
+                        <p className="text-sm font-bold uppercase tracking-wide text-foreground">{topicData?.display_name || challenge.topic}</p>
                       </div>
                     </div>
 
@@ -256,11 +286,12 @@ export default function Challenges({ user, onNavigate }: ChallengesProps) {
                         <motion.button
                           whileTap={{ scale: 0.95 }}
                           onClick={() => handleDecline(challenge.id)}
-                          className="brutal-border bg-background rounded-full w-12 h-12 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] flex items-center justify-center mx-auto"
+                          className="brutal-white brutal-border rounded-xl px-6 py-3 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] flex items-center justify-center gap-2 min-w-[120px]"
                         >
-                          <div className="w-7 h-7 rounded-full bg-red-500 flex items-center justify-center">
+                          <div className="w-6 h-6 rounded-full bg-red-500 flex items-center justify-center">
                             <XIcon className="w-4 h-4 text-white stroke-[3]" />
                           </div>
+                          <span className="text-sm font-bold uppercase tracking-wider">Reject</span>
                         </motion.button>
                       </div>
                     ) : (
