@@ -6,7 +6,7 @@ import confetti from "canvas-confetti"
 import GameQuestion from "./game-question"
 import ScoreBars from "./score-bars"
 import PlayerHeader from "./player-header"
-import GameOver from "./game-over"
+import ChallengeSentScreen from "./challenge-sent-screen"
 import type { PlayerData, Question } from "@/lib/types"
 import { GAME_CONFIG } from "@/lib/constants"
 
@@ -85,6 +85,8 @@ export default function AsyncSoloGame({
   }, [currentQuestionIndex])
 
   const handleAnswer = async (answer: string, timeTaken: number) => {
+    // Stop timer
+    setTimeRemaining(0)
 
     // Save answer to database - the API will check correctness
     const response = await fetch(`/api/matches/${matchId}/answer`, {
@@ -102,16 +104,15 @@ export default function AsyncSoloGame({
     const result = await response.json()
 
     // Update score and show result
-    const isCorrect = result.is_correct
+    const isCorrect = result.is_correct || false
     const points = result.points_earned || 0
     const correctAnswer = result.correct_answer || ''
 
-    setMyScore(prev => prev + points)
+    const newScore = myScore + points
+    setMyScore(newScore)
     setLastAnswerResult({ isCorrect, correctAnswer })
 
     const answerData = {
-      questionId: currentQuestion.id,
-      answer,
       isCorrect,
       timeTaken,
       points
@@ -131,7 +132,6 @@ export default function AsyncSoloGame({
       setLastAnswerResult(null)
 
       if (isFinalQuestion) {
-        // Game complete - mark as complete in DB
         completeGame()
       } else {
         setCurrentQuestionIndex(prev => prev + 1)
@@ -153,23 +153,20 @@ export default function AsyncSoloGame({
     setIsComplete(true)
   }
 
-  // Show game over screen
+  // Show challenge sent screen when complete
   if (isComplete) {
     return (
-      <div className="relative w-full h-screen flex items-center justify-center overflow-hidden bg-muted">
-        <GameOver
-          playerScore={myScore}
-          opponentScore={0}
-          playerAnswers={myAnswers}
-          opponent={opponentData}
-          opponentRequestedRematch={false}
-          forfeitedBy={null}
-          myFid={myPlayer.fid}
-          onPlayAgain={() => {}}
-          onGoHome={onGameEnd}
-          onChallenge={() => {}}
-        />
-      </div>
+      <ChallengeSentScreen
+        playerScore={myScore}
+        playerAnswers={myAnswers}
+        opponentName={opponentData.displayName}
+        topic={topic}
+        onPlayAgain={() => {
+          // Navigate to matchmaking for same topic
+          window.location.href = `/?matchmaking=${topic}`
+        }}
+        onGoHome={onGameEnd}
+      />
     )
   }
 

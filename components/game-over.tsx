@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react"
 import { motion } from "framer-motion"
 import confetti from "canvas-confetti"
-import { Trophy, Target, Zap, RotateCcw, Home, Swords, Share2 } from "lucide-react"
+import { Trophy, Target, Zap, RotateCcw, Home, Swords, Share2, ArrowLeft } from "lucide-react"
 import { GAME_CONFIG } from "@/lib/constants"
 
 interface GameOverProps {
@@ -23,12 +23,14 @@ interface GameOverProps {
   forfeitedBy?: number | null
   myFid: number
   topic?: string
+  isHistorical?: boolean
   onPlayAgain: () => void
   onGoHome: () => void
   onChallenge: () => void
+  onBack?: () => void
 }
 
-export default function GameOver({ playerScore, opponentScore, playerAnswers, opponent, opponentRequestedRematch, forfeitedBy, myFid, topic, onPlayAgain, onGoHome, onChallenge }: GameOverProps) {
+export default function GameOver({ playerScore, opponentScore, playerAnswers, opponent, opponentRequestedRematch, forfeitedBy, myFid, topic, isHistorical, onPlayAgain, onGoHome, onChallenge, onBack }: GameOverProps) {
   const opponentForfeited = forfeitedBy !== null && forfeitedBy !== myFid
   const iForfeited = forfeitedBy === myFid
 
@@ -117,16 +119,30 @@ export default function GameOver({ playerScore, opponentScore, playerAnswers, op
   }
 
   return (
-    <div className="w-full h-screen overflow-hidden flex items-center justify-center px-[5%]">
-      <div className="text-center w-full max-w-md flex flex-col justify-center">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ type: "spring", stiffness: 300, damping: 25 }}
-          className="flex flex-col"
-        >
-          {/* Result Icon */}
-          <div className="mb-3 flex justify-center">
+    <div className="w-full h-screen overflow-hidden flex flex-col">
+      {/* Back button for historical matches */}
+      {isHistorical && onBack && (
+        <div className="flex-none p-4">
+          <button
+            onClick={onBack}
+            className="brutal-border bg-background p-2 rounded-lg shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] flex items-center gap-2"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span className="text-xs font-bold uppercase tracking-wider">Back</span>
+          </button>
+        </div>
+      )}
+
+      <div className="flex-1 flex items-center justify-center px-[5%]">
+        <div className="text-center w-full max-w-md flex flex-col justify-center">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ type: "spring", stiffness: 300, damping: 25 }}
+            className="flex flex-col"
+          >
+            {/* Result Icon */}
+            <div className="mb-3 flex justify-center">
             <div className={`w-16 h-16 rounded-full flex items-center justify-center brutal-border shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] ${
               playerWon ? 'brutal-beige' : isDraw ? 'brutal-violet' : 'bg-gray-300'
             }`}>
@@ -206,93 +222,98 @@ export default function GameOver({ playerScore, opponentScore, playerAnswers, op
               </span>
             </button>
 
-            <button
-              onClick={onPlayAgain}
-              style={{
-                transform: 'translate3d(0, 0, 0)',
-                WebkitTransform: 'translate3d(0, 0, 0)',
-                backfaceVisibility: 'hidden',
-                WebkitBackfaceVisibility: 'hidden',
-              }}
-              className="relative w-full py-2.5 rounded-2xl brutal-beige brutal-border font-bold text-[10px] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all duration-200 text-foreground uppercase tracking-wide"
-            >
-              <span className="flex items-center justify-center gap-2">
-                <RotateCcw className="w-3.5 h-3.5" />
-                Play Again
-              </span>
-            </button>
+            {!isHistorical && (
+              <>
+                <button
+                  onClick={onPlayAgain}
+                  style={{
+                    transform: 'translate3d(0, 0, 0)',
+                    WebkitTransform: 'translate3d(0, 0, 0)',
+                    backfaceVisibility: 'hidden',
+                    WebkitBackfaceVisibility: 'hidden',
+                  }}
+                  className="relative w-full py-2.5 rounded-2xl brutal-beige brutal-border font-bold text-[10px] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all duration-200 text-foreground uppercase tracking-wide"
+                >
+                  <span className="flex items-center justify-center gap-2">
+                    <RotateCcw className="w-3.5 h-3.5" />
+                    Play Again
+                  </span>
+                </button>
 
-            <button
-              onClick={handleChallenge}
-              disabled={challengeProgress >= 100}
-              style={{
-                transform: 'translate3d(0, 0, 0)',
-                WebkitTransform: 'translate3d(0, 0, 0)',
-                backfaceVisibility: 'hidden',
-                WebkitBackfaceVisibility: 'hidden',
-                animation: opponentRequestedRematch && !challengeActive ? 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite' : 'none',
-              }}
-              className={`relative w-full py-2.5 rounded-2xl brutal-border font-bold text-[10px] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all duration-200 uppercase tracking-wide overflow-hidden ${
-                challengeProgress >= 100 ? 'bg-gray-300 opacity-50' : opponentRequestedRematch ? 'brutal-violet' : 'brutal-beige'
-              }`}
-            >
-              {challengeActive && (
-                <svg className="absolute inset-0 w-full h-full pointer-events-none">
-                  <rect
-                    x="2"
-                    y="2"
-                    width="calc(100% - 4px)"
-                    height="calc(100% - 4px)"
-                    fill="none"
-                    stroke="#CFB8FF"
-                    strokeWidth="4"
-                    strokeDasharray={`${challengeProgress * 2}% ${200 - challengeProgress * 2}%`}
-                    strokeDashoffset="50%"
-                    rx="12"
-                    style={{
-                      transition: 'stroke-dasharray 0.05s linear',
-                    }}
-                  />
-                </svg>
-              )}
+                <button
+                  onClick={handleChallenge}
+                  disabled={challengeProgress >= 100}
+                  style={{
+                    transform: 'translate3d(0, 0, 0)',
+                    WebkitTransform: 'translate3d(0, 0, 0)',
+                    backfaceVisibility: 'hidden',
+                    WebkitBackfaceVisibility: 'hidden',
+                    animation: opponentRequestedRematch && !challengeActive ? 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite' : 'none',
+                  }}
+                  className={`relative w-full py-2.5 rounded-2xl brutal-border font-bold text-[10px] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all duration-200 uppercase tracking-wide overflow-hidden ${
+                    challengeProgress >= 100 ? 'bg-gray-300 opacity-50' : opponentRequestedRematch ? 'brutal-violet' : 'brutal-beige'
+                  }`}
+                >
+                  {challengeActive && (
+                    <svg className="absolute inset-0 w-full h-full pointer-events-none">
+                      <rect
+                        x="2"
+                        y="2"
+                        width="calc(100% - 4px)"
+                        height="calc(100% - 4px)"
+                        fill="none"
+                        stroke="#CFB8FF"
+                        strokeWidth="4"
+                        strokeDasharray={`${challengeProgress * 2}% ${200 - challengeProgress * 2}%`}
+                        strokeDashoffset="50%"
+                        rx="12"
+                        style={{
+                          transition: 'stroke-dasharray 0.05s linear',
+                        }}
+                      />
+                    </svg>
+                  )}
 
-              <span className="relative z-10 flex items-center justify-center gap-1.5">
-                {opponent.pfpUrl && (
-                  <img
-                    src={opponent.pfpUrl}
-                    alt={opponent.displayName}
-                    className="w-5 h-5 rounded-full brutal-border flex-shrink-0"
-                  />
-                )}
-                <Swords className="w-3.5 h-3.5 flex-shrink-0" />
-                <span className="truncate" style={{ maxWidth: 'calc(100% - 80px)' }}>
-                  {opponentRequestedRematch && !challengeActive
-                    ? `${opponent.displayName} wants rematch!`
-                    : `Challenge ${opponent.displayName}`}
-                </span>
-                {challengeActive && (
-                  <span className="text-[9px] flex-shrink-0">({Math.ceil(10 - (challengeProgress / 10))}s)</span>
-                )}
-              </span>
-            </button>
+                  <span className="relative z-10 flex items-center justify-center gap-1.5">
+                    {opponent.pfpUrl && (
+                      <img
+                        src={opponent.pfpUrl}
+                        alt={opponent.displayName}
+                        className="w-5 h-5 rounded-full brutal-border flex-shrink-0"
+                      />
+                    )}
+                    <Swords className="w-3.5 h-3.5 flex-shrink-0" />
+                    <span className="truncate" style={{ maxWidth: 'calc(100% - 80px)' }}>
+                      {opponentRequestedRematch && !challengeActive
+                        ? `${opponent.displayName} wants rematch!`
+                        : `Challenge ${opponent.displayName}`}
+                    </span>
+                    {challengeActive && (
+                      <span className="text-[9px] flex-shrink-0">({Math.ceil(10 - (challengeProgress / 10))}s)</span>
+                    )}
+                  </span>
+                </button>
 
-            <button
-              onClick={onGoHome}
-              style={{
-                transform: 'translate3d(0, 0, 0)',
-                WebkitTransform: 'translate3d(0, 0, 0)',
-                backfaceVisibility: 'hidden',
-                WebkitBackfaceVisibility: 'hidden',
-              }}
-              className="relative w-full py-2.5 rounded-2xl brutal-border bg-background font-bold text-[10px] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all duration-200 text-foreground uppercase tracking-wide"
-            >
-              <span className="flex items-center justify-center gap-2">
-                <Home className="w-3.5 h-3.5" />
-                Home
-              </span>
-            </button>
+                <button
+                  onClick={onGoHome}
+                  style={{
+                    transform: 'translate3d(0, 0, 0)',
+                    WebkitTransform: 'translate3d(0, 0, 0)',
+                    backfaceVisibility: 'hidden',
+                    WebkitBackfaceVisibility: 'hidden',
+                  }}
+                  className="relative w-full py-2.5 rounded-2xl brutal-border bg-background font-bold text-[10px] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all duration-200 text-foreground uppercase tracking-wide"
+                >
+                  <span className="flex items-center justify-center gap-2">
+                    <Home className="w-3.5 h-3.5" />
+                    Home
+                  </span>
+                </button>
+              </>
+            )}
           </div>
         </motion.div>
+      </div>
       </div>
     </div>
   )

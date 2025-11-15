@@ -5,6 +5,7 @@ import { motion } from "framer-motion"
 import { Trophy, X, Filter, ChevronDown } from "lucide-react"
 import type { FarcasterUser, AppScreen } from "@/lib/types"
 import BottomNav from "./bottom-nav"
+import GameOver from "./game-over"
 
 interface Match {
   id: string
@@ -39,6 +40,8 @@ export default function MatchHistory({ user, onClose, onNavigate, currentScreen,
   const [filterTopic, setFilterTopic] = useState<string>('')
   const [showFilters, setShowFilters] = useState(false)
   const [topics, setTopics] = useState<string[]>([])
+  const [selectedMatch, setSelectedMatch] = useState<any>(null)
+  const [loadingMatchDetails, setLoadingMatchDetails] = useState(false)
 
   const observerTarget = useRef<HTMLDivElement>(null)
   const LIMIT = 20
@@ -133,6 +136,28 @@ export default function MatchHistory({ user, onClose, onNavigate, currentScreen,
     }
   }
 
+  const handleMatchClick = async (match: Match) => {
+    if (!user?.fid) return
+
+    setLoadingMatchDetails(true)
+    try {
+      const response = await fetch(`/api/matches/${match.id}/details?fid=${user.fid}`)
+      const data = await response.json()
+
+      if (response.ok) {
+        setSelectedMatch(data)
+      } else {
+        console.error('Failed to fetch match details:', data.error)
+        alert('Failed to load match details')
+      }
+    } catch (error) {
+      console.error('Error fetching match details:', error)
+      alert('Failed to load match details')
+    } finally {
+      setLoadingMatchDetails(false)
+    }
+  }
+
   return (
     <div className="w-full h-screen flex flex-col bg-card">
       {/* Header */}
@@ -191,12 +216,13 @@ export default function MatchHistory({ user, onClose, onNavigate, currentScreen,
           </div>
         ) : (
           matches.map((match, index) => (
-            <motion.div
+            <motion.button
               key={match.id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.05 }}
-              className="relative brutal-border p-3 rounded-2xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] overflow-hidden bg-card"
+              onClick={() => handleMatchClick(match)}
+              className="relative brutal-border p-3 rounded-2xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] overflow-hidden bg-card w-full text-left hover:scale-[1.02] transition-transform active:scale-[0.98]"
             >
               {/* Score Bar - Subtle Background */}
               <div className="absolute inset-0 rounded-2xl overflow-hidden opacity-10">
@@ -260,7 +286,7 @@ export default function MatchHistory({ user, onClose, onNavigate, currentScreen,
                   Async Challenge
                 </p>
               )}
-            </motion.div>
+            </motion.button>
           ))
         )}
 
@@ -280,6 +306,40 @@ export default function MatchHistory({ user, onClose, onNavigate, currentScreen,
       </div>
 
       {/* Bottom nav removed - now in global layout */}
+
+      {/* Game Over Modal */}
+      {selectedMatch && (
+        <div className="fixed inset-0 z-50 bg-black/90">
+          <GameOver
+            playerScore={selectedMatch.my_score}
+            opponentScore={selectedMatch.opponent_score}
+            playerAnswers={selectedMatch.my_answers}
+            opponent={{
+              username: selectedMatch.opponent.username,
+              displayName: selectedMatch.opponent.displayName,
+              pfpUrl: selectedMatch.opponent.pfpUrl
+            }}
+            opponentRequestedRematch={false}
+            forfeitedBy={selectedMatch.forfeited_by}
+            myFid={user?.fid || 0}
+            topic={selectedMatch.topic}
+            isHistorical={true}
+            onPlayAgain={() => {}}
+            onGoHome={() => setSelectedMatch(null)}
+            onChallenge={() => {}}
+            onBack={() => setSelectedMatch(null)}
+          />
+        </div>
+      )}
+
+      {/* Loading overlay for match details */}
+      {loadingMatchDetails && (
+        <div className="fixed inset-0 z-40 bg-black/50 flex items-center justify-center">
+          <div className="brutal-violet brutal-border p-6 rounded-2xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+            <p className="text-sm font-bold uppercase tracking-wider">Loading match...</p>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

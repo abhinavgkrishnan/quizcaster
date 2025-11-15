@@ -56,20 +56,29 @@ export default function AsyncEmulationGame({
   const currentQuestion = questions[currentQuestionIndex]
   const isFinalQuestion = currentQuestionIndex === questions.length - 1
 
-  const handleAnswer = (answer: string, timeTaken: number) => {
-    const challengerAnswer = challengerAnswers[currentQuestionIndex]
-    const isCorrect = answer === challengerAnswer.answer || checkCorrectAnswer(answer)
+  const handleAnswer = async (answer: string, timeTaken: number) => {
+    // Save answer via API to get correct validation
+    const response = await fetch(`/api/matches/${matchId}/answer`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        fid: myPlayer.fid,
+        question_id: currentQuestion.id,
+        question_number: currentQuestionIndex,
+        answer,
+        time_taken_ms: timeTaken
+      })
+    })
 
-    const multiplier = isFinalQuestion ? 2 : 1
-    const points = isCorrect ? calculatePoints(timeTaken, multiplier) : 0
+    const result = await response.json()
+    const isCorrect = result.is_correct || false
+    const points = result.points_earned || 0
 
     // Update my score
     setMyScore(prev => prev + points)
 
     // Store my answer
     const myAnswer = {
-      questionId: currentQuestion.id,
-      answer,
       isCorrect,
       timeTaken,
       points
@@ -111,28 +120,19 @@ export default function AsyncEmulationGame({
   const completeGame = async () => {
     setGameComplete(true)
 
-    // TODO: Send results to server
+    // Mark opponent completion and trigger stats update + notification
     try {
-      await fetch(`/api/matches/${matchId}/complete`, {
+      await fetch(`/api/matches/${matchId}/complete-async`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           fid: myPlayer.fid,
-          score: myScore,
-          answers: myAnswers
+          score: myScore
         })
       })
     } catch (error) {
       console.error('Failed to save game results:', error)
     }
-  }
-
-  const checkCorrectAnswer = (answer: string): boolean => {
-    // Check against the correct answer stored in questions
-    const challengerAnswer = challengerAnswers[currentQuestionIndex]
-    // If challenger got it right and user gives same answer, it's correct
-    // Otherwise we'd need the actual correct answer from the question data
-    return answer === challengerAnswer.answer && challengerAnswer.isCorrect
   }
 
   if (gameComplete) {

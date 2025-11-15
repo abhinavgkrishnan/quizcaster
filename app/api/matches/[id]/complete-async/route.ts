@@ -61,6 +61,42 @@ export async function POST(
       updateData.status = 'completed'
       updateData.winner_fid = winnerFid
       updateData.completed_at = new Date().toISOString()
+
+      // Send notification to challenger that opponent has completed
+      const challengerFid = isPlayer1 ? match.player2_fid : match.player1_fid
+
+      try {
+        const { data: users } = await supabase
+          .from('users')
+          .select('fid, username, display_name, notification_token, notification_url, notifications_enabled')
+          .in('fid', [fid, challengerFid])
+
+        const challenger = users?.find(u => u.fid === challengerFid)
+        const opponent = users?.find(u => u.fid === fid)
+
+        if (challenger?.notifications_enabled && challenger.notification_token && challenger.notification_url) {
+          const opponentName = opponent?.display_name || opponent?.username || 'Someone'
+
+          await fetch(challenger.notification_url, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${challenger.notification_token}`
+            },
+            body: JSON.stringify({
+              notificationId: crypto.randomUUID(),
+              title: 'Challenge Complete!',
+              body: `${opponentName} finished your challenge!`,
+              targetUrl: `${process.env.NEXT_PUBLIC_APP_URL}/?match=${matchId}`,
+              tokens: [challenger.notification_token]
+            })
+          }).catch(err => {
+            console.error('Failed to send notification:', err)
+          })
+        }
+      } catch (notifError) {
+        console.error('Error sending notification:', notifError)
+      }
     }
 
     // Update match
