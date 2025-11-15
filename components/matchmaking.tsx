@@ -12,15 +12,19 @@ interface MatchmakingProps {
   topic: string
   onMatchFound: (matchData: MatchData) => void
   onCancel?: () => void
+  challengeMatchId?: string | null
+  challengeOpponentFid?: string | null
 }
 
-export default function Matchmaking({ topic, onMatchFound, onCancel }: MatchmakingProps) {
+export default function Matchmaking({ topic, onMatchFound, onCancel, challengeMatchId, challengeOpponentFid }: MatchmakingProps) {
   const { user } = useFarcaster()
   const hasJoinedRef = useRef(false)
   const mockFidRef = useRef(999999 + Math.floor(Math.random() * 100)) // Stable random FID per component instance
   const isDevMode = process.env.NEXT_PUBLIC_DEV_MODE === 'true'
   const [showMatchFound, setShowMatchFound] = useState(false)
   const [foundMatchData, setFoundMatchData] = useState<any>(null)
+  const [waitingForOpponent, setWaitingForOpponent] = useState(false)
+  const [goingAsync, setGoingAsync] = useState(false)
 
   // In dev mode, use mock user with stable random FID for multi-tab testing
   const effectiveUser = user || (isDevMode ? {
@@ -29,6 +33,49 @@ export default function Matchmaking({ topic, onMatchFound, onCancel }: Matchmaki
     displayName: `Dev Player ${mockFidRef.current}`,
     pfpUrl: ''
   } : null)
+
+  // Handle challenge flow - wait 30 seconds then go async
+  useEffect(() => {
+    if (challengeMatchId && !hasJoinedRef.current) {
+      hasJoinedRef.current = true
+      setWaitingForOpponent(true)
+
+      // Wait 30 seconds then transition to async
+      const timeout = setTimeout(() => {
+        setWaitingForOpponent(false)
+        setGoingAsync(true)
+
+        // Transition to async game after brief message
+        setTimeout(() => {
+          if (effectiveUser) {
+            onMatchFound({
+              match_id: challengeMatchId,
+              myPlayer: {
+                fid: effectiveUser.fid,
+                username: effectiveUser.username,
+                displayName: effectiveUser.displayName,
+                pfpUrl: effectiveUser.pfpUrl || '',
+                score: 0,
+                answers: [],
+                ready: true
+              },
+              opponent: {
+                fid: parseInt(challengeOpponentFid || '0'),
+                username: 'opponent',
+                displayName: 'Opponent',
+                pfpUrl: '',
+                score: 0,
+                answers: [],
+                ready: false
+              }
+            })
+          }
+        }, 2000)
+      }, 30000)
+
+      return () => clearTimeout(timeout)
+    }
+  }, [challengeMatchId, challengeOpponentFid])
 
   const handleMatchFound = (payload: any) => {
     // Show match-found screen first
@@ -44,8 +91,13 @@ export default function Matchmaking({ topic, onMatchFound, onCancel }: Matchmaki
       handleMatchFound
     )
 
-  // Join queue on mount ONCE
+  // Join queue on mount ONCE (skip if challenge mode)
   useEffect(() => {
+    if (challengeMatchId) {
+      // Skip regular matchmaking in challenge mode
+      return
+    }
+
     if (hasJoinedRef.current) {
       return
     }
@@ -62,11 +114,80 @@ export default function Matchmaking({ topic, onMatchFound, onCancel }: Matchmaki
       hasJoinedRef.current = false
       leaveQueue()
     }
-  }, []) // Empty deps - only run once on mount
+  }, [challengeMatchId]) // Add challengeMatchId to deps
 
   const handleCancel = async () => {
     await leaveQueue()
     onCancel?.()
+  }
+
+  // Show "going async" message
+  if (goingAsync) {
+    return (
+      <div className="w-full max-w-md px-6 py-8 flex flex-col items-center justify-center min-h-[500px]">
+        <motion.div
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          className="text-center"
+        >
+          <div className="w-24 h-24 rounded-full brutal-beige brutal-border flex items-center justify-center mx-auto mb-6 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+            <Clock className="w-12 h-12 text-foreground" />
+          </div>
+          <h2 className="text-2xl font-bold text-foreground mb-3 uppercase tracking-tight">
+            Going Async
+          </h2>
+          <p className="text-sm text-muted-foreground font-semibold uppercase tracking-wide">
+            Play now, they'll respond later
+          </p>
+        </motion.div>
+      </div>
+    )
+  }
+
+  // Show "waiting for opponent" screen
+  if (waitingForOpponent) {
+    return (
+      <div className="w-full max-w-md px-6 py-8 flex flex-col items-center justify-center min-h-[500px]">
+        <motion.div
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          className="text-center"
+        >
+          <div className="w-24 h-24 rounded-full brutal-violet brutal-border flex items-center justify-center mx-auto mb-6 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+            <Clock className="w-12 h-12 text-foreground" />
+          </div>
+          <h2 className="text-2xl font-bold text-foreground mb-3 uppercase tracking-tight">
+            Waiting for Opponent
+          </h2>
+          <p className="text-sm text-muted-foreground font-semibold uppercase tracking-wide mb-8">
+            {topic}
+          </p>
+
+          {/* Loading dots */}
+          <div className="flex gap-2 justify-center mb-4">
+            {[0, 1, 2].map((i) => (
+              <motion.div
+                key={i}
+                animate={{
+                  y: [-4, 4, -4],
+                  opacity: [0.4, 1, 0.4]
+                }}
+                transition={{
+                  delay: i * 0.15,
+                  duration: 0.8,
+                  repeat: Infinity
+                }}
+                className="w-3 h-3 rounded-full bg-foreground"
+              />
+            ))}
+          </div>
+
+          <p className="text-xs text-muted-foreground">
+            If they don't join, you'll play async
+          </p>
+        </motion.div>
+      </div>
+    )
   }
 
   // Show match-found screen

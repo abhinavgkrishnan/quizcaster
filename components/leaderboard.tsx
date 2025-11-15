@@ -243,7 +243,7 @@ export default function Leaderboard({ onNavigate }: LeaderboardProps) {
           <div className="space-y-2">
             {leaderboard.map((entry, index) => {
               const isCurrentUser = user?.fid === entry.fid
-              const bgColor = isCurrentUser ? 'brutal-violet' : 'bg-[#FEFFDD]'
+              const bgColor = isCurrentUser ? 'brutal-violet' : 'brutal-beige'
 
               return (
                 <button

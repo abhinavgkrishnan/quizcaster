@@ -223,6 +223,34 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true })
     }
 
+    if (action === 'cancel') {
+      if (!challenge_id) {
+        return NextResponse.json({ error: 'Challenge ID is required' }, { status: 400 })
+      }
+
+      // Update challenge status
+      const { data: challenge } = await supabase
+        .from('async_challenges')
+        .update({ status: 'cancelled' })
+        .eq('id', challenge_id)
+        .select('match_id')
+        .single()
+
+      // Update match status
+      if (challenge?.match_id) {
+        await supabase
+          .from('matches')
+          .update({
+            status: 'cancelled',
+            async_status: 'cancelled',
+            completed_at: new Date().toISOString()
+          })
+          .eq('id', challenge.match_id)
+      }
+
+      return NextResponse.json({ success: true })
+    }
+
     if (action === 'complete_challenger') {
       // Challenger finished playing, store their data
       if (!match_id || !body.challenger_data) {

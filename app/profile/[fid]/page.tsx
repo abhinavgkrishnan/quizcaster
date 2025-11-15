@@ -163,17 +163,17 @@ export default function OtherProfilePage({ params }: OtherProfilePageProps) {
 
       const data = await response.json()
 
-      if (response.ok) {
-        setShowTopicSelector(false)
+      setShowTopicSelector(false)
 
+      if (response.ok) {
         // Navigate to matchmaking/waiting screen immediately
         router.push(`/?challenge=${data.match_id}&topic=${topic}&opponent=${fid}`)
       } else {
-        alert(data.error || 'Failed to send challenge')
+        console.error('Failed to send challenge:', data.error)
       }
     } catch (error) {
       console.error('Failed to send challenge:', error)
-      alert('Error sending challenge')
+      setShowTopicSelector(false)
     } finally {
       setChallengeLoading(false)
     }

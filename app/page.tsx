@@ -24,14 +24,27 @@ export default function Home() {
 
   const { currentScreen, setCurrentScreen, setIsGameScreen } = appContext
 
+  const [challengeMatchId, setChallengeMatchId] = useState<string | null>(null)
+  const [challengeOpponentFid, setChallengeOpponentFid] = useState<string | null>(null)
+
   // Check URL params for matchmaking trigger and screen navigation
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search)
       const matchmakingTopic = params.get('matchmaking')
       const targetScreen = params.get('screen')
+      const challengeMatch = params.get('challenge')
+      const challengeTopic = params.get('topic')
+      const opponentFid = params.get('opponent')
 
-      if (matchmakingTopic) {
+      if (challengeMatch && challengeTopic) {
+        // Challenge flow - wait for opponent or go async
+        setSelectedTopic(challengeTopic)
+        setChallengeMatchId(challengeMatch)
+        setChallengeOpponentFid(opponentFid)
+        setCurrentScreen("matchmaking")
+        window.history.replaceState({}, '', '/')
+      } else if (matchmakingTopic) {
         setSelectedTopic(matchmakingTopic)
         setCurrentScreen("matchmaking")
         window.history.replaceState({}, '', '/')
@@ -142,6 +155,8 @@ export default function Home() {
               topic={selectedTopic}
               onMatchFound={handleMatchmakingComplete}
               onCancel={() => setCurrentScreen("topics")}
+              challengeMatchId={challengeMatchId}
+              challengeOpponentFid={challengeOpponentFid}
             />
           </div>
         )}

@@ -229,7 +229,13 @@ export default function FriendsList({ user, onNavigate, currentScreen }: Friends
                   className="brutal-beige brutal-border p-4 rounded-2xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
                 >
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => {
+                        sessionStorage.setItem('profileReferrer', 'friends')
+                        window.location.href = `/profile/${friend.fid}`
+                      }}
+                      className="flex items-center gap-3 flex-1 min-w-0 text-left"
+                    >
                       <div className="w-12 h-12 rounded-full brutal-border overflow-hidden shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
                         {friend.pfp_url ? (
                           <img src={friend.pfp_url} alt={friend.display_name} className="w-full h-full object-cover" />
@@ -237,20 +243,20 @@ export default function FriendsList({ user, onNavigate, currentScreen }: Friends
                           <div className="w-full h-full bg-background" />
                         )}
                       </div>
-                      <div>
-                        <p className="text-sm font-bold text-foreground">{friend.display_name}</p>
-                        <p className="text-xs text-foreground/60">@{friend.username}</p>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-bold text-foreground truncate">{friend.display_name}</p>
+                        <p className="text-xs text-foreground/60 truncate">@{friend.username}</p>
                         {friend.active_flair && (
-                          <p className="text-[10px] text-foreground/50 mt-0.5">
+                          <p className="text-[10px] text-foreground/50 mt-0.5 truncate">
                             {friend.active_flair.icon} {friend.active_flair.name}
                           </p>
                         )}
                       </div>
-                    </div>
+                    </button>
                     <motion.button
                       whileTap={{ scale: 0.95 }}
                       onClick={() => handleChallengeFriend(friend)}
-                      className="brutal-violet brutal-border p-2 rounded-lg shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+                      className="brutal-violet brutal-border p-2 rounded-lg shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] flex-shrink-0"
                     >
                       <Swords className="w-4 h-4" />
                     </motion.button>
@@ -343,22 +349,28 @@ export default function FriendsList({ user, onNavigate, currentScreen }: Friends
                     }}
                     className="flex items-center justify-between brutal-white brutal-border p-3 rounded-xl shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
                   >
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-full brutal-border overflow-hidden bg-white">
+                    <button
+                      onClick={() => {
+                        sessionStorage.setItem('profileReferrer', 'friends')
+                        window.location.href = `/profile/${follower.fid}`
+                      }}
+                      className="flex items-center gap-2 flex-1 min-w-0 text-left"
+                    >
+                      <div className="w-8 h-8 rounded-full brutal-border overflow-hidden bg-white flex-shrink-0">
                         {follower.pfp_url ? (
                           <img src={follower.pfp_url} alt={follower.display_name} className="w-full h-full object-cover" />
                         ) : (
                           <div className="w-full h-full bg-background" />
                         )}
                       </div>
-                      <div>
-                        <p className="text-xs font-bold text-foreground">{follower.display_name}</p>
-                        <p className="text-[10px] text-foreground/60">@{follower.username}</p>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-bold text-foreground truncate">{follower.display_name}</p>
+                        <p className="text-[10px] text-foreground/60 truncate">@{follower.username}</p>
                       </div>
-                    </div>
+                    </button>
                     <button
                       onClick={() => isAlreadyFriend ? handleChallengeFriend(follower) : handleSendRequest(follower.fid)}
-                      className="brutal-violet brutal-border px-3 py-1 rounded-lg shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] text-[10px] font-bold uppercase tracking-wider"
+                      className="brutal-violet brutal-border px-3 py-1 rounded-lg shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] text-[10px] font-bold uppercase tracking-wider flex-shrink-0"
                     >
                       {isAlreadyFriend ? 'Challenge' : 'Add'}
                     </button>

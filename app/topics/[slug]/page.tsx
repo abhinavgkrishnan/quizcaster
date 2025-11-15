@@ -87,17 +87,17 @@ export default function TopicPage({ params }: TopicPageProps) {
 
       const data = await response.json()
 
-      if (response.ok) {
-        setShowFriendsModal(false)
+      setShowFriendsModal(false)
 
+      if (response.ok) {
         // Navigate to matchmaking/waiting screen immediately
         router.push(`/?challenge=${data.match_id}&topic=${slug}&opponent=${friend.fid}`)
       } else {
-        alert(data.error || 'Failed to send challenge')
+        console.error('Failed to send challenge:', data.error)
       }
     } catch (error) {
       console.error('Challenge error:', error)
-      alert('Failed to send challenge')
+      setShowFriendsModal(false)
     }
   }
 
