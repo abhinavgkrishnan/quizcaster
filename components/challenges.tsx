@@ -59,6 +59,29 @@ export default function Challenges({ user, onNavigate }: ChallengesProps) {
     }
   }, [user?.fid])
 
+  // Refetch challenges when user returns to the page/tab
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden && user?.fid) {
+        fetchChallenges()
+      }
+    }
+
+    const handleFocus = () => {
+      if (user?.fid) {
+        fetchChallenges()
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    window.addEventListener('focus', handleFocus)
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      window.removeEventListener('focus', handleFocus)
+    }
+  }, [user?.fid])
+
   const fetchTopics = async () => {
     try {
       const response = await fetch('/api/topics')

@@ -110,15 +110,18 @@ export async function POST(
         .eq('id', matchId)
 
       // Update associated challenge status to 'completed' (for async_challenge matches that became live)
-      const { error: challengeError } = await supabase
+      const { data: challengeUpdate, error: challengeError } = await supabase
         .from('async_challenges')
         .update({ status: 'completed' })
         .eq('match_id', matchId)
+        .select()
 
       if (challengeError) {
         console.error('[Complete] Failed to update challenge status:', challengeError)
+      } else if (challengeUpdate && challengeUpdate.length > 0) {
+        console.log('[Complete] Updated challenge status to completed for match:', matchId, challengeUpdate)
       } else {
-        console.log('[Complete] Updated challenge status to completed for match:', matchId)
+        console.log('[Complete] No challenge found for match:', matchId)
       }
 
       // Broadcast game completion to both players

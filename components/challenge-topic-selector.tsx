@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import { X } from "lucide-react"
 import * as Icons from "lucide-react"
+import { getTopicColorClass } from "@/lib/utils/topic-colors"
 
 interface Topic {
   slug: string
@@ -84,7 +85,7 @@ export default function ChallengeTopicSelector({ onSelect, onClose }: ChallengeT
             <div className="grid grid-cols-3 gap-2">
               {topics.map((topic, index) => {
                 const IconComponent = topic.icon_name ? (Icons as any)[topic.icon_name] : Icons.HelpCircle
-                const colorClass = topic.color_class || 'brutal-violet'
+                const colorClass = getTopicColorClass(topic.color_class)
 
                 return (
                   <motion.button

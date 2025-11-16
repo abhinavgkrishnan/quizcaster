@@ -8,6 +8,7 @@ import { Home, Users, User, Bell, Trophy } from "lucide-react"
 import type { AppScreen } from "@/lib/types"
 import FriendsList from "./friends-list"
 import type { FarcasterUser } from "@/lib/types"
+import { getTopicColorClass } from "@/lib/utils/topic-colors"
 
 interface TopicSelectionProps {
   onSelectTopic: (topic: string) => void
@@ -83,7 +84,7 @@ export default function TopicSelection({ onSelectTopic, onNavigate, user }: Topi
             {topics.map((topic, index) => {
               // Get icon from lucide-react by name
               const IconComponent = topic.icon_name ? (Icons as any)[topic.icon_name] : Icons.HelpCircle
-              const colorClass = topic.color_class || 'brutal-violet'
+              const colorClass = getTopicColorClass(topic.color_class)
 
               return (
                 <button

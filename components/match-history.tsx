@@ -14,6 +14,13 @@ interface Match {
   my_score: number
   opponent_score: number
   result: 'win' | 'loss' | 'draw'
+  player: {
+    fid: number
+    username: string
+    display_name: string
+    pfp_url?: string
+    active_flair?: any
+  }
   opponent: {
     fid: number
     username: string
@@ -172,9 +179,9 @@ export default function MatchHistory({ user, onClose, onNavigate, currentScreen,
   }
 
   return (
-    <div className="w-full h-screen flex flex-col bg-card overflow-visible">
+    <div className="w-full h-screen flex flex-col bg-card">
       {/* Header */}
-      <div className="flex-none bg-secondary border-b-2 border-black px-4 py-4 overflow-visible">
+      <div className="flex-none bg-secondary border-b-2 border-black px-4 py-4 relative z-50">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Trophy className="w-5 h-5" />
@@ -250,16 +257,16 @@ export default function MatchHistory({ user, onClose, onNavigate, currentScreen,
       </div>
 
       {/* Matches List */}
-      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3 pb-24" style={{ WebkitOverflowScrolling: 'touch' }}>
+      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3 pb-24 relative z-10" style={{ WebkitOverflowScrolling: 'touch' }}>
         {matches.length === 0 && !loading ? (
           <div className="text-center py-12 text-muted-foreground">
             <p className="text-sm font-semibold uppercase tracking-wider">No matches found</p>
           </div>
         ) : (
           matches.map((match, index) => {
-            const iForfeited = match.forfeited_by === user?.fid
+            const playerForfeited = match.forfeited_by === match.player?.fid
             const opponentForfeited = match.forfeited_by === match.opponent?.fid
-            const hasForfeit = iForfeited || opponentForfeited
+            const hasForfeit = playerForfeited || opponentForfeited
 
             return (
             <motion.div
@@ -285,20 +292,22 @@ export default function MatchHistory({ user, onClose, onNavigate, currentScreen,
 
               {/* Header Row: PFPs and Result */}
               <div className="relative flex items-center justify-between mb-2">
-                {/* My Side */}
+                {/* Player Side */}
                 <div className="flex flex-col items-center gap-1 flex-1 min-h-[60px]">
                   <div className="w-8 h-8 rounded-full brutal-border overflow-hidden shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] bg-white flex-shrink-0">
-                    {user?.pfpUrl ? (
-                      <img src={user.pfpUrl} alt={user.displayName} className="w-full h-full object-cover" loading="lazy" />
+                    {match.player?.pfp_url ? (
+                      <img src={match.player.pfp_url} alt={match.player.display_name} className="w-full h-full object-cover" loading="lazy" />
                     ) : (
                       <div className="w-full h-full bg-violet-200" />
                     )}
                   </div>
-                  <p className="text-[10px] font-bold text-foreground/70 uppercase">ME</p>
+                  <p className="text-[10px] font-bold text-foreground/70 uppercase truncate max-w-[100px]">
+                    {isOwnProfile ? 'ME' : `@${match.player?.username || 'Unknown'}`}
+                  </p>
                   <div className="h-3">
-                    {(user as any)?.activeFlair && (
+                    {match.player?.active_flair && (
                       <p className="text-[8px] text-foreground/60">
-                        {(user as any).activeFlair.icon}
+                        {match.player.active_flair.icon}
                       </p>
                     )}
                   </div>
@@ -307,7 +316,7 @@ export default function MatchHistory({ user, onClose, onNavigate, currentScreen,
                 {/* Center: Result & Topic */}
                 <div className="flex flex-col items-center justify-center px-2 flex-shrink-0">
                   <p className="text-xs font-bold uppercase tracking-wider text-foreground mb-0.5">
-                    {iForfeited ? TEXT.MATCH_HISTORY.DEFEAT_FORFEIT : opponentForfeited ? TEXT.MATCH_HISTORY.VICTORY_FORFEIT : getResultText(match.result)}
+                    {playerForfeited ? (isOwnProfile ? TEXT.MATCH_HISTORY.DEFEAT_FORFEIT : `${match.player.username?.toUpperCase()} FORFEIT`) : opponentForfeited ? (isOwnProfile ? TEXT.MATCH_HISTORY.VICTORY_FORFEIT : `${match.opponent.username?.toUpperCase()} FORFEIT`) : getResultText(match.result)}
                   </p>
                   <p className="text-[10px] text-foreground/60 uppercase tracking-wider">
                     {match.topic}

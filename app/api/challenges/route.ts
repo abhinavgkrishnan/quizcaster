@@ -220,11 +220,11 @@ export async function POST(request: NextRequest) {
       const now = Date.now()
       const acceptedWithin30Seconds = (now - createdAt) < 30000
 
-      // Update challenge status
+      // Update challenge status to 'in_progress' so it's hidden from challenges list
       const { error } = await supabase
         .from('async_challenges')
         .update({
-          status: 'accepted',
+          status: 'in_progress',
           accepted_at: new Date().toISOString()
         })
         .eq('id', challenge_id)

@@ -50,28 +50,31 @@ export async function GET(request: NextRequest) {
 
     if (error) throw error
 
-    // Get all unique opponent FIDs
-    const opponentFids = new Set<number>()
+    // Get all unique FIDs (both players)
+    const allFids = new Set<number>()
     matches?.forEach((match: any) => {
-      const opponentFid = match.player1_fid === fidNumber ? match.player2_fid : match.player1_fid
-      if (opponentFid) opponentFids.add(opponentFid)
+      if (match.player1_fid) allFids.add(match.player1_fid)
+      if (match.player2_fid) allFids.add(match.player2_fid)
     })
 
-    // Fetch opponent data
-    const { data: opponents } = await supabase
+    // Fetch all user data
+    const { data: users } = await supabase
       .from('users')
       .select('fid, username, display_name, pfp_url, active_flair')
-      .in('fid', Array.from(opponentFids))
+      .in('fid', Array.from(allFids))
 
-    const opponentMap = new Map(opponents?.map(o => [o.fid, o]) || [])
+    const userMap = new Map(users?.map(u => [u.fid, u]) || [])
 
     // Format matches
     const formattedMatches = matches?.map((match: any) => {
       const isPlayer1 = match.player1_fid === fidNumber
       const myScore = isPlayer1 ? match.player1_score : match.player2_score
       const opponentScore = isPlayer1 ? match.player2_score : match.player1_score
+      const playerFid = fidNumber
       const opponentFid = isPlayer1 ? match.player2_fid : match.player1_fid
-      const opponent = opponentMap.get(opponentFid)
+
+      const player = userMap.get(playerFid)
+      const opponent = userMap.get(opponentFid)
 
       let result = 'draw'
       if (match.winner_fid === fidNumber) result = 'win'
@@ -83,6 +86,13 @@ export async function GET(request: NextRequest) {
         my_score: myScore,
         opponent_score: opponentScore,
         result,
+        player: {
+          fid: player?.fid,
+          username: player?.username,
+          display_name: player?.display_name,
+          pfp_url: player?.pfp_url,
+          active_flair: player?.active_flair
+        },
         opponent: {
           fid: opponent?.fid,
           username: opponent?.username,
