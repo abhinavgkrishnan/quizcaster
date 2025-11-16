@@ -223,6 +223,10 @@ svg {
     background: #C8F4D4;
   }
 
+  .brutal-light-grey {
+    background: #f5f5f5;
+  }
+
   /* Brutal border style */
   .brutal-border {
     border: 2px solid #000000;

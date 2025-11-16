@@ -9,6 +9,8 @@ const TOPIC_COLOR_MAP: Record<string, string> = {
   'brutal-green': 'brutal-green',
   'brutal-white': 'brutal-white',
   'brutal-gray': 'brutal-gray',
+  'brutal-light-grey': 'brutal-light-grey',
+  'light-grey': 'brutal-light-grey', // Alias
 } as const
 
 /**
