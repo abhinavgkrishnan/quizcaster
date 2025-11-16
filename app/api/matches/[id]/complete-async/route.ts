@@ -151,15 +151,22 @@ export async function POST(
       updateData.player2_score = player2Score
 
       // Update associated challenge status to 'completed'
-      await supabase
+      const { error: challengeError } = await supabase
         .from('async_challenges')
         .update({ status: 'completed' })
         .eq('match_id', matchId)
+
+      if (challengeError) {
+        console.error('[Complete Async] Failed to update challenge status:', challengeError)
+      } else {
+        console.log('[Complete Async] Updated challenge status to completed for match:', matchId)
+      }
 
       // Send notification to challenger that opponent has completed
       const challengerFid = isPlayer1 ? match.player2_fid : match.player1_fid
 
       try {
+        const { TEXT } = await import('@/lib/constants/text')
         const { data: users } = await supabase
           .from('users')
           .select('fid, username, display_name, notification_token, notification_url, notifications_enabled')
@@ -179,9 +186,9 @@ export async function POST(
             },
             body: JSON.stringify({
               notificationId: crypto.randomUUID(),
-              title: 'Challenge Complete!',
-              body: `${opponentName} finished your challenge!`,
-              targetUrl: `${process.env.NEXT_PUBLIC_APP_URL}/?match=${matchId}`,
+              title: TEXT.CHALLENGE.NOTIF_COMPLETE_TITLE,
+              body: TEXT.CHALLENGE.NOTIF_COMPLETE_BODY(opponentName),
+              targetUrl: `${process.env.NEXT_PUBLIC_APP_URL}/?screen=challenges`,
               tokens: [challenger.notification_token]
             })
           }).catch(err => {

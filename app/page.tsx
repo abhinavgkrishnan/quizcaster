@@ -34,6 +34,34 @@ export default function Home() {
   const [isEmulationMode, setIsEmulationMode] = useState(false)
   const [challengerAnswers, setChallengerAnswers] = useState<any[]>([])
 
+  const handleChallengeNotification = async (challengeId: string) => {
+    try {
+      // Fetch challenge details
+      const response = await fetch(`/api/challenges?fid=${user?.fid}&type=received`)
+      const data = await response.json()
+      const challenge = data.challenges?.find((c: any) => c.id === challengeId)
+
+      if (!challenge) {
+        // Challenge not found or already completed - go to challenges screen
+        console.log('[Challenge Notif] Challenge not found or completed, going to challenges screen')
+        setCurrentScreen('challenges')
+        return
+      }
+
+      // Challenge exists and is pending/accepted - navigate to match
+      console.log('[Challenge Notif] Challenge found, status:', challenge.status)
+      if (challenge.status === 'pending' || challenge.status === 'accepted') {
+        window.location.href = `/?match=${challenge.match_id}`
+      } else {
+        // Declined/cancelled/completed - go to challenges screen
+        setCurrentScreen('challenges')
+      }
+    } catch (error) {
+      console.error('[Challenge Notif] Error handling notification:', error)
+      setCurrentScreen('challenges')
+    }
+  }
+
   // Check URL params for matchmaking trigger and screen navigation
   useEffect(() => {
     if (typeof window !== 'undefined' && user) {
@@ -44,8 +72,13 @@ export default function Home() {
       const challengeTopic = params.get('topic')
       const matchId = params.get('match')
       const mode = params.get('mode')
+      const challengeNotifId = params.get('challenge_notif')
 
-      if (challengeMatchId && challengeTopic && user) {
+      if (challengeNotifId) {
+        // Handle challenge notification click - smart routing based on challenge status
+        handleChallengeNotification(challengeNotifId)
+        window.history.replaceState({}, '', '/')
+      } else if (challengeMatchId && challengeTopic && user) {
         // If mode=emulation, opponent is accepting challenge
         if (mode === 'emulation') {
           console.log('[Page] Mode=emulation detected, fetching match:', challengeMatchId)
@@ -118,6 +151,19 @@ export default function Home() {
 
               if (matchData && matchData.questions) {
                 const isPlayer1 = matchData.player1_fid === currentUser.fid
+                const opponentFid = isPlayer1 ? matchData.player2_fid : matchData.player1_fid
+
+                // Fetch opponent data and flair
+                const [opponentRes, opponentFlairRes] = await Promise.all([
+                  fetch(`/api/users/${opponentFid}`),
+                  fetch(`/api/flairs?fid=${opponentFid}`)
+                ])
+                const opponentData = await opponentRes.json()
+                const opponentFlairData = await opponentFlairRes.json()
+
+                // Fetch my flair
+                const myFlairRes = await fetch(`/api/flairs?fid=${currentUser.fid}`)
+                const myFlairData = await myFlairRes.json()
 
                 // Set async challenge mode
                 setIsAsyncChallenge(true)
@@ -129,13 +175,15 @@ export default function Home() {
                     fid: currentUser.fid,
                     username: currentUser.username,
                     displayName: currentUser.displayName,
-                    pfpUrl: currentUser.pfpUrl || ''
+                    pfpUrl: currentUser.pfpUrl || '',
+                    activeFlair: myFlairData.active_flair
                   },
                   opponent: {
-                    fid: isPlayer1 ? matchData.player2_fid : matchData.player1_fid,
-                    username: 'Opponent',
-                    displayName: 'Opponent',
-                    pfpUrl: ''
+                    fid: opponentData.fid,
+                    username: opponentData.username,
+                    displayName: opponentData.display_name,
+                    pfpUrl: opponentData.pfp_url,
+                    activeFlair: opponentFlairData.active_flair
                   }
                 })
                 setCurrentScreen("game")
@@ -182,10 +230,16 @@ export default function Home() {
       if (matchData.is_async === false && matchData.status === 'active') {
         console.log('[fetchMatchAndStart] LIVE MATCH: Starting Socket.IO game')
 
-        // Fetch opponent data
+        // Fetch opponent data and flairs
         const opponentFid = isPlayer1 ? matchData.player2_fid : matchData.player1_fid
-        const opponentRes = await fetch(`/api/users/${opponentFid}`)
+        const [opponentRes, myFlairRes, opponentFlairRes] = await Promise.all([
+          fetch(`/api/users/${opponentFid}`),
+          fetch(`/api/flairs?fid=${user.fid}`),
+          fetch(`/api/flairs?fid=${opponentFid}`)
+        ])
         const opponentData = await opponentRes.json()
+        const myFlairData = await myFlairRes.json()
+        const opponentFlairData = await opponentFlairRes.json()
 
         setCurrentMatch({
           match_id: matchId,
@@ -193,13 +247,15 @@ export default function Home() {
             fid: user.fid,
             username: user.username,
             displayName: user.displayName,
-            pfpUrl: user.pfpUrl
+            pfpUrl: user.pfpUrl,
+            activeFlair: myFlairData.active_flair
           },
           opponent: {
             fid: opponentData.fid,
             username: opponentData.username,
             displayName: opponentData.display_name,
-            pfpUrl: opponentData.pfp_url
+            pfpUrl: opponentData.pfp_url,
+            activeFlair: opponentFlairData.active_flair
           }
         })
         setCurrentScreen("matchFound")

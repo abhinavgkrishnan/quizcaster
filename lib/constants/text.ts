@@ -39,12 +39,19 @@ export const TEXT = {
   // Challenge Messages
   CHALLENGE: {
     SENT: "Challenge Sent!",
+    ACCEPTED: "Challenge Accepted!",
     WAITING_FOR: (name: string) => `Waiting for ${name}`,
     WAITING_FOR_OPPONENT: "Waiting for Opponent",
     IN_PROGRESS: "Challenge in Progress",
     GOING_ASYNC: "Going Async...",
     IF_NO_JOIN: "If they don't join, you'll play async",
     WAITING_TO_FINISH: "Waiting for them to finish their match...",
+
+    // Notification text
+    NOTIF_NEW_TITLE: "New Challenge! 🎮",
+    NOTIF_NEW_BODY: (challengerName: string, topic: string) => `${challengerName} challenged you to ${topic}!`,
+    NOTIF_COMPLETE_TITLE: "Challenge Complete! 🎉",
+    NOTIF_COMPLETE_BODY: (opponentName: string) => `${opponentName} finished your challenge!`,
   },
 
   // Match History

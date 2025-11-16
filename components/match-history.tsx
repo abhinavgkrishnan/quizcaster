@@ -42,7 +42,8 @@ export default function MatchHistory({ user, onClose, onNavigate, currentScreen,
   const [offset, setOffset] = useState(0)
   const [filterTopic, setFilterTopic] = useState<string>('')
   const [showFilters, setShowFilters] = useState(false)
-  const [topics, setTopics] = useState<string[]>([])
+  const [showTopicDropdown, setShowTopicDropdown] = useState(false)
+  const [topics, setTopics] = useState<Array<{ slug: string; display_name: string }>>([])
   const [selectedMatch, setSelectedMatch] = useState<any>(null)
   const [loadingMatchDetails, setLoadingMatchDetails] = useState(false)
 
@@ -55,13 +56,22 @@ export default function MatchHistory({ user, onClose, onNavigate, currentScreen,
       try {
         const response = await fetch('/api/topics')
         const data = await response.json()
-        setTopics((data.topics || []).map((t: any) => t.slug))
+        setTopics(data.topics || [])
       } catch (error) {
         console.error('Failed to fetch topics:', error)
       }
     }
     fetchTopics()
   }, [])
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClick = () => setShowTopicDropdown(false)
+    if (showTopicDropdown) {
+      document.addEventListener('click', handleClick)
+      return () => document.removeEventListener('click', handleClick)
+    }
+  }, [showTopicDropdown])
 
   // Fetch matches
   const fetchMatches = useCallback(async (reset = false) => {
@@ -197,16 +207,44 @@ export default function MatchHistory({ user, onClose, onNavigate, currentScreen,
             animate={{ height: 'auto', opacity: 1 }}
             className="mt-4"
           >
-            <select
-              value={filterTopic}
-              onChange={(e) => setFilterTopic(e.target.value)}
-              className="w-full brutal-border bg-background p-2 rounded-lg text-sm font-semibold uppercase tracking-wider"
-            >
-              <option value="">All Topics</option>
-              {topics.map(topic => (
-                <option key={topic} value={topic}>{topic}</option>
-              ))}
-            </select>
+            <div className="relative">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setShowTopicDropdown(!showTopicDropdown)
+                }}
+                className="w-full brutal-white brutal-border px-4 py-3 rounded-xl shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] flex items-center justify-between text-sm font-bold uppercase tracking-wide"
+              >
+                <span>{filterTopic ? topics.find(t => t.slug === filterTopic)?.display_name : 'All Topics'}</span>
+                <ChevronDown className="w-4 h-4" />
+              </button>
+
+              {showTopicDropdown && (
+                <div className="absolute top-full left-0 right-0 mt-2 brutal-white brutal-border rounded-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] overflow-hidden z-[100]">
+                  <button
+                    onClick={() => {
+                      setFilterTopic('')
+                      setShowTopicDropdown(false)
+                    }}
+                    className={`w-full px-4 py-3 text-left text-sm font-bold uppercase tracking-wide hover:bg-gray-100 transition-colors border-b-2 border-black ${filterTopic === '' ? 'bg-gray-100' : ''}`}
+                  >
+                    All Topics
+                  </button>
+                  {topics.map(topic => (
+                    <button
+                      key={topic.slug}
+                      onClick={() => {
+                        setFilterTopic(topic.slug)
+                        setShowTopicDropdown(false)
+                      }}
+                      className={`w-full px-4 py-3 text-left text-sm font-bold uppercase tracking-wide hover:bg-gray-100 transition-colors border-b-2 border-black last:border-b-0 ${filterTopic === topic.slug ? 'bg-gray-100' : ''}`}
+                    >
+                      {topic.display_name}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </motion.div>
         )}
       </div>

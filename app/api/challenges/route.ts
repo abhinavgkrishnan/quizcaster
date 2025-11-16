@@ -160,6 +160,7 @@ export async function POST(request: NextRequest) {
 
       // Send Farcaster notification to challenged user
       try {
+        const { TEXT } = await import('@/lib/constants/text')
         const { data: users } = await supabase
           .from('users')
           .select('fid, username, display_name, notification_token, notification_url, notifications_enabled')
@@ -179,9 +180,9 @@ export async function POST(request: NextRequest) {
             },
             body: JSON.stringify({
               notificationId: crypto.randomUUID(),
-              title: 'New Challenge! 🎮',
-              body: `${challengerName} challenged you to ${topic}!`,
-              targetUrl: `${process.env.NEXT_PUBLIC_APP_URL}/?match=${match.id}`,
+              title: TEXT.CHALLENGE.NOTIF_NEW_TITLE,
+              body: TEXT.CHALLENGE.NOTIF_NEW_BODY(challengerName, topic),
+              targetUrl: `${process.env.NEXT_PUBLIC_APP_URL}/?challenge_notif=${challenge.id}`,
               tokens: [challenged.notification_token]
             })
           }).catch(err => {
