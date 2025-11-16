@@ -6,7 +6,10 @@ import confetti from "canvas-confetti"
 import GameQuestion from "./game-question"
 import ScoreBars from "./score-bars"
 import PlayerHeader from "./player-header"
+import QuestionCounter from "./question-counter"
 import ChallengeSentScreen from "./challenge-sent-screen"
+import { useGameTimer } from "@/lib/hooks/useGameTimer"
+import { useAsyncGameInit } from "@/lib/hooks/useAsyncGameInit"
 import type { PlayerData, Question } from "@/lib/types"
 import { GAME_CONFIG } from "@/lib/constants"
 
@@ -31,34 +34,24 @@ export default function AsyncSoloGame({
   const [myScore, setMyScore] = useState(0)
   const [myAnswers, setMyAnswers] = useState<any[]>([])
   const [lastAnswerResult, setLastAnswerResult] = useState<{ isCorrect: boolean; correctAnswer: string } | null>(null)
-  const [timeRemaining, setTimeRemaining] = useState<number>(GAME_CONFIG.QUESTION_TIME_LIMIT)
   const [opponentData, setOpponentData] = useState(opponent)
   const [isComplete, setIsComplete] = useState(false)
-  const [show2xBadge, setShow2xBadge] = useState(false)
-  const [gameInitialized, setGameInitialized] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   // Initialize Redis session on mount
-  useEffect(() => {
-    const initGame = async () => {
-      try {
-        await fetch(`/api/matches/${matchId}/start-async`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ fid: myPlayer.fid })
-        })
-        setGameInitialized(true)
-      } catch (error) {
-        console.error('[AsyncSolo] Failed to initialize game:', error)
-      }
-    }
-    initGame()
-  }, [matchId, myPlayer.fid])
+  const gameInitialized = useAsyncGameInit({ matchId, fid: myPlayer.fid })
 
   // Safety check for question index
   const safeIndex = Math.min(currentQuestionIndex, questions.length - 1)
   const currentQuestion = questions[safeIndex]
   const isFinalQuestion = safeIndex === questions.length - 1
+
+  // Timer using custom hook
+  const timeRemaining = useGameTimer({
+    questionKey: currentQuestionIndex,
+    isPaused: !!lastAnswerResult || isSubmitting,
+    onTimeout: () => handleAnswer('', GAME_CONFIG.QUESTION_TIME_LIMIT * 1000)
+  })
 
   // Fetch actual opponent data with flair
   useEffect(() => {
@@ -88,49 +81,11 @@ export default function AsyncSoloGame({
     fetchOpponent()
   }, [opponent])
 
-  // Show 2x badge on final question
-  useEffect(() => {
-    if (isFinalQuestion && !show2xBadge) {
-      setShow2xBadge(true)
-    }
-  }, [isFinalQuestion])
-
-  // Timer countdown - wait for options to load before starting
-  useEffect(() => {
-    if (lastAnswerResult || isSubmitting) return
-
-    setTimeRemaining(GAME_CONFIG.QUESTION_TIME_LIMIT)
-
-    // Wait for options to load (OPTIONS_LOAD_DELAY + TIMER_START_BUFFER)
-    const totalDelay = GAME_CONFIG.OPTIONS_LOAD_DELAY + GAME_CONFIG.TIMER_START_BUFFER
-    let interval: NodeJS.Timeout
-
-    const startTimer = setTimeout(() => {
-      interval = setInterval(() => {
-        setTimeRemaining(prev => {
-          if (prev <= 1) {
-            clearInterval(interval)
-            handleAnswer('', GAME_CONFIG.QUESTION_TIME_LIMIT * 1000)
-            return 0
-          }
-          return prev - 1
-        })
-      }, 1000)
-    }, totalDelay)
-
-    return () => {
-      clearTimeout(startTimer)
-      if (interval) clearInterval(interval)
-    }
-  }, [currentQuestionIndex, lastAnswerResult, isSubmitting])
-
   const handleAnswer = async (answer: string, timeTaken: number) => {
     if (isSubmitting) return // Prevent duplicate submissions
 
     try {
       setIsSubmitting(true)
-      // Stop timer
-      setTimeRemaining(0)
 
       console.log('[AsyncSolo] Submitting answer for Q', safeIndex + 1, 'isFinal:', isFinalQuestion)
 
@@ -255,36 +210,11 @@ export default function AsyncSoloGame({
         </div>
 
         {/* Question Counter with 2X Badge */}
-        <div className="relative z-10 text-center mb-1.5 flex-shrink-0">
-          <div className="flex items-center justify-center gap-2">
-            <motion.div
-              key={currentQuestionIndex}
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              className="inline-block brutal-white brutal-border px-4 py-2 rounded-full shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
-            >
-              <p className="text-[10px] font-bold text-foreground uppercase tracking-wider">
-                Question {safeIndex + 1} of {questions.length}
-              </p>
-            </motion.div>
-
-            {/* 2X Badge for Final Question */}
-            <AnimatePresence>
-              {show2xBadge && (
-                <motion.div
-                  initial={{ scale: 3, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  exit={{ scale: 0, opacity: 0 }}
-                  className="brutal-violet brutal-border px-3 py-1.5 rounded-full shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
-                >
-                  <p className="text-[10px] font-bold text-foreground uppercase tracking-wider">
-                    2X Points
-                  </p>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-        </div>
+        <QuestionCounter
+          questionNumber={safeIndex + 1}
+          totalQuestions={questions.length}
+          isFinalQuestion={isFinalQuestion}
+        />
 
         {/* Question */}
         <div className="relative z-10 flex-1">

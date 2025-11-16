@@ -7,6 +7,9 @@ import GameQuestion from "./game-question"
 import GameOver from "./game-over"
 import PlayerHeader from "./player-header"
 import ScoreBars from "./score-bars"
+import QuestionCounter from "./question-counter"
+import { useGameTimer } from "@/lib/hooks/useGameTimer"
+import { useAsyncGameInit } from "@/lib/hooks/useAsyncGameInit"
 import type { PlayerData, Question } from "@/lib/socket/events"
 import { GAME_CONFIG } from "@/lib/constants"
 import { calculatePoints } from "@/lib/utils/scoring"
@@ -44,71 +47,24 @@ export default function AsyncEmulationGame({
   const [myAnswers, setMyAnswers] = useState<any[]>([])
   const [gameComplete, setGameComplete] = useState(false)
   const [lastAnswerResult, setLastAnswerResult] = useState<{ isCorrect: boolean; correctAnswer: string } | null>(null)
-  const [gameInitialized, setGameInitialized] = useState(false)
-  const [timeRemaining, setTimeRemaining] = useState<number>(GAME_CONFIG.QUESTION_TIME_LIMIT)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [show2xBadge, setShow2xBadge] = useState(false)
 
   // Initialize Redis session on mount
-  useEffect(() => {
-    const initGame = async () => {
-      try {
-        await fetch(`/api/matches/${matchId}/start-async`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ fid: myPlayer.fid })
-        })
-        setGameInitialized(true)
-      } catch (error) {
-        console.error('[AsyncEmulation] Failed to initialize game:', error)
-      }
-    }
-    initGame()
-  }, [matchId, myPlayer.fid])
+  const gameInitialized = useAsyncGameInit({ matchId, fid: myPlayer.fid })
 
   const currentQuestion = questions[currentQuestionIndex]
   const isFinalQuestion = currentQuestionIndex === questions.length - 1
 
-  // Show 2x badge on final question
-  useEffect(() => {
-    if (isFinalQuestion && !show2xBadge) {
-      setShow2xBadge(true)
-    }
-  }, [isFinalQuestion])
-
-  // Timer countdown - wait for options to load before starting
-  useEffect(() => {
-    if (lastAnswerResult || isSubmitting) return
-
-    setTimeRemaining(GAME_CONFIG.QUESTION_TIME_LIMIT)
-
-    // Wait for options to load (OPTIONS_LOAD_DELAY + TIMER_START_BUFFER)
-    const totalDelay = GAME_CONFIG.OPTIONS_LOAD_DELAY + GAME_CONFIG.TIMER_START_BUFFER
-    let interval: NodeJS.Timeout
-
-    const startTimer = setTimeout(() => {
-      interval = setInterval(() => {
-        setTimeRemaining(prev => {
-          if (prev <= 1) {
-            clearInterval(interval)
-            handleAnswer('', GAME_CONFIG.QUESTION_TIME_LIMIT * 1000)
-            return 0
-          }
-          return prev - 1
-        })
-      }, 1000)
-    }, totalDelay)
-
-    return () => {
-      clearTimeout(startTimer)
-      if (interval) clearInterval(interval)
-    }
-  }, [currentQuestionIndex, lastAnswerResult, isSubmitting])
+  // Timer using custom hook
+  const timeRemaining = useGameTimer({
+    questionKey: currentQuestionIndex,
+    isPaused: !!lastAnswerResult || isSubmitting,
+    onTimeout: () => handleAnswer('', GAME_CONFIG.QUESTION_TIME_LIMIT * 1000)
+  })
 
   const handleAnswer = async (answer: string, timeTaken: number) => {
     if (isSubmitting) return
     setIsSubmitting(true)
-    setTimeRemaining(0)
 
     // Save answer via API
     const response = await fetch(`/api/matches/${matchId}/answer-async`, {
@@ -232,36 +188,11 @@ export default function AsyncEmulationGame({
         </div>
 
         {/* Question Counter with 2X Badge */}
-        <div className="relative z-10 text-center mb-1.5 flex-shrink-0">
-          <div className="flex items-center justify-center gap-2">
-            <motion.div
-              key={currentQuestionIndex}
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              className="inline-block brutal-white brutal-border px-4 py-2 rounded-full shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
-            >
-              <p className="text-[10px] font-bold text-foreground uppercase tracking-wider">
-                Question {currentQuestionIndex + 1} of {questions.length}
-              </p>
-            </motion.div>
-
-            {/* 2X Badge for Final Question */}
-            <AnimatePresence>
-              {show2xBadge && (
-                <motion.div
-                  initial={{ scale: 3, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  exit={{ scale: 0, opacity: 0 }}
-                  className="brutal-violet brutal-border px-3 py-1.5 rounded-full shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
-                >
-                  <p className="text-[10px] font-bold text-foreground uppercase tracking-wider">
-                    2X Points
-                  </p>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-        </div>
+        <QuestionCounter
+          questionNumber={currentQuestionIndex + 1}
+          totalQuestions={questions.length}
+          isFinalQuestion={isFinalQuestion}
+        />
 
         {/* Question */}
         <div className="relative z-10 flex-1">

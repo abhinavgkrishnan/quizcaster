@@ -205,7 +205,7 @@ export default function MatchHistory({ user, onClose, onNavigate, currentScreen,
           <motion.div
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
-            className="mt-4 relative z-50"
+            className="mt-4 relative z-[100]"
           >
             <div className="relative">
               <button
@@ -220,7 +220,7 @@ export default function MatchHistory({ user, onClose, onNavigate, currentScreen,
               </button>
 
               {showTopicDropdown && (
-                <div className="absolute top-full left-0 right-0 mt-2 brutal-white brutal-border rounded-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] overflow-hidden z-[9999]">
+                <div className="absolute top-full left-0 right-0 mt-2 brutal-white brutal-border rounded-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] overflow-hidden z-[200]">
                   <button
                     onClick={() => {
                       setFilterTopic('')
@@ -326,7 +326,7 @@ export default function MatchHistory({ user, onClose, onNavigate, currentScreen,
                       <div className="w-full h-full bg-amber-200" />
                     )}
                   </div>
-                  <p className="text-[10px] font-bold text-foreground/70 uppercase truncate max-w-[60px]">
+                  <p className="text-[10px] font-bold text-foreground/70 uppercase truncate max-w-[100px]">
                     @{match.opponent?.username || 'Unknown'}
                   </p>
                   <div className="h-3">

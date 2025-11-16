@@ -1,7 +1,6 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { useEffect, useState } from "react"
 
 interface ScoreBarsProps {
   playerScore: number
@@ -9,17 +8,6 @@ interface ScoreBarsProps {
 }
 
 export default function ScoreBars({ playerScore, opponentScore }: ScoreBarsProps) {
-  const [prevPlayerScore, setPrevPlayerScore] = useState(playerScore)
-  const [prevOpponentScore, setPrevOpponentScore] = useState(opponentScore)
-
-  useEffect(() => {
-    setPrevPlayerScore(playerScore)
-  }, [playerScore])
-
-  useEffect(() => {
-    setPrevOpponentScore(opponentScore)
-  }, [opponentScore])
-
   const total = playerScore + opponentScore || 1
   const playerPercentage = (playerScore / total) * 100
 

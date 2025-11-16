@@ -79,11 +79,13 @@ export default function PlayerHeader({
         </div>
         <div className="min-w-0 flex-1">
           <p className="text-[9px] text-foreground/60 font-semibold truncate uppercase tracking-wider">{playerName}</p>
-          {playerFlair && (
-            <p className="text-[8px] text-foreground/50 truncate">
-              {playerFlair.icon} {playerFlair.name}
-            </p>
-          )}
+          <div className="h-3">
+            {playerFlair && (
+              <p className="text-[8px] text-foreground/50 truncate">
+                {playerFlair.icon} {playerFlair.name}
+              </p>
+            )}
+          </div>
           <AnimatePresence mode="wait">
             <motion.p
               key={playerScore}
@@ -120,11 +122,13 @@ export default function PlayerHeader({
       >
         <div className="min-w-0 flex-1 text-right">
           <p className="text-[9px] text-foreground/60 font-semibold truncate uppercase tracking-wider">{opponentName}</p>
-          {opponentFlair && (
-            <p className="text-[8px] text-foreground/50 truncate">
-              {opponentFlair.icon} {opponentFlair.name}
-            </p>
-          )}
+          <div className="h-3">
+            {opponentFlair && (
+              <p className="text-[8px] text-foreground/50 truncate">
+                {opponentFlair.icon} {opponentFlair.name}
+              </p>
+            )}
+          </div>
           <AnimatePresence mode="wait">
             <motion.p
               key={opponentScore}
