@@ -9,10 +9,11 @@ interface MatchFoundProps {
   topic: string
   myPlayer: PlayerData
   opponent: PlayerData
+  isChallenge?: boolean
   onAnimationComplete?: () => void
 }
 
-export default function MatchFound({ topic, myPlayer, opponent, onAnimationComplete }: MatchFoundProps) {
+export default function MatchFound({ topic, myPlayer, opponent, isChallenge = false, onAnimationComplete }: MatchFoundProps) {
   useEffect(() => {
     // Auto-transition after animation
     const timer = setTimeout(() => {
@@ -45,7 +46,7 @@ export default function MatchFound({ topic, myPlayer, opponent, onAnimationCompl
             transition={{ delay: 0.4 }}
             className="text-3xl font-bold uppercase tracking-wider text-foreground"
           >
-            {topic ? 'Challenge Accepted!' : 'Match Found!'}
+            {isChallenge ? 'Challenge Accepted!' : 'Match Found!'}
           </motion.h1>
         </motion.div>
 

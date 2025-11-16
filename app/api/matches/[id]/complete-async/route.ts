@@ -201,41 +201,63 @@ export async function POST(
     }
 
     // Update match
-    await supabase
+    const { error: matchUpdateError } = await supabase
       .from('matches')
       .update(updateData)
       .eq('id', matchId)
 
-    // Cleanup Redis if both completed OR if session still exists but shouldn't
-    if (bothCompleted) {
-      await deleteGameSession(matchId)
-    } else if (gameState) {
-      // Check if both timestamps exist in Postgres (safety check)
-      const { data: updatedMatch } = await supabase
-        .from('matches')
-        .select('player1_completed_at, player2_completed_at')
-        .eq('id', matchId)
-        .single()
+    if (matchUpdateError) {
+      console.error('[Complete Async] Failed to update match:', matchUpdateError)
+    }
 
-      if (updatedMatch?.player1_completed_at && updatedMatch?.player2_completed_at) {
-        console.log('[Complete Async] Both completed in Postgres, cleaning up Redis')
-        await deleteGameSession(matchId)
+    // Re-fetch match to check if both players completed after this update
+    const { data: finalMatch } = await supabase
+      .from('matches')
+      .select('player1_completed_at, player2_completed_at, player1_score, player2_score')
+      .eq('id', matchId)
+      .single()
 
-        // Also update to completed status if not already done
-        await supabase
-          .from('matches')
-          .update({
-            status: 'completed',
-            completed_at: new Date().toISOString()
-          })
-          .eq('id', matchId)
-          .is('completed_at', null)
+    const actuallyBothCompleted = finalMatch?.player1_completed_at && finalMatch?.player2_completed_at
 
-        await supabase
-          .from('async_challenges')
-          .update({ status: 'completed' })
-          .eq('match_id', matchId)
+    if (actuallyBothCompleted) {
+      console.log('[Complete Async] Both players completed, finalizing match')
+
+      // Calculate winner from final scores
+      let winnerFid: number | null = null
+      const p1Score = finalMatch.player1_score || 0
+      const p2Score = finalMatch.player2_score || 0
+
+      if (p1Score > p2Score) {
+        winnerFid = match.player1_fid
+      } else if (p2Score > p1Score) {
+        winnerFid = match.player2_fid
       }
+
+      // Final update with winner and completed status
+      await supabase
+        .from('matches')
+        .update({
+          status: 'completed',
+          winner_fid: winnerFid,
+          completed_at: new Date().toISOString()
+        })
+        .eq('id', matchId)
+
+      // Update challenge status
+      await supabase
+        .from('async_challenges')
+        .update({ status: 'completed' })
+        .eq('match_id', matchId)
+
+      // Cleanup Redis
+      if (gameState) {
+        await deleteGameSession(matchId)
+      }
+
+      console.log('[Complete Async] Match finalized - Winner:', winnerFid, 'Scores:', p1Score, 'vs', p2Score)
+    } else if (gameState) {
+      // Only one player completed, keep Redis for now
+      console.log('[Complete Async] Only one player completed, keeping Redis session')
     }
 
     return NextResponse.json({

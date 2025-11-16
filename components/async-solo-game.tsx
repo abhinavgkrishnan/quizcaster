@@ -60,24 +60,33 @@ export default function AsyncSoloGame({
   const currentQuestion = questions[safeIndex]
   const isFinalQuestion = safeIndex === questions.length - 1
 
-  // Fetch actual opponent data
+  // Fetch actual opponent data with flair
   useEffect(() => {
     const fetchOpponent = async () => {
-      if (opponent.fid) {
-        const response = await fetch(`/api/users/${opponent.fid}`)
-        if (response.ok) {
-          const data = await response.json()
+      if (opponent.fid && !opponent.displayName) {
+        // Only fetch if not already provided in props
+        const [userRes, flairRes] = await Promise.all([
+          fetch(`/api/users/${opponent.fid}`),
+          fetch(`/api/flairs?fid=${opponent.fid}`)
+        ])
+        if (userRes.ok) {
+          const userData = await userRes.json()
+          const flairData = await flairRes.json()
           setOpponentData({
-            fid: data.fid,
-            username: data.username,
-            displayName: data.display_name,
-            pfpUrl: data.pfp_url
+            fid: userData.fid,
+            username: userData.username,
+            displayName: userData.display_name,
+            pfpUrl: userData.pfp_url,
+            activeFlair: flairData.active_flair
           })
         }
+      } else if (opponent.displayName) {
+        // Use data from props
+        setOpponentData(opponent)
       }
     }
     fetchOpponent()
-  }, [opponent.fid])
+  }, [opponent])
 
   // Show 2x badge on final question
   useEffect(() => {

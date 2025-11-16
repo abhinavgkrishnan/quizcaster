@@ -208,7 +208,15 @@ export default function Home() {
                     activeFlair: opponentFlairData.active_flair
                   }
                 })
-                setCurrentScreen("game")
+
+                // Show VS screen first
+                sessionStorage.setItem('isChallenge', 'true')
+                setCurrentScreen("matchFound")
+
+                setTimeout(() => {
+                  setCurrentScreen("game")
+                  sessionStorage.removeItem('isChallenge')
+                }, 3000)
               }
             }, 2000)
           }
@@ -280,11 +288,14 @@ export default function Home() {
             activeFlair: opponentFlairData.active_flair
           }
         })
+        // Store if this is a challenge match for MatchFound component
+        sessionStorage.setItem('isChallenge', matchData.match_type === 'async_challenge' ? 'true' : 'false')
         setCurrentScreen("matchFound")
 
         // Show VS screen for 3 seconds then start game
         setTimeout(() => {
           setCurrentScreen("game")
+          sessionStorage.removeItem('isChallenge')
         }, 3000)
         return
       }
@@ -333,11 +344,13 @@ export default function Home() {
               activeFlair: challengerFlairData.active_flair
             }
           })
+          sessionStorage.setItem('isChallenge', 'true')
           setCurrentScreen("matchFound")
 
           // Show VS screen for 3 seconds then start emulation game
           setTimeout(() => {
             setCurrentScreen("game")
+            sessionStorage.removeItem('isChallenge')
           }, 3000)
           return
         }
@@ -572,6 +585,7 @@ export default function Home() {
             topic={selectedTopic}
             myPlayer={currentMatch.myPlayer}
             opponent={currentMatch.opponent}
+            isChallenge={typeof window !== 'undefined' ? sessionStorage.getItem('isChallenge') === 'true' : false}
           />
         )}
         {currentScreen === "game" && selectedTopic && currentMatch && (

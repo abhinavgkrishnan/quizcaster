@@ -172,9 +172,9 @@ export default function MatchHistory({ user, onClose, onNavigate, currentScreen,
   }
 
   return (
-    <div className="w-full h-screen flex flex-col bg-card">
+    <div className="w-full h-screen flex flex-col bg-card overflow-visible">
       {/* Header */}
-      <div className="flex-none bg-secondary border-b-2 border-black px-4 py-4">
+      <div className="flex-none bg-secondary border-b-2 border-black px-4 py-4 overflow-visible">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Trophy className="w-5 h-5" />
@@ -205,7 +205,7 @@ export default function MatchHistory({ user, onClose, onNavigate, currentScreen,
           <motion.div
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
-            className="mt-4"
+            className="mt-4 relative z-50"
           >
             <div className="relative">
               <button
@@ -286,7 +286,7 @@ export default function MatchHistory({ user, onClose, onNavigate, currentScreen,
               {/* Header Row: PFPs and Result */}
               <div className="relative flex items-center justify-between mb-2">
                 {/* My Side */}
-                <div className="flex flex-col items-center gap-1 flex-1">
+                <div className="flex flex-col items-center gap-1 flex-1 min-h-[60px]">
                   <div className="w-8 h-8 rounded-full brutal-border overflow-hidden shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] bg-white flex-shrink-0">
                     {user?.pfpUrl ? (
                       <img src={user.pfpUrl} alt={user.displayName} className="w-full h-full object-cover" loading="lazy" />
@@ -295,6 +295,13 @@ export default function MatchHistory({ user, onClose, onNavigate, currentScreen,
                     )}
                   </div>
                   <p className="text-[10px] font-bold text-foreground/70 uppercase">ME</p>
+                  <div className="h-3">
+                    {(user as any)?.activeFlair && (
+                      <p className="text-[8px] text-foreground/60">
+                        {(user as any).activeFlair.icon}
+                      </p>
+                    )}
+                  </div>
                 </div>
 
                 {/* Center: Result & Topic */}
@@ -305,10 +312,13 @@ export default function MatchHistory({ user, onClose, onNavigate, currentScreen,
                   <p className="text-[10px] text-foreground/60 uppercase tracking-wider">
                     {match.topic}
                   </p>
+                  <p className="text-[8px] text-foreground/40 mt-0.5">
+                    {new Date(match.completed_at).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit' })} {new Date(match.completed_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false })}
+                  </p>
                 </div>
 
                 {/* Opponent Side */}
-                <div className="flex flex-col items-center gap-1 flex-1">
+                <div className="flex flex-col items-center gap-1 flex-1 min-h-[60px]">
                   <div className="w-8 h-8 rounded-full brutal-border overflow-hidden shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] bg-white flex-shrink-0">
                     {match.opponent?.pfp_url ? (
                       <img src={match.opponent.pfp_url} alt={match.opponent.display_name} className="w-full h-full object-cover" loading="lazy" />
@@ -319,6 +329,13 @@ export default function MatchHistory({ user, onClose, onNavigate, currentScreen,
                   <p className="text-[10px] font-bold text-foreground/70 uppercase truncate max-w-[60px]">
                     @{match.opponent?.username || 'Unknown'}
                   </p>
+                  <div className="h-3">
+                    {match.opponent?.active_flair && (
+                      <p className="text-[8px] text-foreground/60">
+                        {match.opponent.active_flair.icon}
+                      </p>
+                    )}
+                  </div>
                 </div>
               </div>
 
