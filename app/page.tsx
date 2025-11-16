@@ -133,8 +133,19 @@ export default function Home() {
 
             console.log('[Page] Opponent accepted within 30s! Starting LIVE game')
 
-            // Opponent joined! Start live Socket.IO match
+            // Opponent joined! Fetch their data
             const isPlayer1 = matchData.player1_fid === currentUser.fid
+            const opponentFid = isPlayer1 ? matchData.player2_fid : matchData.player1_fid
+
+            const [opponentRes, myFlairRes, opponentFlairRes] = await Promise.all([
+              fetch(`/api/users/${opponentFid}`),
+              fetch(`/api/flairs?fid=${currentUser.fid}`),
+              fetch(`/api/flairs?fid=${opponentFid}`)
+            ])
+            const opponentData = await opponentRes.json()
+            const myFlairData = await myFlairRes.json()
+            const opponentFlairData = await opponentFlairRes.json()
+
             setIsAsyncChallenge(false) // This is now a live game
             setCurrentMatch({
               match_id: challengeMatchId,
@@ -142,16 +153,25 @@ export default function Home() {
                 fid: currentUser.fid,
                 username: currentUser.username,
                 displayName: currentUser.displayName,
-                pfpUrl: currentUser.pfpUrl || ''
+                pfpUrl: currentUser.pfpUrl || '',
+                activeFlair: myFlairData.active_flair
               },
               opponent: {
-                fid: isPlayer1 ? matchData.player2_fid : matchData.player1_fid,
-                username: 'Opponent',
-                displayName: 'Opponent',
-                pfpUrl: ''
+                fid: opponentData.fid,
+                username: opponentData.username,
+                displayName: opponentData.display_name,
+                pfpUrl: opponentData.pfp_url,
+                activeFlair: opponentFlairData.active_flair
               }
             })
-            setCurrentScreen("game")
+
+            sessionStorage.setItem('isChallenge', 'true')
+            setCurrentScreen("matchFound")
+
+            setTimeout(() => {
+              setCurrentScreen("game")
+              sessionStorage.removeItem('isChallenge')
+            }, 3000)
           }
         }, 2000)
 
