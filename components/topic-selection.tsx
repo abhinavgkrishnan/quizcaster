@@ -8,7 +8,6 @@ import { Home, Users, User, Bell, Trophy } from "lucide-react"
 import type { AppScreen } from "@/lib/types"
 import FriendsList from "./friends-list"
 import type { FarcasterUser } from "@/lib/types"
-import { getTopicColorClass } from "@/lib/utils/topic-colors"
 
 interface TopicSelectionProps {
   onSelectTopic: (topic: string) => void
@@ -84,7 +83,7 @@ export default function TopicSelection({ onSelectTopic, onNavigate, user }: Topi
             {topics.map((topic, index) => {
               // Get icon from lucide-react by name
               const IconComponent = topic.icon_name ? (Icons as any)[topic.icon_name] : Icons.HelpCircle
-              const colorClass = getTopicColorClass(topic.color_class)
+              const bgColor = topic.color_class ? `#${topic.color_class.replace('#', '')}` : '#CFB8FF' // Ensure # prefix
 
               return (
                 <button
@@ -93,6 +92,7 @@ export default function TopicSelection({ onSelectTopic, onNavigate, user }: Topi
                     opacity: 0,
                     transform: 'translate3d(0, 10px, 0)',
                     animation: `fadeInUp 0.4s ease-out ${index * 0.05}s forwards`,
+                    backgroundColor: bgColor
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.transform = 'translate3d(0, -6px, 0)';
@@ -111,7 +111,7 @@ export default function TopicSelection({ onSelectTopic, onNavigate, user }: Topi
                     e.currentTarget.style.boxShadow = '4px 4px 0px 0px rgba(0,0,0,1)';
                   }}
                   onClick={() => router.push(`/topics/${topic.slug}`)}
-                  className={`relative aspect-square rounded-2xl ${colorClass} brutal-border font-bold shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all duration-200`}
+                  className="relative aspect-square rounded-2xl brutal-border font-bold shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all duration-200"
                 >
                   {/* Content */}
                   <div className="relative z-10 flex flex-col items-center justify-center h-full gap-2 p-3">

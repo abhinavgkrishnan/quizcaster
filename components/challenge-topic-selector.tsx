@@ -4,7 +4,6 @@ import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import { X } from "lucide-react"
 import * as Icons from "lucide-react"
-import { getTopicColorClass } from "@/lib/utils/topic-colors"
 
 interface Topic {
   slug: string
@@ -85,7 +84,7 @@ export default function ChallengeTopicSelector({ onSelect, onClose }: ChallengeT
             <div className="grid grid-cols-3 gap-2">
               {topics.map((topic, index) => {
                 const IconComponent = topic.icon_name ? (Icons as any)[topic.icon_name] : Icons.HelpCircle
-                const colorClass = getTopicColorClass(topic.color_class)
+                const bgColor = topic.color_class ? `#${topic.color_class.replace('#', '')}` : '#CFB8FF' // Ensure # prefix
 
                 return (
                   <motion.button
@@ -95,7 +94,8 @@ export default function ChallengeTopicSelector({ onSelect, onClose }: ChallengeT
                     transition={{ delay: index * 0.03, duration: 0.3 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={() => onSelect(topic.slug)}
-                    className={`relative rounded-xl ${colorClass} brutal-border font-bold shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] active:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] transition-shadow touch-manipulation py-3 px-2`}
+                    style={{ backgroundColor: bgColor }}
+                    className="relative rounded-xl brutal-border font-bold shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] active:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] transition-shadow touch-manipulation py-3 px-2"
                   >
                     {/* Content */}
                     <div className="relative z-10 flex flex-col items-center justify-center gap-1">
