@@ -48,9 +48,31 @@ export default function Home() {
         return
       }
 
-      // Challenge exists and is pending/accepted - navigate to match
       console.log('[Challenge Notif] Challenge found, status:', challenge.status)
-      if (challenge.status === 'pending' || challenge.status === 'accepted') {
+
+      if (challenge.status === 'pending') {
+        // Auto-accept the challenge when they click notification
+        console.log('[Challenge Notif] Auto-accepting challenge')
+        const acceptResponse = await fetch('/api/challenges', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'accept',
+            challenge_id: challengeId
+          })
+        })
+
+        if (acceptResponse.ok) {
+          const acceptData = await acceptResponse.json()
+          console.log('[Challenge Notif] Challenge accepted:', acceptData)
+          // Navigate to match which will handle live vs async logic
+          window.location.href = `/?match=${challenge.match_id}`
+        } else {
+          console.error('[Challenge Notif] Failed to accept')
+          setCurrentScreen('challenges')
+        }
+      } else if (challenge.status === 'accepted') {
+        // Already accepted, navigate to match
         window.location.href = `/?match=${challenge.match_id}`
       } else {
         // Declined/cancelled/completed - go to challenges screen
@@ -271,8 +293,15 @@ export default function Home() {
       if (matchData.player1_completed_at && !matchData.player2_completed_at && !isPlayer1) {
         console.log('[fetchMatchAndStart] SCENARIO 3: Challenger finished! Starting emulation mode')
 
-        const emulationRes = await fetch(`/api/matches/${matchId}/emulation`)
+        // Fetch emulation data and flairs
+        const [emulationRes, myFlairRes, challengerFlairRes] = await Promise.all([
+          fetch(`/api/matches/${matchId}/emulation`),
+          fetch(`/api/flairs?fid=${user.fid}`),
+          fetch(`/api/flairs?fid=${matchData.player1_fid}`)
+        ])
         const emulationData = await emulationRes.json()
+        const myFlairData = await myFlairRes.json()
+        const challengerFlairData = await challengerFlairRes.json()
 
         if (emulationData && !emulationData.error && matchData.questions) {
           setIsEmulationMode(true)
@@ -293,13 +322,15 @@ export default function Home() {
               fid: user.fid,
               username: user.username,
               displayName: user.displayName,
-              pfpUrl: user.pfpUrl
+              pfpUrl: user.pfpUrl,
+              activeFlair: myFlairData.active_flair
             },
             opponent: {
               fid: emulationData.opponent.fid,
               username: emulationData.opponent.username,
               displayName: emulationData.opponent.display_name,
-              pfpUrl: emulationData.opponent.pfp_url
+              pfpUrl: emulationData.opponent.pfp_url,
+              activeFlair: challengerFlairData.active_flair
             }
           })
           setCurrentScreen("matchFound")

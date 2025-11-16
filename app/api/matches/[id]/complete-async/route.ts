@@ -206,9 +206,36 @@ export async function POST(
       .update(updateData)
       .eq('id', matchId)
 
-    // If both completed, cleanup Redis
+    // Cleanup Redis if both completed OR if session still exists but shouldn't
     if (bothCompleted) {
       await deleteGameSession(matchId)
+    } else if (gameState) {
+      // Check if both timestamps exist in Postgres (safety check)
+      const { data: updatedMatch } = await supabase
+        .from('matches')
+        .select('player1_completed_at, player2_completed_at')
+        .eq('id', matchId)
+        .single()
+
+      if (updatedMatch?.player1_completed_at && updatedMatch?.player2_completed_at) {
+        console.log('[Complete Async] Both completed in Postgres, cleaning up Redis')
+        await deleteGameSession(matchId)
+
+        // Also update to completed status if not already done
+        await supabase
+          .from('matches')
+          .update({
+            status: 'completed',
+            completed_at: new Date().toISOString()
+          })
+          .eq('id', matchId)
+          .is('completed_at', null)
+
+        await supabase
+          .from('async_challenges')
+          .update({ status: 'completed' })
+          .eq('match_id', matchId)
+      }
     }
 
     return NextResponse.json({

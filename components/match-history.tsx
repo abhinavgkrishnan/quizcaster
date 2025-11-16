@@ -220,7 +220,7 @@ export default function MatchHistory({ user, onClose, onNavigate, currentScreen,
               </button>
 
               {showTopicDropdown && (
-                <div className="absolute top-full left-0 right-0 mt-2 brutal-white brutal-border rounded-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] overflow-hidden z-[100]">
+                <div className="absolute top-full left-0 right-0 mt-2 brutal-white brutal-border rounded-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] overflow-hidden z-[9999]">
                   <button
                     onClick={() => {
                       setFilterTopic('')
