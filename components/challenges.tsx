@@ -250,7 +250,7 @@ export default function Challenges({ user, onNavigate }: ChallengesProps) {
               // Get topic data for icon and color
               const topicData = topics.find(t => t.slug === challenge.topic)
               const TopicIcon = topicData?.icon_name ? (Icons as any)[topicData.icon_name] : Icons.HelpCircle
-              const topicColor = topicData?.color_class || 'brutal-beige'
+              const topicBgColor = topicData?.color_class ? `#${topicData.color_class.replace('#', '')}` : '#FEFFDD'
 
               return (
                 <div
@@ -286,7 +286,7 @@ export default function Challenges({ user, onNavigate }: ChallengesProps) {
                       </div>
 
                       {/* Topic Card - matching topic-selection style */}
-                      <div className={`${topicColor} brutal-border rounded-xl shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] p-3 flex items-center justify-center gap-2`}>
+                      <div style={{ backgroundColor: topicBgColor }} className="brutal-border rounded-xl shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] p-3 flex items-center justify-center gap-2">
                         <TopicIcon className="w-6 h-6 stroke-[2.5] text-foreground" />
                         <p className="text-sm font-bold uppercase tracking-wide text-foreground">{topicData?.display_name || challenge.topic}</p>
                       </div>
