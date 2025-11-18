@@ -14,17 +14,21 @@ export default function Timer({ timeRemaining, onTimeout, duration = GAME_CONFIG
   const hasPlayedTick = useRef(false)
   const audioRef = useRef<HTMLAudioElement | null>(null)
 
-  // Initialize audio element once
+  // Initialize audio element once with loop
   useEffect(() => {
     if (typeof window !== 'undefined') {
       audioRef.current = new Audio('/sounds/Manikkutty.mp3')
       audioRef.current.volume = 0.5
+      audioRef.current.loop = true
     }
   }, [])
 
-  // Play tick sound when timer hits 5 seconds (once)
+  // Play/stop tick sound based on time remaining
   useEffect(() => {
-    if (timeRemaining === 5 && !hasPlayedTick.current && audioRef.current) {
+    if (!audioRef.current) return
+
+    // Start playing when timer hits 5 seconds
+    if (timeRemaining <= 5 && timeRemaining > 0 && !hasPlayedTick.current) {
       try {
         audioRef.current.play().catch(() => {
           // Silently ignore if sound doesn't play
@@ -35,8 +39,10 @@ export default function Timer({ timeRemaining, onTimeout, duration = GAME_CONFIG
       }
     }
 
-    // Reset for next question
-    if (timeRemaining === 10) {
+    // Stop playing when timer reaches 0 or resets to 10
+    if (timeRemaining <= 0 || timeRemaining === 10) {
+      audioRef.current.pause()
+      audioRef.current.currentTime = 0
       hasPlayedTick.current = false
     }
   }, [timeRemaining])

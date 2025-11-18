@@ -7,6 +7,7 @@ import { useMatchmaking } from "@/lib/hooks/useMatchmaking"
 import { useUnifiedAuth } from "@/lib/contexts/UnifiedAuthContext"
 import type { PlayerData, MatchData } from "@/lib/types"
 import MatchFound from "./match-found"
+import { TEXT } from "@/lib/constants"
 
 interface MatchmakingProps {
   topic: string
@@ -21,6 +22,7 @@ export default function Matchmaking({ topic, onMatchFound, onCancel }: Matchmaki
   const isDevMode = process.env.NEXT_PUBLIC_DEV_MODE === 'true'
   const [showMatchFound, setShowMatchFound] = useState(false)
   const [foundMatchData, setFoundMatchData] = useState<any>(null)
+  const [currentTipIndex, setCurrentTipIndex] = useState(0)
 
   // In dev mode, use mock user with stable random FID for multi-tab testing
   const effectiveUser = user || (isDevMode ? {
@@ -63,6 +65,15 @@ export default function Matchmaking({ topic, onMatchFound, onCancel }: Matchmaki
       leaveQueue()
     }
   }, []) // Empty deps - only run once on mount
+
+  // Cycle through pro tips every 5 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentTipIndex((prev) => (prev + 1) % TEXT.MATCHMAKING.PRO_TIPS.length)
+    }, 5000)
+
+    return () => clearInterval(interval)
+  }, [])
 
   const handleCancel = async () => {
     await leaveQueue()
@@ -120,19 +131,19 @@ export default function Matchmaking({ topic, onMatchFound, onCancel }: Matchmaki
             </motion.div>
           </div>
 
-          {/* Queue info */}
-          {queuePosition !== null && (
-            <div className="brutal-white brutal-border rounded-2xl p-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-              <div className="flex items-center gap-3 text-foreground">
-                <Clock className="w-5 h-5" />
-                <div className="text-sm font-semibold">
-                  <span className="text-xs text-muted-foreground uppercase tracking-wide">Position:</span>{' '}
-                  <span className="text-base font-bold">{queuePosition}</span>
-                  {queueSize !== null && <span className="text-xs text-muted-foreground"> / {queueSize}</span>}
-                </div>
-              </div>
-            </div>
-          )}
+          {/* Pro tip */}
+          <motion.div
+            key={currentTipIndex}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.5 }}
+            className="text-center px-4"
+          >
+            <p className="text-sm text-muted-foreground font-semibold">
+              {TEXT.MATCHMAKING.PRO_TIPS[currentTipIndex]}
+            </p>
+          </motion.div>
 
           {/* Loading dots */}
           <div className="flex gap-2">

@@ -167,6 +167,13 @@ export const TEXT = {
     SEARCHING: "Searching for opponent...",
     MATCH_FOUND: "Match Found!",
     GET_READY: "Get ready!",
+    PRO_TIPS: [
+      "Pro tip: Choose the correct answer",
+      "Pro tip: Think Mark! Think!",
+      "Pro tip: Go play Fortnite, this one's mot for you",
+      "Pro tip: Use more AI",
+      "Pro tip: Books! ever heard of it?",
+    ],
   },
 
   // Questions
