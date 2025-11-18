@@ -215,10 +215,10 @@ export type Database = {
           async_status?: string | null
           challenge_message?: string | null
           challenger_data?: Json | null
-          forfeited_by?: number | null
           completed_at?: string | null
           created_at?: string
           expires_at?: string | null
+          forfeited_by?: number | null
           id?: string
           is_async?: boolean | null
           is_bot_opponent?: boolean
@@ -264,6 +264,13 @@ export type Database = {
           winner_fid?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "matches_forfeited_by_fkey"
+            columns: ["forfeited_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["fid"]
+          },
           {
             foreignKeyName: "matches_player1_fid_users_fid_fk"
             columns: ["player1_fid"]
@@ -474,6 +481,7 @@ export type Database = {
           notifications_enabled: boolean | null
           pfp_url: string | null
           username: string
+          wallet_address: string | null
         }
         Insert: {
           active_flair?: Json | null
@@ -487,6 +495,7 @@ export type Database = {
           notifications_enabled?: boolean | null
           pfp_url?: string | null
           username: string
+          wallet_address?: string | null
         }
         Update: {
           active_flair?: Json | null
@@ -500,6 +509,7 @@ export type Database = {
           notifications_enabled?: boolean | null
           pfp_url?: string | null
           username?: string
+          wallet_address?: string | null
         }
         Relationships: []
       }

@@ -7,7 +7,21 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { io, Socket } from 'socket.io-client';
 import type { ServerToClientEvents, ClientToServerEvents } from '@/lib/socket/events';
-import type { PlayerData, Question, PlayerScore, GamePhase } from '@/lib/types';
+import type { PlayerData, GamePhase } from '@/lib/types';
+
+interface Question {
+  id: string
+  question: string
+  options: string[]
+  image_url?: string | null
+}
+
+interface PlayerScore {
+  fid: number
+  score: number
+  answers: number
+  correct: number
+}
 
 interface GameState {
   phase: GamePhase;

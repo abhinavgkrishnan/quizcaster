@@ -17,6 +17,36 @@ export async function GET(
       return NextResponse.json({ error: 'Invalid FID' }, { status: 400 })
     }
 
+    // Check if this is a World user (negative FID)
+    if (fidNumber < 0) {
+      console.log('[User API] World user detected:', fidNumber)
+
+      // Fetch from database
+      const { data: dbUser, error: dbError } = await supabase
+        .from('users')
+        .select('fid, username, display_name, pfp_url, wallet_address')
+        .eq('fid', fidNumber)
+        .single()
+
+      if (dbError || !dbUser) {
+        console.error('[User API] World user not found in database:', fidNumber)
+        return NextResponse.json({ error: 'User not found' }, { status: 404 })
+      }
+
+      return NextResponse.json({
+        fid: dbUser.fid,
+        username: dbUser.username,
+        display_name: dbUser.display_name,
+        pfp_url: dbUser.pfp_url,
+        wallet_address: dbUser.wallet_address,
+        follower_count: 0,
+        following_count: 0,
+        in_database: true,
+        platform: 'world'
+      })
+    }
+
+    // Farcaster user - fetch from Neynar
     const neynarApiKey = process.env.NEYNAR_API_KEY
     if (!neynarApiKey) {
       console.error('[User API] Neynar API key not configured')
@@ -66,7 +96,8 @@ export async function GET(
       pfp_url: user.pfp_url,
       follower_count: user.follower_count,
       following_count: user.following_count,
-      in_database: inDatabase
+      in_database: inDatabase,
+      platform: 'farcaster'
     })
   } catch (error) {
     console.error('[User API] Error:', error)

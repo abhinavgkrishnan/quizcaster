@@ -2,8 +2,10 @@
 
 import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
-import { Users, X, UserPlus, Swords, Clock, Send } from "lucide-react"
-import type { FarcasterUser, AppScreen } from "@/lib/types"
+import { Users, X, UserPlus, Swords, Clock, Send, Share2 } from "lucide-react"
+import type { UnifiedUser, AppScreen } from "@/lib/types"
+import { useUnifiedAuth } from "@/lib/contexts/UnifiedAuthContext"
+import { useWorldContacts } from "@/lib/hooks/useWorldContacts"
 import BottomNav from "./bottom-nav"
 import ChallengeTopicSelector from "./challenge-topic-selector"
 import { TEXT } from "@/lib/constants"
@@ -24,12 +26,14 @@ interface FriendRequest {
 }
 
 interface FriendsListProps {
-  user: FarcasterUser | null
+  user: UnifiedUser | null
   onNavigate?: (screen: AppScreen) => void
   currentScreen?: AppScreen
 }
 
 export default function FriendsList({ user, onNavigate, currentScreen }: FriendsListProps) {
+  const { platform } = useUnifiedAuth()
+  const { contacts: worldContacts, requestContacts, isLoading: worldContactsLoading } = useWorldContacts()
   const [friends, setFriends] = useState<Friend[]>([])
   const [requests, setRequests] = useState<FriendRequest[]>([])
   const [loading, setLoading] = useState(true)
@@ -403,19 +407,80 @@ export default function FriendsList({ user, onNavigate, currentScreen }: Friends
         )}
       </div>
 
-      {/* Followers Section */}
+      {/* Followers/Contacts Section */}
       <div className="flex-none bg-secondary border-t-2 border-black max-h-[40vh] flex flex-col">
-        <div className="px-4 pt-4 pb-2">
+        <div className="px-4 pt-4 pb-2 flex items-center justify-between">
           <p className="text-sm font-bold uppercase tracking-wider text-foreground">
-            People You Follow
+            {platform === 'world' ? 'Your Contacts' : 'People You Follow'}
           </p>
+          {platform === 'world' && (
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              onClick={() => requestContacts(true)}
+              disabled={worldContactsLoading}
+              className="brutal-violet brutal-border px-3 py-1 rounded-lg shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] text-[10px] font-bold uppercase tracking-wider flex items-center gap-1"
+            >
+              <Share2 className="w-3 h-3" />
+              {worldContactsLoading ? 'Loading...' : 'Share Contacts'}
+            </motion.button>
+          )}
         </div>
         <div className="flex-1 overflow-y-auto px-4 pb-28 space-y-2" style={{ WebkitOverflowScrolling: 'touch' }} onScroll={handleFollowersScroll}>
-        {loadingFollowers ? (
-          <p className="text-xs text-center text-muted-foreground">
-            Loading followers...
-          </p>
-        ) : followers.length > 0 ? (
+        {platform === 'world' ? (
+          // World App: Show contacts from Share Contacts
+          worldContactsLoading ? (
+            <p className="text-xs text-center text-muted-foreground">
+              Loading contacts...
+            </p>
+          ) : worldContacts.length > 0 ? (
+            worldContacts.filter(contact => !friends.some(f => f.fid === contact.fid)).map((contact, index) => (
+              <div
+                key={contact.walletAddress}
+                style={{
+                  opacity: 0,
+                  transform: 'translate3d(0, 10px, 0)',
+                  animation: `fadeInUp 0.4s ease-out ${index * 0.03}s forwards`,
+                }}
+                className="flex items-center justify-between brutal-white brutal-border p-3 rounded-xl shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+              >
+                <div className="flex items-center gap-2 flex-1 min-w-0">
+                  <div className="w-8 h-8 rounded-full brutal-border overflow-hidden bg-white flex-shrink-0">
+                    {contact.pfpUrl ? (
+                      <img src={contact.pfpUrl} alt={contact.displayName || contact.username} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full bg-background" />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-bold text-foreground truncate">{contact.displayName || contact.username || 'World User'}</p>
+                    <p className="text-[10px] text-foreground/60 truncate">@{contact.username || contact.walletAddress.slice(0, 8)}</p>
+                  </div>
+                </div>
+                {contact.inDatabase ? (
+                  <button
+                    onClick={() => contact.fid && handleSendRequest(contact.fid)}
+                    className="brutal-violet brutal-border px-3 py-1 rounded-lg shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] text-[10px] font-bold uppercase tracking-wider flex-shrink-0 flex items-center gap-1"
+                  >
+                    <UserPlus className="w-3 h-3" />
+                    Add
+                  </button>
+                ) : (
+                  <span className="text-[10px] text-muted-foreground px-3">Not on app</span>
+                )}
+              </div>
+            ))
+          ) : (
+            <p className="text-xs text-center text-muted-foreground py-8">
+              Tap "Share Contacts" to find friends
+            </p>
+          )
+        ) : (
+          // Farcaster: Show followers from Neynar
+          loadingFollowers ? (
+            <p className="text-xs text-center text-muted-foreground">
+              Loading followers...
+            </p>
+          ) : followers.length > 0 ? (
           <>
             {followers.filter((follower: any) => !friends.some(f => f.fid === follower.fid)).map((follower: any, index: number) => {
                 return (
@@ -472,11 +537,12 @@ export default function FriendsList({ user, onNavigate, currentScreen }: Friends
                 Loading more...
               </p>
             )}
-          </>
-        ) : (
-          <p className="text-xs text-center text-muted-foreground py-8">
-            No followers found
-          </p>
+            </>
+          ) : (
+            <p className="text-xs text-center text-muted-foreground py-8">
+              No followers found
+            </p>
+          )
         )}
         </div>
       </div>

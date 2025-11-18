@@ -4,7 +4,7 @@ import { useEffect, useState, use } from "react"
 import { motion } from "framer-motion"
 import { User, Trophy, Target, Clock, ArrowLeft, TrendingUp, Swords, UserPlus, Home, Users, Bell, Send } from "lucide-react"
 import { useRouter } from "next/navigation"
-import { useFarcaster } from "@/lib/farcaster-sdk"
+import { useUnifiedAuth } from "@/lib/contexts/UnifiedAuthContext"
 import MatchHistory from "@/components/match-history"
 import FriendsList from "@/components/friends-list"
 import BottomNav from "@/components/bottom-nav"
@@ -45,7 +45,7 @@ interface UserStats {
 export default function OtherProfilePage({ params }: OtherProfilePageProps) {
   const { fid } = use(params)
   const router = useRouter()
-  const { user: currentUser } = useFarcaster()
+  const { user: currentUser } = useUnifiedAuth()
   const [user, setUser] = useState<UserInfo | null>(null)
   const [stats, setStats] = useState<UserStats | null>(null)
   const [loading, setLoading] = useState(true)
@@ -144,6 +144,7 @@ export default function OtherProfilePage({ params }: OtherProfilePageProps) {
   }, [])
 
   const handleChallenge = () => {
+    console.log('[Profile] Challenge clicked', { userInDatabase, currentUser, user })
     if (!userInDatabase) {
       alert('This user hasn\'t played Quizcaster yet. Invite them first!')
       return
@@ -190,6 +191,8 @@ export default function OtherProfilePage({ params }: OtherProfilePageProps) {
 
   const handleAddFriend = async () => {
     try {
+      console.log('[Profile] Add Friend clicked', { currentUser, fid, userInDatabase })
+
       if (!currentUser?.fid) {
         alert('Please sign in to add friends')
         return
@@ -200,6 +203,7 @@ export default function OtherProfilePage({ params }: OtherProfilePageProps) {
         return
       }
 
+      console.log('[Profile] Sending friend request API call...')
       const response = await fetch('/api/friends', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -210,16 +214,19 @@ export default function OtherProfilePage({ params }: OtherProfilePageProps) {
         })
       })
 
+      console.log('[Profile] Friend request response status:', response.status)
       const data = await response.json()
+      console.log('[Profile] Friend request response data:', data)
 
       if (response.ok) {
         alert('Friend request sent!')
+        setIsFriend(true)
       } else {
         alert(data.error || 'Failed to send friend request')
       }
     } catch (error) {
-      console.error('Failed to send friend request:', error)
-      alert('Error sending friend request')
+      console.error('[Profile] Failed to send friend request:', error)
+      alert('Error sending friend request. Check console for details.')
     }
   }
 
@@ -523,7 +530,7 @@ export default function OtherProfilePage({ params }: OtherProfilePageProps) {
               fid: user.fid,
               username: user.username || 'unknown',
               displayName: user.display_name || 'User',
-              pfpUrl: user.pfp_url || undefined
+              pfpUrl: user.pfp_url || ''
             }}
             onClose={() => setShowMatchHistory(false)}
             onNavigate={(screen) => {

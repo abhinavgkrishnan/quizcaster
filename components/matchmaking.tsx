@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from "react"
 import { motion } from "framer-motion"
 import { Swords, User, Zap, Clock, X } from "lucide-react"
 import { useMatchmaking } from "@/lib/hooks/useMatchmaking"
-import { useFarcaster } from "@/lib/farcaster-sdk"
+import { useUnifiedAuth } from "@/lib/contexts/UnifiedAuthContext"
 import type { PlayerData, MatchData } from "@/lib/types"
 import MatchFound from "./match-found"
 
@@ -15,7 +15,7 @@ interface MatchmakingProps {
 }
 
 export default function Matchmaking({ topic, onMatchFound, onCancel }: MatchmakingProps) {
-  const { user } = useFarcaster()
+  const { user } = useUnifiedAuth()
   const hasJoinedRef = useRef(false)
   const mockFidRef = useRef(999999 + Math.floor(Math.random() * 100)) // Stable random FID per component instance
   const isDevMode = process.env.NEXT_PUBLIC_DEV_MODE === 'true'

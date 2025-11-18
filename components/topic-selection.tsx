@@ -5,14 +5,13 @@ import { motion } from "framer-motion"
 import { useRouter } from "next/navigation"
 import * as Icons from "lucide-react"
 import { Home, Users, User, Bell, Trophy } from "lucide-react"
-import type { AppScreen } from "@/lib/types"
+import type { AppScreen, UnifiedUser } from "@/lib/types"
 import FriendsList from "./friends-list"
-import type { FarcasterUser } from "@/lib/types"
 
 interface TopicSelectionProps {
   onSelectTopic: (topic: string) => void
   onNavigate: (screen: AppScreen) => void
-  user?: FarcasterUser | null
+  user?: UnifiedUser | null
 }
 
 interface Topic {
