@@ -7,6 +7,7 @@ import MatchFound from "@/components/match-found"
 import GameScreen from "@/components/game-screen"
 import AsyncSoloGame from "@/components/async-solo-game"
 import AsyncEmulationGame from "@/components/async-emulation-game"
+import ChallengeSentScreen from "@/components/challenge-sent-screen"
 import Profile from "@/components/profile"
 import Leaderboard from "@/components/leaderboard"
 import FriendsList from "@/components/friends-list"
@@ -50,6 +51,8 @@ export default function Home() {
   const [pendingChallengeMatchId, setPendingChallengeMatchId] = useState<string | null>(null)
   const pollIntervalRef = useRef<NodeJS.Timeout | null>(null)
   const asyncTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const [showChallengeSent, setShowChallengeSent] = useState(false)
+  const [challengeSentData, setChallengeSentData] = useState<any>(null)
 
   // Cycle through pro tips every 5 seconds when waiting for opponent
   useEffect(() => {
@@ -123,8 +126,31 @@ export default function Home() {
       const matchId = params.get('match')
       const mode = params.get('mode')
       const challengeNotifId = params.get('challenge_notif')
+      const viewChallengeMatchId = params.get('view_challenge')
 
-      if (challengeNotifId) {
+      if (viewChallengeMatchId) {
+        // View challenge sent screen - fetch match data and show challenger's score
+        const fetchChallengeData = async () => {
+          try {
+            const response = await fetch(`/api/matches/${viewChallengeMatchId}`)
+            const matchData = await response.json()
+
+            if (matchData && matchData.challenger_data) {
+              setChallengeSentData({
+                playerScore: matchData.challenger_data.score,
+                playerAnswers: matchData.challenger_data.answers,
+                opponentName: matchData.player2_fid === user.fid ? matchData.player1_username : matchData.player2_username,
+                topic: matchData.topic
+              })
+              setShowChallengeSent(true)
+            }
+          } catch (error) {
+            console.error('Failed to fetch challenge data:', error)
+          }
+        }
+        fetchChallengeData()
+        window.history.replaceState({}, '', '/')
+      } else if (challengeNotifId) {
         // Handle challenge notification click - smart routing based on challenge status
         handleChallengeNotification(challengeNotifId)
         window.history.replaceState({}, '', '/')
@@ -529,6 +555,28 @@ export default function Home() {
       })
       // Stay on game screen - will reconnect with new matchId
     }
+  }
+
+  // Show challenge sent screen if viewing a sent challenge
+  if (showChallengeSent && challengeSentData) {
+    return (
+      <ChallengeSentScreen
+        playerScore={challengeSentData.playerScore}
+        playerAnswers={challengeSentData.playerAnswers}
+        opponentName={challengeSentData.opponentName}
+        topic={challengeSentData.topic}
+        onPlayAgain={() => {
+          setShowChallengeSent(false)
+          setChallengeSentData(null)
+          setCurrentScreen('topics')
+        }}
+        onGoHome={() => {
+          setShowChallengeSent(false)
+          setChallengeSentData(null)
+          setCurrentScreen('topics')
+        }}
+      />
+    )
   }
 
   // Show loading state while SDK initializes

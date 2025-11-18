@@ -167,9 +167,9 @@ export default function Challenges({ user, onNavigate }: ChallengesProps) {
     }
   }
 
-  const handleViewScore = async (matchId: string) => {
-    // Navigate to the match in match history to view results
-    router.push(`/?match=${matchId}`)
+  const handleViewScore = async (challenge: Challenge) => {
+    // Navigate to show the challenge sent screen with your score
+    router.push(`/?view_challenge=${challenge.match_id}`)
   }
 
   return (
@@ -252,69 +252,104 @@ export default function Challenges({ user, onNavigate }: ChallengesProps) {
                 >
                   {/* Challenge Card */}
                   <div className="flex items-center gap-3">
-                    {/* Left Column: PFP, Username, Topic stacked vertically */}
-                    <div className="flex flex-col gap-2.5 flex-1 min-w-0">
-                      <div className="flex items-center gap-3">
-                        <div className="w-14 h-14 rounded-full brutal-border overflow-hidden shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] bg-white flex-shrink-0">
-                          {(activeTab === 'received' ? challenge.challenger.pfp_url : challenge.challenged.pfp_url) ? (
-                            <img
-                              src={activeTab === 'received' ? challenge.challenger.pfp_url : challenge.challenged.pfp_url}
-                              alt={activeTab === 'received' ? challenge.challenger.display_name : challenge.challenged.display_name}
-                              className="w-full h-full object-cover"
-                              loading="lazy"
-                            />
-                          ) : (
-                            <div className="w-full h-full bg-violet-200" />
-                          )}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-lg font-bold text-foreground truncate">{activeTab === 'received' ? challenge.challenger.display_name : challenge.challenged.display_name}</p>
-                          <p className="text-sm text-foreground/60 truncate">@{activeTab === 'received' ? challenge.challenger.username : challenge.challenged.username}</p>
-                        </div>
-                      </div>
-
-                      {/* Topic Card - matching topic-selection style */}
-                      <div style={{ backgroundColor: topicBgColor }} className="brutal-border rounded-xl shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] p-3 flex items-center justify-center gap-2">
-                        <TopicIcon className="w-6 h-6 stroke-[2.5] text-foreground" />
-                        <p className="text-sm font-bold uppercase tracking-wide text-foreground">{topicData?.display_name || challenge.topic}</p>
-                      </div>
-                    </div>
-
-                    {/* Right Column: Accept/Reject buttons stacked */}
+                    {/* Layout: For received - stacked (PFP+Name, Topic) on left, buttons on right. For sent - PFP+Name on top, Topic+Button in a row below */}
                     {activeTab === 'received' ? (
-                      <div className="flex flex-col gap-1.5 flex-shrink-0">
-                        <motion.button
-                          whileTap={{ scale: 0.95 }}
-                          onClick={() => handleAccept(challenge)}
-                          className="brutal-white brutal-border rounded-xl px-3 py-2 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] flex items-center justify-center gap-1.5 w-[100px]"
-                        >
-                          <div className="w-4 h-4 rounded-full bg-green-500 flex items-center justify-center flex-shrink-0">
-                            <Check className="w-2.5 h-2.5 text-white stroke-[3]" />
+                      <>
+                        {/* Left Column: PFP, Username, Topic stacked vertically */}
+                        <div className="flex flex-col gap-2.5 flex-1 min-w-0">
+                          <div className="flex items-center gap-3">
+                            <div className="w-14 h-14 rounded-full brutal-border overflow-hidden shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] bg-white flex-shrink-0">
+                              {challenge.challenger.pfp_url ? (
+                                <img
+                                  src={challenge.challenger.pfp_url}
+                                  alt={challenge.challenger.display_name}
+                                  className="w-full h-full object-cover"
+                                  loading="lazy"
+                                />
+                              ) : (
+                                <div className="w-full h-full bg-violet-200" />
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-lg font-bold text-foreground truncate">{challenge.challenger.display_name}</p>
+                              <p className="text-sm text-foreground/60 truncate">@{challenge.challenger.username}</p>
+                            </div>
                           </div>
-                          <span className="text-[10px] font-bold uppercase tracking-wide">Accept</span>
-                        </motion.button>
 
-                        <motion.button
-                          whileTap={{ scale: 0.95 }}
-                          onClick={() => handleDecline(challenge.id)}
-                          className="brutal-white brutal-border rounded-xl px-3 py-2 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] flex items-center justify-center gap-1.5 w-[100px]"
-                        >
-                          <div className="w-4 h-4 rounded-full bg-red-500 flex items-center justify-center flex-shrink-0">
-                            <XIcon className="w-2.5 h-2.5 text-white stroke-[3]" />
+                          {/* Topic Card - matching topic-selection style */}
+                          <div style={{ backgroundColor: topicBgColor }} className="brutal-border rounded-xl shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] p-3 flex items-center justify-center gap-2">
+                            <TopicIcon className="w-6 h-6 stroke-[2.5] text-foreground" />
+                            <p className="text-sm font-bold uppercase tracking-wide text-foreground">{topicData?.display_name || challenge.topic}</p>
                           </div>
-                          <span className="text-[10px] font-bold uppercase tracking-wide">Reject</span>
-                        </motion.button>
-                      </div>
+                        </div>
+
+                        {/* Right Column: Accept/Reject buttons stacked */}
+                        <div className="flex flex-col gap-1.5 flex-shrink-0">
+                          <motion.button
+                            whileTap={{ scale: 0.95 }}
+                            onClick={() => handleAccept(challenge)}
+                            className="brutal-white brutal-border rounded-xl px-3 py-2 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] flex items-center justify-center gap-1.5 w-[100px]"
+                          >
+                            <div className="w-4 h-4 rounded-full bg-green-500 flex items-center justify-center flex-shrink-0">
+                              <Check className="w-2.5 h-2.5 text-white stroke-[3]" />
+                            </div>
+                            <span className="text-[10px] font-bold uppercase tracking-wide">Accept</span>
+                          </motion.button>
+
+                          <motion.button
+                            whileTap={{ scale: 0.95 }}
+                            onClick={() => handleDecline(challenge.id)}
+                            className="brutal-white brutal-border rounded-xl px-3 py-2 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] flex items-center justify-center gap-1.5 w-[100px]"
+                          >
+                            <div className="w-4 h-4 rounded-full bg-red-500 flex items-center justify-center flex-shrink-0">
+                              <XIcon className="w-2.5 h-2.5 text-white stroke-[3]" />
+                            </div>
+                            <span className="text-[10px] font-bold uppercase tracking-wide">Reject</span>
+                          </motion.button>
+                        </div>
+                      </>
                     ) : (
-                      <div className="flex items-center flex-shrink-0">
-                        <motion.button
-                          whileTap={{ scale: 0.95 }}
-                          onClick={() => handleViewScore(challenge.match_id)}
-                          className="brutal-violet brutal-border rounded-xl px-3 py-2 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] flex items-center justify-center gap-1.5 w-[110px]"
-                        >
-                          <Swords className="w-4 h-4" />
-                          <span className="text-[10px] font-bold uppercase tracking-wide">View Score</span>
-                        </motion.button>
+                      /* Sent tab: Stack everything vertically - PFP+Name first, then Topic+Button in a row */
+                      <div className="flex flex-col gap-2.5 flex-1">
+                        {/* PFP and Name */}
+                        <div className="flex items-center gap-3">
+                          <div className="w-14 h-14 rounded-full brutal-border overflow-hidden shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] bg-white flex-shrink-0">
+                            {challenge.challenged.pfp_url ? (
+                              <img
+                                src={challenge.challenged.pfp_url}
+                                alt={challenge.challenged.display_name}
+                                className="w-full h-full object-cover"
+                                loading="lazy"
+                              />
+                            ) : (
+                              <div className="w-full h-full bg-violet-200" />
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-lg font-bold text-foreground truncate">{challenge.challenged.display_name}</p>
+                            <p className="text-sm text-foreground/60 truncate">@{challenge.challenged.username}</p>
+                          </div>
+                        </div>
+
+                        {/* Topic and Button in a row */}
+                        <div className="flex items-center gap-2">
+                          {/* Topic Card - matching topic-selection style */}
+                          <div style={{ backgroundColor: topicBgColor }} className="brutal-border rounded-xl shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] p-3 flex items-center justify-center gap-2 flex-1">
+                            <TopicIcon className="w-6 h-6 stroke-[2.5] text-foreground" />
+                            <p className="text-sm font-bold uppercase tracking-wide text-foreground">{topicData?.display_name || challenge.topic}</p>
+                          </div>
+
+                          {/* View Score Button aligned with topic - same color as topic */}
+                          <motion.button
+                            whileTap={{ scale: 0.95 }}
+                            onClick={() => handleViewScore(challenge)}
+                            style={{ backgroundColor: topicBgColor }}
+                            className="brutal-border rounded-xl px-3 py-2 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] flex items-center justify-center gap-1.5 flex-shrink-0"
+                          >
+                            <Swords className="w-4 h-4" />
+                            <span className="text-[10px] font-bold uppercase tracking-wide">View Score</span>
+                          </motion.button>
+                        </div>
                       </div>
                     )}
                   </div>
