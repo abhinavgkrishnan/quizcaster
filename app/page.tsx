@@ -213,8 +213,6 @@ export default function Home() {
 
             // Brief "going async" message, then start async game
             setTimeout(async () => {
-              setGoingAsync(false)
-
               // Fetch match data with questions
               const response = await fetch(`/api/matches/${challengeMatchId}`)
               const matchData = await response.json()
@@ -257,8 +255,9 @@ export default function Home() {
                   }
                 })
 
-                // Show VS screen first
+                // Show VS screen first, clear goingAsync before transition
                 sessionStorage.setItem('isChallenge', 'true')
+                setGoingAsync(false)
                 setCurrentScreen("matchFound")
 
                 setTimeout(() => {

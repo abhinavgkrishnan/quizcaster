@@ -93,16 +93,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'User not found in QuizCaster' }, { status: 404 })
       }
 
-      // Check pending challenge limit (5 max)
-      const { count } = await supabase
-        .from('async_challenges')
-        .select('*', { count: 'exact', head: true })
-        .eq('challenger_fid', challenger_fid)
-        .eq('status', 'pending')
-
-      if (count && count >= 5) {
-        return NextResponse.json({ error: 'Maximum 5 pending challenges allowed' }, { status: 429 })
-      }
+      // No challenge limit - users can send unlimited challenges
 
       // Get random questions for this topic
       const { data: questionResults, error: questionsError } = await supabase

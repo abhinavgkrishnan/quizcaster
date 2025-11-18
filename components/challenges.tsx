@@ -167,21 +167,9 @@ export default function Challenges({ user, onNavigate }: ChallengesProps) {
     }
   }
 
-  const handleCancel = async (challengeId: string) => {
-    try {
-      await fetch('/api/challenges', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'cancel',
-          challenge_id: challengeId
-        })
-      })
-
-      fetchChallenges()
-    } catch (error) {
-      console.error('Failed to cancel challenge:', error)
-    }
+  const handleViewScore = async (matchId: string) => {
+    // Navigate to the match in match history to view results
+    router.push(`/?match=${matchId}`)
   }
 
   return (
@@ -321,13 +309,11 @@ export default function Challenges({ user, onNavigate }: ChallengesProps) {
                       <div className="flex items-center flex-shrink-0">
                         <motion.button
                           whileTap={{ scale: 0.95 }}
-                          onClick={() => handleCancel(challenge.id)}
-                          className="brutal-white brutal-border rounded-xl px-3 py-2 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] flex items-center justify-center gap-1.5 w-[100px]"
+                          onClick={() => handleViewScore(challenge.match_id)}
+                          className="brutal-violet brutal-border rounded-xl px-3 py-2 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] flex items-center justify-center gap-1.5 w-[110px]"
                         >
-                          <div className="w-4 h-4 rounded-full bg-red-500 flex items-center justify-center flex-shrink-0">
-                            <XIcon className="w-2.5 h-2.5 text-white stroke-[3]" />
-                          </div>
-                          <span className="text-[10px] font-bold uppercase tracking-wide">Cancel</span>
+                          <Swords className="w-4 h-4" />
+                          <span className="text-[10px] font-bold uppercase tracking-wide">View Score</span>
                         </motion.button>
                       </div>
                     )}
