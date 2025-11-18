@@ -3,6 +3,7 @@
 import { useEffect } from "react"
 import { motion } from "framer-motion"
 import { GAME_CONFIG } from "@/lib/constants"
+import { useSounds } from "@/lib/hooks/useSounds"
 
 interface TimerProps {
   timeRemaining: number  // Server-controlled time
@@ -11,12 +12,28 @@ interface TimerProps {
 }
 
 export default function Timer({ timeRemaining, onTimeout, duration = GAME_CONFIG.QUESTION_TIME_LIMIT }: TimerProps) {
+  const { startTimer, stopTimer } = useSounds()
+
+  // Start timer sound when timer starts, stop when it ends
+  useEffect(() => {
+    if (timeRemaining > 0 && timeRemaining <= duration) {
+      startTimer()
+    }
+
+    return () => {
+      stopTimer()
+    }
+  }, [])
+
   // Call onTimeout when time reaches 0
   useEffect(() => {
-    if (timeRemaining <= 0 && onTimeout) {
-      onTimeout()
+    if (timeRemaining <= 0) {
+      stopTimer()
+      if (onTimeout) {
+        onTimeout()
+      }
     }
-  }, [timeRemaining, onTimeout])
+  }, [timeRemaining, onTimeout, stopTimer])
 
   const progress = (timeRemaining / duration) * 100
   const isLowTime = timeRemaining < 3

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { Award, X, Check, Lock, TrendingUp } from "lucide-react"
+import { Award, X, Check, Lock, TrendingUp, Filter, ChevronDown } from "lucide-react"
 import BottomNav from "./bottom-nav"
 import type { AppScreen } from "@/lib/types"
 
@@ -35,6 +35,9 @@ export default function FlairSelector({ fid, onClose, onFlairSelected, onNavigat
   const [selectedFlair, setSelectedFlair] = useState<string | null>(null)
   const [allFlairs, setAllFlairs] = useState<Flair[]>([])
   const [currentWins, setCurrentWins] = useState<Record<string, number>>({})
+  const [filterTopic, setFilterTopic] = useState<string>('')
+  const [showTopicDropdown, setShowTopicDropdown] = useState(false)
+  const [topics, setTopics] = useState<Array<{ slug: string; display_name: string }>>([])
 
   useEffect(() => {
     fetchFlairs()
@@ -52,6 +55,7 @@ export default function FlairSelector({ fid, onClose, onFlairSelected, onNavigat
       // Fetch all available flairs from all topics
       const topicsResponse = await fetch('/api/topics')
       const topicsData = await topicsResponse.json()
+      setTopics(topicsData.topics || [])
 
       const allAvailableFlairs: Flair[] = []
       const winsPerTopic: Record<string, number> = {}
@@ -103,15 +107,31 @@ export default function FlairSelector({ fid, onClose, onFlairSelected, onNavigat
     }
   }
 
-  // Separate earned and locked flairs
+  // Filter and sort flairs
   const earnedFlairIds = new Set(earnedFlairs.map(f => f.id))
-  const lockedFlairs = allFlairs.filter(f => !earnedFlairIds.has(f.id))
+
+  // Filter locked flairs by topic
+  const filteredLockedFlairs = allFlairs
+    .filter(f => !earnedFlairIds.has(f.id))
+    .filter(f => !filterTopic || f.topic === filterTopic)
+
+  // Sort locked flairs by progress (highest first)
+  const lockedFlairs = filteredLockedFlairs.sort((a, b) => {
+    const winsA = currentWins[a.topic || ''] || 0
+    const winsB = currentWins[b.topic || ''] || 0
+    const progressA = (winsA / a.requirement.count) * 100
+    const progressB = (winsB / b.requirement.count) * 100
+    return progressB - progressA // Higher progress first
+  })
+
+  // Filter earned flairs by topic
+  const filteredEarnedFlairs = earnedFlairs.filter(f => !filterTopic || f.topic === filterTopic)
 
   return (
     <div className="w-full h-screen flex flex-col bg-card">
       {/* Header */}
       <div className="flex-none bg-secondary border-b-2 border-black px-4 py-4">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <Award className="w-5 h-5" />
             <h1 className="text-lg font-bold uppercase tracking-wider">Your Flairs</h1>
@@ -124,6 +144,60 @@ export default function FlairSelector({ fid, onClose, onFlairSelected, onNavigat
             >
               <X className="w-4 h-4" />
             </motion.button>
+          )}
+        </div>
+
+        {/* Topic Filter - Same style as Match History */}
+        <div className="relative">
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              setShowTopicDropdown(!showTopicDropdown)
+            }}
+            className="w-full brutal-white brutal-border px-3 py-2 rounded-lg shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] flex items-center justify-between text-xs font-bold uppercase tracking-wider"
+          >
+            <div className="flex items-center gap-2">
+              <Filter className="w-3 h-3" />
+              <span>{filterTopic ? topics.find(t => t.slug === filterTopic)?.display_name : 'All Topics'}</span>
+            </div>
+            <ChevronDown className={`w-4 h-4 transition-transform ${showTopicDropdown ? 'rotate-180' : ''}`} />
+          </button>
+
+          {/* Dropdown */}
+          {showTopicDropdown && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="absolute top-full left-0 right-0 mt-2 brutal-white brutal-border rounded-lg shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] overflow-hidden z-50 bg-card"
+            >
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setFilterTopic('')
+                  setShowTopicDropdown(false)
+                }}
+                className={`w-full px-3 py-2 text-left text-xs font-bold uppercase tracking-wider hover:bg-secondary transition-colors ${
+                  !filterTopic ? 'bg-violet-100' : ''
+                }`}
+              >
+                All Topics
+              </button>
+              {topics.map(topic => (
+                <button
+                  key={topic.slug}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setFilterTopic(topic.slug)
+                    setShowTopicDropdown(false)
+                  }}
+                  className={`w-full px-3 py-2 text-left text-xs font-bold uppercase tracking-wider hover:bg-secondary transition-colors border-t-2 border-black ${
+                    filterTopic === topic.slug ? 'bg-violet-100' : ''
+                  }`}
+                >
+                  {topic.display_name}
+                </button>
+              ))}
+            </motion.div>
           )}
         </div>
       </div>
@@ -163,12 +237,12 @@ export default function FlairSelector({ fid, onClose, onFlairSelected, onNavigat
         ) : (
           <>
             {/* Earned Flairs */}
-            {earnedFlairs.length > 0 && (
+            {filteredEarnedFlairs.length > 0 && (
               <div className="space-y-3">
                 <p className="text-xs font-bold uppercase tracking-wider text-foreground/60 px-2">
-                  Earned Flairs
+                  Earned Flairs ({filteredEarnedFlairs.length})
                 </p>
-                {earnedFlairs.map((flair, index) => (
+                {filteredEarnedFlairs.map((flair, index) => (
                   <motion.button
                     key={flair.id}
                     initial={{ opacity: 0, y: 20 }}
@@ -208,7 +282,7 @@ export default function FlairSelector({ fid, onClose, onFlairSelected, onNavigat
             {lockedFlairs.length > 0 && (
               <div className="space-y-3">
                 <p className="text-xs font-bold uppercase tracking-wider text-foreground/60 px-2">
-                  Locked Flairs
+                  Locked Flairs ({lockedFlairs.length}) • Sorted by Progress
                 </p>
                 {lockedFlairs.map((flair, index) => {
                   const wins = currentWins[flair.topic || ''] || 0
@@ -272,14 +346,14 @@ export default function FlairSelector({ fid, onClose, onFlairSelected, onNavigat
               </div>
             )}
 
-            {earnedFlairs.length === 0 && lockedFlairs.length === 0 && !loading && (
+            {filteredEarnedFlairs.length === 0 && lockedFlairs.length === 0 && !loading && (
               <div className="text-center py-12">
                 <Award className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
                 <p className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-2">
-                  No Flairs Available
+                  {filterTopic ? 'No Flairs in This Topic' : 'No Flairs Available'}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  Win matches to earn flairs!
+                  {filterTopic ? 'Try a different topic filter' : 'Win matches to earn flairs!'}
                 </p>
               </div>
             )}

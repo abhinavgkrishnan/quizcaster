@@ -10,6 +10,7 @@ import { motion, AnimatePresence } from "framer-motion"
 import Timer from "./timer"
 import { Check, X } from "lucide-react"
 import { GAME_CONFIG } from "@/lib/constants"
+import { useSounds } from "@/lib/hooks/useSounds"
 
 interface GameQuestionProps {
   question: {
@@ -38,6 +39,7 @@ export default function GameQuestion({
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null)
   const [showOptions, setShowOptions] = useState(false)
   const startTimeRef = useRef<number>(Date.now())
+  const { playCorrect, playWrong } = useSounds()
 
   // Reset when question changes
   useEffect(() => {
@@ -53,6 +55,17 @@ export default function GameQuestion({
 
     return () => clearTimeout(timer)
   }, [question.id])
+
+  // Play sound when result is shown
+  useEffect(() => {
+    if (showResult && wasCorrect !== null) {
+      if (wasCorrect) {
+        playCorrect()
+      } else {
+        playWrong()
+      }
+    }
+  }, [showResult, wasCorrect, playCorrect, playWrong])
 
   const handleSelectAnswer = async (option: string) => {
     if (isDisabled || selectedAnswer) return
