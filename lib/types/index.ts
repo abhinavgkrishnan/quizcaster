@@ -1,64 +1,72 @@
-/**
- * Central Type Export Hub
- * Import all types from this single location
- */
+// Unified types for cross-platform compatibility (Farcaster + World App)
 
-// Game types
-export type {
-  PlayerData,
-  Question,
-  PlayerScore,
-  MatchData,
-  AppScreen,
-  GamePhase,
-  PlayerDataWithFlair,
-} from './game';
+export type Platform = 'farcaster' | 'world'
 
-// User types
-export type {
-  FarcasterUser,
-  UserStats,
-  UserWithFlair,
-  UserStatsExtended,
-} from './user';
+export interface FarcasterUser {
+  fid: number
+  username: string
+  displayName: string
+  pfpUrl: string
+}
 
-// Flair types
-export type {
-  Flair,
-  FlairResponse,
-  FlairActionRequest,
-} from './flair';
+export interface UnifiedUser {
+  fid: number
+  username: string
+  displayName: string
+  pfpUrl: string
+  walletAddress?: string
+  platform: Platform
+}
 
-// Friends types
-export type {
-  FriendshipStatus,
-  Friendship,
-  Friend,
-  FriendRequest,
-  FriendsResponse,
-  FriendRequestsResponse,
-  FriendActionRequest,
-} from './friends';
+export type AppScreen =
+  | "topics"
+  | "matchmaking"
+  | "matchFound"
+  | "game"
+  | "profile"
+  | "leaderboard"
+  | "friends"
+  | "challenges"
 
-// Challenge types
-export type {
-  AsyncChallengeStatus,
-  AsyncMatchStatus,
-  AsyncChallenge,
-  ChallengerAnswer,
-  ChallengerGameData,
-  ChallengesResponse,
-  ChallengeCreateRequest,
-  ChallengeActionRequest,
-} from './challenge';
+export interface PlayerData {
+  fid: number
+  username: string
+  displayName: string
+  pfpUrl: string
+  activeFlair?: any
+}
 
-// Match types
-export type {
-  MatchHistoryItem,
-  MatchHistoryResponse,
-  TopicWithFlairs,
-} from './match';
+export interface MatchData {
+  match_id: string
+  myPlayer: PlayerData
+  opponent: PlayerData
+}
 
-// Re-export commonly used types from other modules
-export type { Tables, TablesInsert, TablesUpdate } from '@/lib/database.types';
-export type { MatchType, MatchStatus, PlayerStatus } from '@/lib/constants';
+export interface WorldContact {
+  walletAddress: string
+  username?: string
+  profilePictureUrl?: string
+  inDatabase?: boolean
+  fid?: number
+  displayName?: string
+  pfpUrl?: string
+}
+
+export interface Question {
+  id: string
+  topic: string
+  question: string
+  options: string[]
+  correct_answer: string
+  image_url?: string | null
+  difficulty?: string | null
+}
+
+export interface PlayerScore {
+  fid: number
+  score: number
+  answers: number
+  correct: number
+}
+
+export type GamePhase = 'connecting' | 'waiting' | 'ready' | 'playing' | 'answered' | 'question' | 'result' | 'complete'

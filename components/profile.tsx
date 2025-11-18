@@ -3,12 +3,12 @@
 import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import { User, Trophy, Target, Clock, Home, Users, Bell, TrendingUp, Award, History } from "lucide-react"
-import type { FarcasterUser, AppScreen } from "@/lib/types"
+import type { UnifiedUser, AppScreen } from "@/lib/types"
 import FlairSelector from "./flair-selector"
 import MatchHistory from "./match-history"
 
 interface ProfileProps {
-  user: FarcasterUser | null
+  user: UnifiedUser | null
   onNavigate?: (screen: AppScreen) => void
 }
 

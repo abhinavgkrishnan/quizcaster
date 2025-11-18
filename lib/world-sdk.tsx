@@ -53,9 +53,13 @@ export function WorldProvider({ children }: { children: ReactNode }) {
           const worldUser = MiniKit.user
 
           if (worldUser?.walletAddress) {
+            // Parse World ID username (format: @username.1234 or just username)
+            const rawUsername = worldUser.username || worldUser.walletAddress.slice(0, 8)
+            const displayUsername = rawUsername.startsWith('@') ? rawUsername.substring(1).split('.')[0] : rawUsername
+
             const userData: WorldUser = {
-              username: worldUser.username || worldUser.walletAddress.slice(0, 8),
-              displayName: worldUser.username || "World User",
+              username: displayUsername,
+              displayName: displayUsername,
               pfpUrl: worldUser.profilePictureUrl || "",
               walletAddress: worldUser.walletAddress,
             }
@@ -71,9 +75,12 @@ export function WorldProvider({ children }: { children: ReactNode }) {
               username: userData.username,
               display_name: userData.displayName,
               pfp_url: userData.pfpUrl,
+              wallet_address: userData.walletAddress,
               last_active: new Date().toISOString()
             }
-            await supabase.from('users').upsert(userRecord)
+            await supabase.from('users').upsert(userRecord, {
+              onConflict: 'fid'
+            })
           }
         }
 
@@ -111,9 +118,13 @@ export function WorldProvider({ children }: { children: ReactNode }) {
         // Get user info from MiniKit
         const worldUser = MiniKit.user
 
+        // Parse World ID username (format: @username.1234 or just username)
+        const rawUsername = worldUser?.username || payload.address.slice(0, 8)
+        const displayUsername = rawUsername.startsWith('@') ? rawUsername.substring(1).split('.')[0] : rawUsername
+
         const userData: WorldUser = {
-          username: worldUser?.username || payload.address.slice(0, 8),
-          displayName: worldUser?.username || "World User",
+          username: displayUsername,
+          displayName: displayUsername,
           pfpUrl: worldUser?.profilePictureUrl || "",
           walletAddress: payload.address,
         }
@@ -128,9 +139,12 @@ export function WorldProvider({ children }: { children: ReactNode }) {
           username: userData.username,
           display_name: userData.displayName,
           pfp_url: userData.pfpUrl,
+          wallet_address: userData.walletAddress,
           last_active: new Date().toISOString()
         }
-        await supabase.from('users').upsert(userRecord)
+        await supabase.from('users').upsert(userRecord, {
+          onConflict: 'fid'
+        })
 
         // Verify signature on backend in production
         // await fetch('/api/world-auth', {
