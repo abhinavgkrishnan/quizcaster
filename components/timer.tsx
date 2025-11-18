@@ -1,9 +1,8 @@
 "use client"
 
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 import { motion } from "framer-motion"
 import { GAME_CONFIG } from "@/lib/constants"
-import useSound from "use-sound"
 
 interface TimerProps {
   timeRemaining: number  // Server-controlled time
@@ -13,26 +12,34 @@ interface TimerProps {
 
 export default function Timer({ timeRemaining, onTimeout, duration = GAME_CONFIG.QUESTION_TIME_LIMIT }: TimerProps) {
   const hasPlayedTick = useRef(false)
+  const audioRef = useRef<HTMLAudioElement | null>(null)
 
-  // Optional timer tick sound - won't break if sound file missing
-  const [playTick] = useSound('/sounds/Manikkutty.mp3', {
-    volume: 0.5,
-    onError: () => {
-      // Silently ignore if sound doesn't exist
+  // Initialize audio element once
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      audioRef.current = new Audio('/sounds/Manikkutty.mp3')
+      audioRef.current.volume = 0.5
     }
-  })
+  }, [])
 
   // Play tick sound when timer hits 5 seconds (once)
   useEffect(() => {
-    if (timeRemaining === 5 && !hasPlayedTick.current) {
+    if (timeRemaining === 5 && !hasPlayedTick.current && audioRef.current) {
       try {
-        playTick()
+        audioRef.current.play().catch(() => {
+          // Silently ignore if sound doesn't play
+        })
         hasPlayedTick.current = true
       } catch (e) {
         // Ignore sound errors
       }
     }
-  }, [timeRemaining, playTick])
+
+    // Reset for next question
+    if (timeRemaining === 10) {
+      hasPlayedTick.current = false
+    }
+  }, [timeRemaining])
 
   // Call onTimeout when time reaches 0
   useEffect(() => {
