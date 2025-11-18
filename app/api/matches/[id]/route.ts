@@ -22,7 +22,11 @@ export async function GET(
       // Active game in Redis - also fetch Postgres data for completion status
       const { data: match } = await supabase
         .from('matches')
-        .select('*')
+        .select(`
+          *,
+          player1:users!matches_player1_fid_users_fid_fk(username, display_name),
+          player2:users!matches_player2_fid_users_fid_fk(username, display_name)
+        `)
         .eq('id', matchId)
         .single();
 
@@ -72,6 +76,11 @@ export async function GET(
         is_async: match?.is_async || false,
         match_type: match?.match_type || 'realtime',
         topic: match?.topic || 'unknown',
+        challenger_data: match?.challenger_data || null,
+        player1_username: match?.player1?.username,
+        player1_display_name: match?.player1?.display_name,
+        player2_username: match?.player2?.username,
+        player2_display_name: match?.player2?.display_name,
         from_redis: true,
       });
     }
