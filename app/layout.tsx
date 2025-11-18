@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { FarcasterProvider } from "@/lib/farcaster-sdk";
+import { WorldProvider } from "@/lib/world-sdk";
+import { UnifiedAuthProvider } from "@/lib/contexts/UnifiedAuthContext";
 import { AppProvider } from "@/lib/contexts/AppContext";
 import GlobalBottomNav from "@/components/global-bottom-nav";
 
@@ -59,12 +61,16 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <FarcasterProvider>
-          <AppProvider>
-            <div className="relative">
-              {children}
-              <GlobalBottomNav />
-            </div>
-          </AppProvider>
+          <WorldProvider>
+            <UnifiedAuthProvider>
+              <AppProvider>
+                <div className="relative">
+                  {children}
+                  <GlobalBottomNav />
+                </div>
+              </AppProvider>
+            </UnifiedAuthProvider>
+          </WorldProvider>
         </FarcasterProvider>
       </body>
     </html>

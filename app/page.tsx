@@ -11,18 +11,18 @@ import Profile from "@/components/profile"
 import Leaderboard from "@/components/leaderboard"
 import FriendsList from "@/components/friends-list"
 import Challenges from "@/components/challenges"
-import { useFarcaster } from "@/lib/farcaster-sdk"
+import { useUnifiedAuth } from "@/lib/contexts/UnifiedAuthContext"
 import { useAppContext } from "@/lib/contexts/AppContext"
 import BottomNav from "@/components/bottom-nav"
 import { motion } from "framer-motion"
-import { LogIn, Clock, X as XIcon } from "lucide-react"
+import { LogIn, Clock, X as XIcon, Globe } from "lucide-react"
 import type { AppScreen, MatchData } from "@/lib/types"
 
 export default function Home() {
   const appContext = useAppContext()
   const [selectedTopic, setSelectedTopic] = useState<string | null>(null)
   const [currentMatch, setCurrentMatch] = useState<MatchData | null>(null)
-  const { isSDKLoaded, user, isAuthenticated, signIn } = useFarcaster()
+  const { isSDKLoaded, user, isAuthenticated, signIn, platform } = useUnifiedAuth()
   const isDevMode = process.env.NEXT_PUBLIC_DEV_MODE === 'true'
 
   const { currentScreen, setCurrentScreen, setIsGameScreen } = appContext
@@ -486,10 +486,22 @@ export default function Home() {
             className="w-full py-5 rounded-2xl brutal-violet brutal-border font-bold text-base shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:shadow-none transition-all text-foreground uppercase tracking-wide"
           >
             <span className="flex items-center justify-center gap-2">
-              <LogIn className="w-5 h-5" />
-              Sign In with Farcaster
+              {platform === 'world' ? (
+                <>
+                  <Globe className="w-5 h-5" />
+                  Sign In with World ID
+                </>
+              ) : (
+                <>
+                  <LogIn className="w-5 h-5" />
+                  Sign In with Farcaster
+                </>
+              )}
             </span>
           </motion.button>
+          <p className="mt-4 text-xs text-muted-foreground">
+            {platform === 'world' ? 'Running in World App' : 'Running in Farcaster'}
+          </p>
         </div>
       </main>
     )
