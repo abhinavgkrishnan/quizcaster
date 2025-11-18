@@ -6,6 +6,21 @@ import confetti from "canvas-confetti"
 import { Trophy, Target, Zap, RotateCcw, Home, Swords, Share2, ArrowLeft } from "lucide-react"
 import { GAME_CONFIG, TEXT } from "@/lib/constants"
 
+// Shuffle array helper
+const shuffleArray = <T,>(array: T[]): T[] => {
+  const shuffled = [...array]
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+  }
+  return shuffled
+}
+
+// Get random item from array
+const getRandomItem = <T,>(array: T[]): T => {
+  return array[Math.floor(Math.random() * array.length)]
+}
+
 interface GameOverProps {
   playerScore: number
   opponentScore: number
@@ -40,6 +55,36 @@ export default function GameOver({ playerScore, opponentScore, playerAnswers, op
   const [challengeProgress, setChallengeProgress] = useState(0)
   const [challengeActive, setChallengeActive] = useState(false)
   const [isSharing, setIsSharing] = useState(false)
+  const [topicDisplayName, setTopicDisplayName] = useState<string | undefined>(topic)
+
+  // Fetch topic display name from slug
+  useEffect(() => {
+    if (!topic) return
+
+    const fetchTopicName = async () => {
+      try {
+        const response = await fetch('/api/topics')
+        const data = await response.json()
+        const foundTopic = data.topics.find((t: any) => t.slug === topic)
+        if (foundTopic) {
+          setTopicDisplayName(foundTopic.display_name)
+        }
+      } catch (error) {
+        console.error('Failed to fetch topic name:', error)
+      }
+    }
+
+    fetchTopicName()
+  }, [topic])
+
+  // Select random subtitles on mount
+  const [subtitle] = useState(() => {
+    if (opponentForfeited) return getRandomItem(TEXT.RESULTS.OPPONENT_FORFEITED_SUBTITLES)
+    if (iForfeited) return getRandomItem(TEXT.RESULTS.YOU_FORFEITED_SUBTITLES)
+    if (playerWon) return getRandomItem(TEXT.RESULTS.VICTORY_SUBTITLES)
+    if (isDraw) return getRandomItem(TEXT.RESULTS.DRAW_SUBTITLES)
+    return getRandomItem(TEXT.RESULTS.DEFEAT_SUBTITLES)
+  })
 
   const stats = useMemo(() => {
     const questionsAnswered = playerAnswers.length
@@ -99,7 +144,7 @@ export default function GameOver({ playerScore, opponentScore, playerAnswers, op
     try {
       const result = playerWon ? TEXT.SHARE.VICTORY : isDraw ? TEXT.SHARE.DRAW : TEXT.SHARE.DEFEAT
       const scoreText = `${playerScore} - ${opponentScore}`
-      const text = TEXT.SHARE.CAST_TEMPLATE(result, topic, scoreText, stats.accuracy, stats.avgTimeSeconds)
+      const text = TEXT.SHARE.CAST_TEMPLATE(result, topicDisplayName, scoreText, stats.accuracy, stats.avgTimeSeconds)
 
       const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://quizcaster.com'
 
@@ -180,7 +225,7 @@ export default function GameOver({ playerScore, opponentScore, playerAnswers, op
               ? TEXT.RESULTS.OPPONENT_FORFEITED(opponent.displayName)
               : iForfeited
               ? TEXT.RESULTS.YOU_FORFEITED
-              : playerWon ? TEXT.RESULTS.VICTORY_SUBTITLE : isDraw ? TEXT.RESULTS.DRAW_SUBTITLE : TEXT.RESULTS.DEFEAT_SUBTITLE}
+              : subtitle}
           </p>
 
           {/* Scores */}

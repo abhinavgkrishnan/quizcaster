@@ -10,30 +10,57 @@ export const TEXT = {
     DEFEAT: "Defeat",
     DRAW: "Draw!",
 
-    // Zingers/Subtitles
-    VICTORY_SUBTITLE: "Outstanding!",
-    DEFEAT_SUBTITLE: "Try again!",
-    DRAW_SUBTITLE: "Evenly matched!",
+    // Zingers/Subtitles (arrays for random selection)
+    VICTORY_SUBTITLES: [
+      "Sometimes your genius... it's almost frightening",
+      "Outstanding! now go touch grass",
+      "Victory Dance!",
+      "What? were you expecting some free quiz tokens?",
+      "Clearly you have never been the cool kid"
+    ],
+    DEFEAT_SUBTITLES: [
+      "Never try again!",
+      "Another day, another way to disappoint your parents",
+      "Maybe try Candy Crush instead?",
+      "That was painful to watch",
+      "It's okay, just another tuesday for you"
+    ],
+    DRAW_SUBTITLES: [
+      "Great minds think alike. Stupid ones do too I guess",
+      "At least you're both equally mid",
+      "Guess the real winner is the friends we made along the way or some shit",
+      "You both share a single brain cell",
+    ],
 
     // Forfeit messages
     OPPONENT_FORFEITED: (name: string) => `${name} forfeited!`,
+    OPPONENT_FORFEITED_SUBTITLES: [
+      "They couldn't handle the heat",
+      "Rage quit LMAO!!!",
+      "Too much for the poor lad",
+    ],
     YOU_FORFEITED: "You forfeited",
+    YOU_FORFEITED_SUBTITLES: [
+      "Quitter. Noted.",
+      "Running away won't solve your problems",
+      "Loser mentality detected",
+    ],
   },
 
   // Share Messages
   SHARE: {
-    VICTORY: "🏆 Victory!",
-    DRAW: "🤝 Draw!",
-    DEFEAT: "💪 Good game!",
+    VICTORY: "gg ez noobs.",
+    DRAW: "i want a rematch!",
+    DEFEAT: "i lost just so i could do a reverse sweep",
 
     CAST_TEMPLATE: (result: string, topic: string | undefined, score: string, accuracy: string, avgTime: string) =>
-      `${result} Just played Quizcaster${topic ? ` in ${topic}` : ''}!\n\n📊 Score: ${score}\n✅ Accuracy: ${accuracy}%\n⚡ Avg time: ${avgTime}s\n\nThink you can beat me? 👇`,
+      `${result} just played Quizcaster${topic ? ` on ${topic}` : ''}!\n\n🎯${score}\n\nThink you can beat me?`,
   },
 
   // Invitations
   INVITE: {
     MESSAGE: (username: string) =>
-      `Hey @${username}! Join me on Quizcaster - test your knowledge and compete with friends! 🎮🧠`,
+      `Hey @${username}! pvp quiz on farcaster. ready for a 🤺? or too 🐤 to try?`,
   },
 
   // Challenge Messages
@@ -48,9 +75,9 @@ export const TEXT = {
     WAITING_TO_FINISH: "Waiting for them to finish their match...",
 
     // Notification text
-    NOTIF_NEW_TITLE: "New Challenge! 🎮",
+    NOTIF_NEW_TITLE: "New Challenge!",
     NOTIF_NEW_BODY: (challengerName: string, topic: string) => `${challengerName} challenged you to ${topic}!`,
-    NOTIF_COMPLETE_TITLE: "Challenge Complete! 🎉",
+    NOTIF_COMPLETE_TITLE: "Challenge Complete!",
     NOTIF_COMPLETE_BODY: (opponentName: string) => `${opponentName} finished your challenge!`,
   },
 
@@ -170,7 +197,7 @@ export const TEXT = {
     PRO_TIPS: [
       "Pro tip: Choose the correct answer",
       "Pro tip: Think Mark! Think!",
-      "Pro tip: Go play Fortnite, this one's mot for you",
+      "Pro tip: Go play Fortnite, this one's not for you",
       "Pro tip: Use more AI",
       "Pro tip: Books! ever heard of it?",
     ],

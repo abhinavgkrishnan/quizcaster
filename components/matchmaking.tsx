@@ -15,6 +15,16 @@ interface MatchmakingProps {
   onCancel?: () => void
 }
 
+// Shuffle array helper
+const shuffleArray = <T,>(array: T[]): T[] => {
+  const shuffled = [...array]
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+  }
+  return shuffled
+}
+
 export default function Matchmaking({ topic, onMatchFound, onCancel }: MatchmakingProps) {
   const { user } = useUnifiedAuth()
   const hasJoinedRef = useRef(false)
@@ -23,6 +33,7 @@ export default function Matchmaking({ topic, onMatchFound, onCancel }: Matchmaki
   const [showMatchFound, setShowMatchFound] = useState(false)
   const [foundMatchData, setFoundMatchData] = useState<any>(null)
   const [currentTipIndex, setCurrentTipIndex] = useState(0)
+  const shuffledTipsRef = useRef(shuffleArray(TEXT.MATCHMAKING.PRO_TIPS))
 
   // In dev mode, use mock user with stable random FID for multi-tab testing
   const effectiveUser = user || (isDevMode ? {
@@ -66,10 +77,10 @@ export default function Matchmaking({ topic, onMatchFound, onCancel }: Matchmaki
     }
   }, []) // Empty deps - only run once on mount
 
-  // Cycle through pro tips every 5 seconds
+  // Cycle through shuffled pro tips every 5 seconds
   useEffect(() => {
     const interval = setInterval(() => {
-      setCurrentTipIndex((prev) => (prev + 1) % TEXT.MATCHMAKING.PRO_TIPS.length)
+      setCurrentTipIndex((prev) => (prev + 1) % shuffledTipsRef.current.length)
     }, 5000)
 
     return () => clearInterval(interval)
@@ -141,7 +152,7 @@ export default function Matchmaking({ topic, onMatchFound, onCancel }: Matchmaki
             className="text-center px-4"
           >
             <p className="text-sm text-muted-foreground font-semibold">
-              {TEXT.MATCHMAKING.PRO_TIPS[currentTipIndex]}
+              {shuffledTipsRef.current[currentTipIndex]}
             </p>
           </motion.div>
 
