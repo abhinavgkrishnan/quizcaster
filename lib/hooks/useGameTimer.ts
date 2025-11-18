@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { GAME_CONFIG } from '@/lib/constants'
 
 interface UseGameTimerOptions {
@@ -16,6 +16,12 @@ interface UseGameTimerOptions {
  */
 export function useGameTimer({ questionKey, isPaused = false, onTimeout }: UseGameTimerOptions) {
   const [timeRemaining, setTimeRemaining] = useState<number>(GAME_CONFIG.QUESTION_TIME_LIMIT)
+  const onTimeoutRef = useRef(onTimeout)
+
+  // Keep the ref up to date
+  useEffect(() => {
+    onTimeoutRef.current = onTimeout
+  }, [onTimeout])
 
   useEffect(() => {
     if (isPaused) return
@@ -32,7 +38,7 @@ export function useGameTimer({ questionKey, isPaused = false, onTimeout }: UseGa
         setTimeRemaining(prev => {
           if (prev <= 1) {
             clearInterval(interval)
-            onTimeout()
+            onTimeoutRef.current()
             return 0
           }
           return prev - 1
@@ -44,7 +50,7 @@ export function useGameTimer({ questionKey, isPaused = false, onTimeout }: UseGa
       clearTimeout(startTimer)
       if (interval) clearInterval(interval)
     }
-  }, [questionKey, isPaused, onTimeout])
+  }, [questionKey, isPaused])
 
   return timeRemaining
 }

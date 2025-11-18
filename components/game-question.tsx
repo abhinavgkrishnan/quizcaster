@@ -40,6 +40,14 @@ export default function GameQuestion({
   const [showOptions, setShowOptions] = useState(false)
   const startTimeRef = useRef<number>(Date.now())
   const { playCorrect, playWrong } = useSounds()
+  const playCorrectRef = useRef(playCorrect)
+  const playWrongRef = useRef(playWrong)
+
+  // Keep refs up to date
+  useEffect(() => {
+    playCorrectRef.current = playCorrect
+    playWrongRef.current = playWrong
+  }, [playCorrect, playWrong])
 
   // Reset when question changes
   useEffect(() => {
@@ -60,12 +68,12 @@ export default function GameQuestion({
   useEffect(() => {
     if (showResult && wasCorrect !== null) {
       if (wasCorrect) {
-        playCorrect()
+        playCorrectRef.current()
       } else {
-        playWrong()
+        playWrongRef.current()
       }
     }
-  }, [showResult, wasCorrect, playCorrect, playWrong])
+  }, [showResult, wasCorrect])
 
   const handleSelectAnswer = async (option: string) => {
     if (isDisabled || selectedAnswer) return
