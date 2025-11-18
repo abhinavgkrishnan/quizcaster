@@ -135,14 +135,21 @@ export default function Home() {
             const response = await fetch(`/api/matches/${viewChallengeMatchId}`)
             const matchData = await response.json()
 
+            console.log('[View Challenge] Match data:', matchData)
+
             if (matchData && matchData.challenger_data) {
+              // Challenger is always player1 in async challenges
+              const opponentName = matchData.player2_display_name || matchData.player2_username || 'Opponent'
+
               setChallengeSentData({
                 playerScore: matchData.challenger_data.score,
                 playerAnswers: matchData.challenger_data.answers,
-                opponentName: matchData.player2_fid === user.fid ? matchData.player1_username : matchData.player2_username,
+                opponentName: opponentName,
                 topic: matchData.topic
               })
               setShowChallengeSent(true)
+            } else {
+              console.error('[View Challenge] No challenger_data found in match')
             }
           } catch (error) {
             console.error('Failed to fetch challenge data:', error)

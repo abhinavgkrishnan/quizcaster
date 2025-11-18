@@ -79,7 +79,11 @@ export async function GET(
     // Not in Redis - check Postgres
     const { data: match, error } = await supabase
       .from('matches')
-      .select('*')
+      .select(`
+        *,
+        player1:users!matches_player1_fid_users_fid_fk(username, display_name),
+        player2:users!matches_player2_fid_users_fid_fk(username, display_name)
+      `)
       .eq('id', matchId)
       .single();
 
@@ -130,9 +134,15 @@ export async function GET(
       status: match.status,
       player1_fid: match.player1_fid,
       player2_fid: match.player2_fid,
+      player1_username: match.player1?.username,
+      player1_display_name: match.player1?.display_name,
+      player2_username: match.player2?.username,
+      player2_display_name: match.player2?.display_name,
       questions: formattedQuestions,
       is_async: match.is_async || false,
       match_type: match.match_type,
+      topic: match.topic,
+      challenger_data: match.challenger_data,
       from_redis: false,
     });
   } catch (error) {
