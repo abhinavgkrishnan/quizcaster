@@ -115,40 +115,49 @@ export default function FlairSelector({ fid, onClose, onFlairSelected, onNavigat
     .filter(f => !earnedFlairIds.has(f.id))
     .filter(f => !filterTopic || f.topic === filterTopic)
 
-  // Sort locked flairs by progress (highest first)
+  // Sort locked flairs by how close they are to unlocking (smallest gap first)
   const lockedFlairs = filteredLockedFlairs.sort((a, b) => {
     const winsA = currentWins[a.topic || ''] || 0
     const winsB = currentWins[b.topic || ''] || 0
-    const progressA = (winsA / a.requirement.count) * 100
-    const progressB = (winsB / b.requirement.count) * 100
-    return progressB - progressA // Higher progress first
+    const gapA = a.requirement.count - winsA // How many wins needed
+    const gapB = b.requirement.count - winsB
+    return gapA - gapB // Smallest gap (closest to unlock) first
   })
 
   // Filter earned flairs by topic
   const filteredEarnedFlairs = earnedFlairs.filter(f => !filterTopic || f.topic === filterTopic)
 
   return (
-    <div className="w-full h-screen flex flex-col bg-card">
+    <div className="w-full h-screen flex flex-col bg-card overflow-hidden">
       {/* Header */}
-      <div className="flex-none bg-secondary border-b-2 border-black px-4 py-4">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <Award className="w-5 h-5" />
-            <h1 className="text-lg font-bold uppercase tracking-wider">Your Flairs</h1>
+      <div className="flex-none px-4 pt-6 pb-4 relative z-10 bg-card">
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-4"
+        >
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <Award className="w-5 h-5" />
+              <h1 className="text-4xl font-bold text-foreground">Your Flairs</h1>
+            </div>
+            {onClose && (
+              <motion.button
+                whileTap={{ scale: 0.95 }}
+                onClick={onClose}
+                className="brutal-border bg-background p-2 rounded-lg shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+              >
+                <X className="w-4 h-4" />
+              </motion.button>
+            )}
           </div>
-          {onClose && (
-            <motion.button
-              whileTap={{ scale: 0.95 }}
-              onClick={onClose}
-              className="brutal-border bg-background p-2 rounded-lg shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
-            >
-              <X className="w-4 h-4" />
-            </motion.button>
-          )}
-        </div>
+          <p className="text-muted-foreground text-sm font-semibold uppercase tracking-wide">
+            Earn badges by winning
+          </p>
+        </motion.div>
 
-        {/* Topic Filter - Same style as Match History */}
-        <div className="relative">
+        {/* Topic Filter - Same as Leaderboard */}
+        <div className="relative z-20">
           <button
             onClick={(e) => {
               e.stopPropagation()
@@ -203,7 +212,7 @@ export default function FlairSelector({ fid, onClose, onFlairSelected, onNavigat
       </div>
 
       {/* Flairs List */}
-      <div className="flex-1 overflow-y-auto p-4 pb-28 space-y-4">
+      <div className="flex-1 overflow-y-auto p-4 pb-28 space-y-4" style={{ WebkitOverflowScrolling: 'touch' }}>
         {/* No Flair Option */}
         <motion.button
           whileTap={{ scale: 0.98 }}
@@ -282,13 +291,13 @@ export default function FlairSelector({ fid, onClose, onFlairSelected, onNavigat
             {lockedFlairs.length > 0 && (
               <div className="space-y-3">
                 <p className="text-xs font-bold uppercase tracking-wider text-foreground/60 px-2">
-                  Locked Flairs ({lockedFlairs.length}) • Sorted by Progress
+                  Locked Flairs ({lockedFlairs.length})
                 </p>
                 {lockedFlairs.map((flair, index) => {
                   const wins = currentWins[flair.topic || ''] || 0
                   const required = flair.requirement.count
                   const progress = Math.min((wins / required) * 100, 100)
-                  const isClose = progress >= 50 // Show progress if > 50%
+                  const hasProgress = wins > 0 // Show progress if they have at least 1 win
 
                   return (
                     <motion.div
@@ -320,8 +329,8 @@ export default function FlairSelector({ fid, onClose, onFlairSelected, onNavigat
                         </div>
                       </div>
 
-                      {/* Progress bar */}
-                      {isClose && (
+                      {/* Progress bar - Show if they have at least 1 win */}
+                      {hasProgress && (
                         <div className="mt-3">
                           <div className="flex items-center justify-between mb-1">
                             <p className="text-[10px] text-foreground/50 uppercase tracking-wider">Progress</p>
