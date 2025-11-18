@@ -67,6 +67,7 @@ export default function GameQuestion({
   // Play sound when result is shown
   useEffect(() => {
     if (showResult && wasCorrect !== null) {
+      console.log('[GameQuestion] Playing sound:', wasCorrect ? 'correct' : 'wrong')
       if (wasCorrect) {
         playCorrectRef.current()
       } else {

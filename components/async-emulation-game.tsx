@@ -201,7 +201,7 @@ export default function AsyncEmulationGame({
             onAnswer={handleAnswer}
             isDisabled={false}
             showResult={lastAnswerResult !== null}
-            wasCorrect={lastAnswerResult?.isCorrect || null}
+            wasCorrect={lastAnswerResult?.isCorrect ?? null}
             correctAnswer={lastAnswerResult?.correctAnswer}
             timeRemaining={timeRemaining}
           />

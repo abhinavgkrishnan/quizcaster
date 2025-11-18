@@ -34,6 +34,7 @@ export default function Matchmaking({ topic, onMatchFound, onCancel }: Matchmaki
   const [foundMatchData, setFoundMatchData] = useState<any>(null)
   const [currentTipIndex, setCurrentTipIndex] = useState(0)
   const shuffledTipsRef = useRef(shuffleArray(TEXT.MATCHMAKING.PRO_TIPS))
+  const [topicDisplayName, setTopicDisplayName] = useState<string>(topic)
 
   // In dev mode, use mock user with stable random FID for multi-tab testing
   const effectiveUser = user || (isDevMode ? {
@@ -56,6 +57,24 @@ export default function Matchmaking({ topic, onMatchFound, onCancel }: Matchmaki
       effectiveUser?.username || 'Player',
       handleMatchFound
     )
+
+  // Fetch topic display name
+  useEffect(() => {
+    const fetchTopicName = async () => {
+      try {
+        const response = await fetch('/api/topics')
+        const data = await response.json()
+        const foundTopic = data.topics.find((t: any) => t.slug === topic)
+        if (foundTopic) {
+          setTopicDisplayName(foundTopic.display_name)
+        }
+      } catch (error) {
+        console.error('Failed to fetch topic name:', error)
+      }
+    }
+
+    fetchTopicName()
+  }, [topic])
 
   // Join queue on mount ONCE
   useEffect(() => {
@@ -121,7 +140,7 @@ export default function Matchmaking({ topic, onMatchFound, onCancel }: Matchmaki
         <h2 className="text-3xl font-bold text-foreground mb-3 uppercase tracking-tight">
           Finding Match
         </h2>
-        <p className="text-muted-foreground text-sm font-semibold uppercase tracking-wider">{topic}</p>
+        <p className="text-muted-foreground text-sm font-semibold uppercase tracking-wider">{topicDisplayName}</p>
       </motion.div>
 
       <div className="flex flex-col items-center gap-8">

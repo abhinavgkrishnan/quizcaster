@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import TopicSelection from "@/components/topic-selection"
 import Matchmaking from "@/components/matchmaking"
 import MatchFound from "@/components/match-found"
@@ -17,10 +17,22 @@ import BottomNav from "@/components/bottom-nav"
 import { motion } from "framer-motion"
 import { LogIn, Clock, X as XIcon, Globe } from "lucide-react"
 import type { AppScreen, MatchData } from "@/lib/types"
+import { TEXT } from "@/lib/constants"
+
+// Shuffle array helper
+const shuffleArray = <T,>(array: readonly T[]): T[] => {
+  const shuffled = [...array]
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+  }
+  return shuffled
+}
 
 export default function Home() {
   const appContext = useAppContext()
   const [selectedTopic, setSelectedTopic] = useState<string | null>(null)
+  const [selectedTopicDisplayName, setSelectedTopicDisplayName] = useState<string | null>(null)
   const [currentMatch, setCurrentMatch] = useState<MatchData | null>(null)
   const { isSDKLoaded, user, isAuthenticated, signIn, platform } = useUnifiedAuth()
   const isDevMode = process.env.NEXT_PUBLIC_DEV_MODE === 'true'
@@ -33,6 +45,22 @@ export default function Home() {
   const [asyncQuestions, setAsyncQuestions] = useState<any[]>([])
   const [isEmulationMode, setIsEmulationMode] = useState(false)
   const [challengerAnswers, setChallengerAnswers] = useState<any[]>([])
+  const [currentTipIndex, setCurrentTipIndex] = useState(0)
+  const [shuffledTips] = useState(() => shuffleArray(TEXT.MATCHMAKING.PRO_TIPS))
+  const [pendingChallengeMatchId, setPendingChallengeMatchId] = useState<string | null>(null)
+  const pollIntervalRef = useRef<NodeJS.Timeout | null>(null)
+  const asyncTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+
+  // Cycle through pro tips every 5 seconds when waiting for opponent
+  useEffect(() => {
+    if (!waitingForOpponent) return
+
+    const interval = setInterval(() => {
+      setCurrentTipIndex((prev) => (prev + 1) % shuffledTips.length)
+    }, 5000)
+
+    return () => clearInterval(interval)
+  }, [waitingForOpponent, shuffledTips.length])
 
   const handleChallengeNotification = async (challengeId: string) => {
     try {
@@ -113,22 +141,22 @@ export default function Home() {
 
         // Challenge sent - show waiting screen, poll for opponent join
         setSelectedTopic(challengeTopic)
+        setPendingChallengeMatchId(challengeMatchId)
         setWaitingForOpponent(true)
         setWaitingType('join')
 
         const currentUser = user // Capture user in closure
-        let pollInterval: NodeJS.Timeout
         let hasJoined = false
 
         // Poll every 2 seconds to check if opponent joined
-        pollInterval = setInterval(async () => {
+        pollIntervalRef.current = setInterval(async () => {
           const response = await fetch(`/api/matches/${challengeMatchId}`)
           const matchData = await response.json()
 
           // Check if opponent joined (status changed to 'active' and is_async is false = live game)
           if (matchData.status === 'active' && matchData.is_async === false) {
             hasJoined = true
-            clearInterval(pollInterval)
+            if (pollIntervalRef.current) clearInterval(pollIntervalRef.current)
             setWaitingForOpponent(false)
 
             console.log('[Page] Opponent accepted within 30s! Starting LIVE game')
@@ -176,8 +204,8 @@ export default function Home() {
         }, 2000)
 
         // After 30 seconds, if opponent hasn't joined, go async
-        setTimeout(() => {
-          clearInterval(pollInterval)
+        asyncTimeoutRef.current = setTimeout(() => {
+          if (pollIntervalRef.current) clearInterval(pollIntervalRef.current)
 
           if (!hasJoined) {
             setWaitingForOpponent(false)
@@ -418,9 +446,22 @@ export default function Home() {
   }, [currentScreen, setIsGameScreen])
 
 
-  const handleTopicSelect = (topic: string) => {
+  const handleTopicSelect = async (topic: string) => {
     setSelectedTopic(topic)
     setCurrentScreen("matchmaking")
+
+    // Fetch display name
+    try {
+      const response = await fetch('/api/topics')
+      const data = await response.json()
+      const foundTopic = data.topics.find((t: any) => t.slug === topic)
+      if (foundTopic) {
+        setSelectedTopicDisplayName(foundTopic.display_name)
+      }
+    } catch (error) {
+      console.error('Failed to fetch topic name:', error)
+      setSelectedTopicDisplayName(topic) // Fallback to slug
+    }
   }
 
   const handleMatchmakingComplete = (matchData: MatchData) => {
@@ -431,7 +472,46 @@ export default function Home() {
   const handleGameEnd = () => {
     setCurrentScreen("topics")
     setSelectedTopic(null)
+    setSelectedTopicDisplayName(null)
     setCurrentMatch(null)
+  }
+
+  const handleCancelChallenge = async () => {
+    // Clear any polling intervals and timeouts
+    if (pollIntervalRef.current) {
+      clearInterval(pollIntervalRef.current)
+      pollIntervalRef.current = null
+    }
+    if (asyncTimeoutRef.current) {
+      clearTimeout(asyncTimeoutRef.current)
+      asyncTimeoutRef.current = null
+    }
+
+    if (pendingChallengeMatchId && user) {
+      try {
+        // Find the challenge ID for this match
+        const response = await fetch(`/api/challenges?fid=${user.fid}&type=sent`)
+        const data = await response.json()
+        const challenge = data.challenges?.find((c: any) => c.match_id === pendingChallengeMatchId)
+
+        if (challenge) {
+          // Cancel the challenge via decline action
+          await fetch('/api/challenges', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: 'decline',
+              challenge_id: challenge.id,
+            })
+          })
+        }
+      } catch (error) {
+        console.error('Failed to cancel challenge:', error)
+      }
+    }
+    setPendingChallengeMatchId(null)
+    setWaitingForOpponent(false)
+    setCurrentScreen('topics')
   }
 
   const handlePlayAgain = () => {
@@ -523,8 +603,22 @@ export default function Home() {
               {waitingType === 'join' ? 'Waiting for Opponent' : 'Challenge in Progress'}
             </h2>
             <p className="text-sm text-muted-foreground font-semibold uppercase tracking-wide mb-8">
-              {selectedTopic}
+              {selectedTopicDisplayName || selectedTopic}
             </p>
+
+            {/* Pro tip */}
+            <motion.div
+              key={currentTipIndex}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.5 }}
+              className="text-center px-4 mb-4"
+            >
+              <p className="text-sm text-muted-foreground font-semibold">
+                {shuffledTips[currentTipIndex]}
+              </p>
+            </motion.div>
 
             <div className="flex gap-2 justify-center mb-4">
               {[0, 1, 2].map((i) => (
@@ -553,10 +647,7 @@ export default function Home() {
             <motion.button
               whileHover={{ y: -2 }}
               whileTap={{ y: 2 }}
-              onClick={() => {
-                setWaitingForOpponent(false)
-                setCurrentScreen('topics')
-              }}
+              onClick={handleCancelChallenge}
               className="mt-6 px-6 py-3 rounded-2xl brutal-border bg-background font-bold text-sm shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:shadow-none transition-all text-foreground uppercase tracking-wide flex items-center gap-2 mx-auto"
             >
               <XIcon className="w-4 h-4" />

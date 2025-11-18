@@ -319,7 +319,7 @@ export default function MatchHistory({ user, onClose, onNavigate, currentScreen,
                     {playerForfeited ? (isOwnProfile ? TEXT.MATCH_HISTORY.DEFEAT_FORFEIT : `${match.player.username?.toUpperCase()} FORFEIT`) : opponentForfeited ? (isOwnProfile ? TEXT.MATCH_HISTORY.VICTORY_FORFEIT : `${match.opponent.username?.toUpperCase()} FORFEIT`) : getResultText(match.result)}
                   </p>
                   <p className="text-[10px] text-foreground/60 uppercase tracking-wider">
-                    {match.topic}
+                    {topics.find(t => t.slug === match.topic)?.display_name || match.topic}
                   </p>
                   <p className="text-[8px] text-foreground/40 mt-0.5">
                     {new Date(match.completed_at).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit' })} {new Date(match.completed_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false })}
