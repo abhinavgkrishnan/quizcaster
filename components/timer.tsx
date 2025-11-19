@@ -8,9 +8,10 @@ interface TimerProps {
   timeRemaining: number  // Server-controlled time
   onTimeout?: () => void
   duration?: number
+  questionId?: string  // Track question changes to stop audio
 }
 
-export default function Timer({ timeRemaining, onTimeout, duration = GAME_CONFIG.QUESTION_TIME_LIMIT }: TimerProps) {
+export default function Timer({ timeRemaining, onTimeout, duration = GAME_CONFIG.QUESTION_TIME_LIMIT, questionId }: TimerProps) {
   const hasPlayedTick = useRef(false)
   const audioRef = useRef<HTMLAudioElement | null>(null)
 
@@ -21,7 +22,26 @@ export default function Timer({ timeRemaining, onTimeout, duration = GAME_CONFIG
       audioRef.current.volume = 0.5
       audioRef.current.loop = true
     }
+
+    // CLEANUP: Stop audio when component unmounts (game ends, navigation, etc.)
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause()
+        audioRef.current.currentTime = 0
+        audioRef.current = null
+      }
+    }
   }, [])
+
+  // Stop audio when question changes (new question starts)
+  useEffect(() => {
+    // Stop and reset when question changes
+    if (audioRef.current) {
+      audioRef.current.pause()
+      audioRef.current.currentTime = 0
+      hasPlayedTick.current = false
+    }
+  }, [questionId])
 
   // Play/stop tick sound based on time remaining
   useEffect(() => {
@@ -39,8 +59,8 @@ export default function Timer({ timeRemaining, onTimeout, duration = GAME_CONFIG
       }
     }
 
-    // Stop playing when timer reaches 0 or resets to 10
-    if (timeRemaining <= 0 || timeRemaining === 10) {
+    // Stop playing when timer reaches 0
+    if (timeRemaining <= 0) {
       audioRef.current.pause()
       audioRef.current.currentTime = 0
       hasPlayedTick.current = false

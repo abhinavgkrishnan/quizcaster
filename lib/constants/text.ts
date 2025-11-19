@@ -51,16 +51,16 @@ export const TEXT = {
   SHARE: {
     VICTORY: "gg ez noobs.",
     DRAW: "i want a rematch!",
-    DEFEAT: "i lost just so i could do a reverse sweep",
+    DEFEAT: "fuckit we ball.",
 
-    CAST_TEMPLATE: (result: string, topic: string | undefined, score: string, accuracy: string, avgTime: string) =>
-      `${result} just played Quizcaster${topic ? ` on ${topic}` : ''}!\n\n🎯${score}\n\nThink you can beat me?`,
+    CAST_TEMPLATE: (result: string, topic: string | undefined, score: string, accuracy: string, avgTime: string, opponentUsername?: string) =>
+      `${result} just played Quizcaster${opponentUsername ? ` against @${opponentUsername}` : ''}${topic ? ` on ${topic}` : ''}!\n\n🎯${score}\n\nThink you can beat me?`,
   },
 
   // Invitations
   INVITE: {
     MESSAGE: (username: string) =>
-      `Hey @${username}! pvp quiz on farcaster. ready for a 🤺? or too 🐤 to try?`,
+      `yo @${username}! pvp quiz on farcaster just dropped! ready for a 🤺? or too 🐤 to try?`,
   },
 
   // Challenge Messages

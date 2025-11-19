@@ -144,7 +144,7 @@ export default function GameOver({ playerScore, opponentScore, playerAnswers, op
     try {
       const result = playerWon ? TEXT.SHARE.VICTORY : isDraw ? TEXT.SHARE.DRAW : TEXT.SHARE.DEFEAT
       const scoreText = `${playerScore} - ${opponentScore}`
-      const text = TEXT.SHARE.CAST_TEMPLATE(result, topicDisplayName, scoreText, stats.accuracy, stats.avgTimeSeconds)
+      const text = TEXT.SHARE.CAST_TEMPLATE(result, topicDisplayName, scoreText, stats.accuracy, stats.avgTimeSeconds, opponent.username)
 
       const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://quizcaster.com'
 

@@ -103,6 +103,7 @@ export default function GameQuestion({
         <Timer
           timeRemaining={timeRemaining}
           onTimeout={handleTimeout}
+          questionId={question.id}
         />
       </div>
 
