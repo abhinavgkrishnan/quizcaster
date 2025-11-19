@@ -383,6 +383,8 @@ export default function Home() {
       // SCENARIO 3: Challenger finished (opponent accepts after challenger done)
       if (matchData.player1_completed_at && !matchData.player2_completed_at && !isPlayer1) {
         console.log('[fetchMatchAndStart] SCENARIO 3: Challenger finished! Starting emulation mode')
+        console.log('[fetchMatchAndStart] SCENARIO 3 - matchData.questions:', matchData.questions ? 'exists' : 'missing')
+        console.log('[fetchMatchAndStart] SCENARIO 3 - matchData.from_redis:', matchData.from_redis)
 
         // Fetch emulation data and flairs
         const [emulationRes, myFlairRes, challengerFlairRes] = await Promise.all([
@@ -393,6 +395,9 @@ export default function Home() {
         const emulationData = await emulationRes.json()
         const myFlairData = await myFlairRes.json()
         const challengerFlairData = await challengerFlairRes.json()
+
+        console.log('[fetchMatchAndStart] SCENARIO 3 - emulationData:', emulationData)
+        console.log('[fetchMatchAndStart] SCENARIO 3 - emulationData.error:', emulationData?.error)
 
         if (emulationData && !emulationData.error && matchData.questions) {
           setIsEmulationMode(true)
@@ -432,6 +437,15 @@ export default function Home() {
             setCurrentScreen("game")
             sessionStorage.removeItem('isChallenge')
           }, 3000)
+          return
+        } else {
+          console.error('[fetchMatchAndStart] SCENARIO 3 FAILED - Missing data:', {
+            hasEmulationData: !!emulationData,
+            hasError: !!emulationData?.error,
+            hasQuestions: !!matchData.questions
+          })
+          alert('Failed to load challenge data. Please try again.')
+          setCurrentScreen('challenges')
           return
         }
       }

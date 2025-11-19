@@ -37,14 +37,18 @@ export async function GET(request: NextRequest) {
       `)
 
     if (type === 'sent') {
-      query = query.eq('challenger_fid', fidNumber)
+      // Show pending, accepted, and in_progress challenges in sent tab
+      query = query
+        .eq('challenger_fid', fidNumber)
+        .in('status', ['pending', 'accepted', 'in_progress'])
     } else {
-      query = query.eq('challenged_fid', fidNumber)
+      // Only show pending and accepted in received tab (hide in_progress from opponent)
+      query = query
+        .eq('challenged_fid', fidNumber)
+        .in('status', ['pending', 'accepted'])
     }
 
-    query = query
-      .in('status', ['pending', 'accepted'])
-      .order('created_at', { ascending: false })
+    query = query.order('created_at', { ascending: false })
 
     const { data: challenges, error } = await query
 
