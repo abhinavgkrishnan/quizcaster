@@ -38,24 +38,13 @@ export default function ChallengeTopicSelector({ onSelect, onClose }: ChallengeT
     fetchTopics()
   }, [])
 
-  const [enableOverlayClick, setEnableOverlayClick] = useState(false)
-
-  // Enable overlay click after animation completes (prevents first-tap issue)
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setEnableOverlayClick(true)
-    }, 300) // Match animation duration
-    return () => clearTimeout(timer)
-  }, [])
-
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       className="fixed inset-0 z-[200] bg-black/50 flex items-end"
-      onClick={enableOverlayClick ? onClose : undefined}
-      style={{ pointerEvents: enableOverlayClick ? 'auto' : 'none' }}
+      onClick={onClose}
     >
       <motion.div
         initial={{ y: "100%" }}

@@ -337,13 +337,16 @@ export default function FriendsList({ user, onNavigate, currentScreen }: Friends
                         )}
                       </div>
                     </button>
-                    <motion.button
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => handleChallengeFriend(friend)}
-                      className="brutal-violet brutal-border p-2.5 rounded-lg shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] flex-shrink-0 flex items-center justify-center w-10 h-10"
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        handleChallengeFriend(friend)
+                      }}
+                      className="brutal-violet brutal-border p-2.5 rounded-lg shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] flex-shrink-0 flex items-center justify-center w-10 h-10 active:scale-95 transition-transform"
                     >
                       <Swords className="w-4 h-4" />
-                    </motion.button>
+                    </button>
                   </div>
                 </motion.div>
               ))

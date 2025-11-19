@@ -135,7 +135,7 @@ export default function TopicPage({ params }: TopicPageProps) {
         <div className="flex items-center gap-3 mb-4">
           <button
             onClick={() => router.back()}
-            className="brutal-border bg-background p-2 rounded-lg shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+            className="brutal-border bg-background p-2.5 rounded-lg shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] flex items-center justify-center w-10 h-10"
           >
             <ArrowLeft className="w-4 h-4" />
           </button>
