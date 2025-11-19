@@ -95,6 +95,19 @@ export async function POST(
     if (isPlayer1) {
       updateData.player1_score = score
       updateData.player1_completed_at = new Date().toISOString()
+      // Save challenger_data for async challenges (player1 is always the challenger)
+      if (match.match_type === 'async_challenge') {
+        updateData.challenger_data = {
+          score,
+          answers: playerAnswers.map(a => ({
+            questionId: a.question_id,
+            answer: a.answer,
+            isCorrect: a.is_correct,
+            timeTaken: a.time_taken_ms,
+            points: a.points_earned
+          }))
+        }
+      }
     } else {
       updateData.player2_score = score
       updateData.player2_completed_at = new Date().toISOString()

@@ -174,6 +174,20 @@ export default function Home() {
 
         // Challenge sent - show waiting screen, poll for opponent join
         setSelectedTopic(challengeTopic)
+        // Fetch topic display name
+        const fetchTopicName = async () => {
+          try {
+            const response = await fetch('/api/topics')
+            const data = await response.json()
+            const foundTopic = data.topics.find((t: any) => t.slug === challengeTopic)
+            if (foundTopic) {
+              setSelectedTopicDisplayName(foundTopic.display_name)
+            }
+          } catch (error) {
+            console.error('Failed to fetch topic name:', error)
+          }
+        }
+        fetchTopicName()
         setPendingChallengeMatchId(challengeMatchId)
         setWaitingForOpponent(true)
         setWaitingType('join')
