@@ -597,27 +597,6 @@ export default function Home() {
     }
   }
 
-  // Show challenge sent screen if viewing a sent challenge
-  if (showChallengeSent && challengeSentData) {
-    return (
-      <ChallengeSentScreen
-        playerScore={challengeSentData.playerScore}
-        playerAnswers={challengeSentData.playerAnswers}
-        opponentName={challengeSentData.opponentName}
-        topic={challengeSentData.topic}
-        onPlayAgain={() => {
-          setShowChallengeSent(false)
-          setChallengeSentData(null)
-          setCurrentScreen('topics')
-        }}
-        onGoHome={() => {
-          setShowChallengeSent(false)
-          setChallengeSentData(null)
-          setCurrentScreen('topics')
-        }}
-      />
-    )
-  }
 
   // Show loading state while SDK initializes
   if (!isSDKLoaded) {
@@ -849,10 +828,28 @@ export default function Home() {
             currentScreen={currentScreen}
           />
         )}
-        {currentScreen === "challenges" && (
+        {currentScreen === "challenges" && !showChallengeSent && (
           <Challenges
             user={user}
             onNavigate={setCurrentScreen}
+          />
+        )}
+        {showChallengeSent && challengeSentData && (
+          <ChallengeSentScreen
+            playerScore={challengeSentData.playerScore}
+            playerAnswers={challengeSentData.playerAnswers}
+            opponentName={challengeSentData.opponentName}
+            topic={challengeSentData.topic}
+            onPlayAgain={() => {
+              setShowChallengeSent(false)
+              setChallengeSentData(null)
+              setCurrentScreen('topics')
+            }}
+            onGoHome={() => {
+              setShowChallengeSent(false)
+              setChallengeSentData(null)
+              setCurrentScreen('topics')
+            }}
           />
         )}
       </div>

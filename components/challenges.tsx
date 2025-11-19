@@ -169,7 +169,7 @@ export default function Challenges({ user, onNavigate }: ChallengesProps) {
 
   const handleViewScore = async (challenge: Challenge) => {
     // Navigate to show the challenge sent screen with your score
-    router.push(`/?view_challenge=${challenge.match_id}`)
+    window.location.href = `/?view_challenge=${challenge.match_id}`
   }
 
   return (
