@@ -99,7 +99,8 @@ export async function completeMatchForPlayer({
 
       score = playerAnswers.reduce((sum, a) => sum + a.points_earned, 0)
 
-      // Check if both players completed by checking Postgres
+      // For async: Check if OTHER player already completed
+      // After we update this player's timestamp, BOTH will be done if other is already done
       const otherPlayerCompleted = isPlayer1 ? match.player2_completed_at : match.player1_completed_at
       bothCompleted = !!otherPlayerCompleted
     } else {
@@ -138,39 +139,32 @@ export async function completeMatchForPlayer({
       )
     }
 
-    // If both players completed, finalize the match
+    // Now both players are completed if bothCompleted was true
+    // (we just updated this player's timestamp, and other was already done)
     if (bothCompleted) {
-      let player1Score = score
-      let player2Score = 0
+      // Get final scores - use what we already know
+      let player1Score = isPlayer1 ? score : match.player1_score || 0
+      let player2Score = isPlayer1 ? match.player2_score || 0 : score
 
-      if (gameState) {
-        // Get opponent's score from Redis
-        const opponentFid = isPlayer1 ? gameState.player2_fid : gameState.player1_fid
-        const opponentAnswers = await getPlayerAnswers(matchId, opponentFid)
-
-        if (opponentAnswers.length > 0) {
-          // Save opponent's answers if not already saved
-          const saveResult = await saveMatchAnswers(matchId, opponentAnswers.map(a => ({
-            ...a,
-            fid: opponentFid
-          })))
-
-          // Ignore duplicate key errors (answers already saved)
-          if (!saveResult.success && saveResult.error?.code !== '23505') {
-            console.error('[Match Completion] Error saving opponent answers:', saveResult.error)
-          }
-        }
-
-        player1Score = gameState.player1_score
-        player2Score = gameState.player2_score
-      } else {
-        // Recalculate scores from database answers
-        if (match.player2_fid) {
+      // If we don't have opponent's score yet, get it from DB
+      if (player1Score === 0 || player2Score === 0) {
+        if (gameState) {
+          player1Score = gameState.player1_score
+          player2Score = gameState.player2_score
+        } else if (match.player2_fid) {
           const scores = await getScoresFromAnswers(matchId, match.player1_fid, match.player2_fid)
           player1Score = scores.player1Score
           player2Score = scores.player2Score
         }
       }
+
+      console.log('[Match Completion] Finalizing match:', {
+        matchId,
+        player1Score,
+        player2Score,
+        player1Fid: match.player1_fid,
+        player2Fid: match.player2_fid
+      })
 
       // Check for forfeits
       const totalQuestions = gameState?.questions.length || 10 // Default to 10 if no game state
