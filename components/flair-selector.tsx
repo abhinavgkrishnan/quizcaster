@@ -145,7 +145,7 @@ export default function FlairSelector({ fid, onClose, onFlairSelected, onNavigat
               <motion.button
                 whileTap={{ scale: 0.95 }}
                 onClick={onClose}
-                className="brutal-border bg-background p-2 rounded-lg shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+                className="brutal-border bg-background p-2 rounded-lg shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] flex items-center justify-center"
               >
                 <X className="w-4 h-4" />
               </motion.button>

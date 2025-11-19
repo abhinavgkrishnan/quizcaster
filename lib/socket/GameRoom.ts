@@ -145,6 +145,11 @@ export class GameRoom {
       // Set questionStartTime HERE (when timer actually starts, not when question broadcasts)
       this.questionStartTime = Date.now();
 
+      // Broadcast timer_start so clients can synchronize
+      this.io.to(this.matchId).emit('timer_start', {
+        serverTime: this.questionStartTime
+      });
+
       // Only start timer if question hasn't ended yet
       if (!this.questionEnded) {
         this.startTimer();

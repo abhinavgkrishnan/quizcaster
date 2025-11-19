@@ -38,13 +38,24 @@ export default function ChallengeTopicSelector({ onSelect, onClose }: ChallengeT
     fetchTopics()
   }, [])
 
+  const [enableOverlayClick, setEnableOverlayClick] = useState(false)
+
+  // Enable overlay click after animation completes (prevents first-tap issue)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setEnableOverlayClick(true)
+    }, 300) // Match animation duration
+    return () => clearTimeout(timer)
+  }, [])
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       className="fixed inset-0 z-[200] bg-black/50 flex items-end"
-      onClick={onClose}
+      onClick={enableOverlayClick ? onClose : undefined}
+      style={{ pointerEvents: enableOverlayClick ? 'auto' : 'none' }}
     >
       <motion.div
         initial={{ y: "100%" }}
@@ -53,6 +64,7 @@ export default function ChallengeTopicSelector({ onSelect, onClose }: ChallengeT
         transition={{ type: "spring", damping: 30, stiffness: 300 }}
         className="w-full bg-card overflow-hidden max-h-[65vh] flex flex-col border-t-2 border-black"
         onClick={(e) => e.stopPropagation()}
+        style={{ pointerEvents: 'auto' }}
       >
         {/* Header */}
         <div className="flex-none bg-secondary border-b-2 border-black px-4 py-4">
@@ -61,7 +73,7 @@ export default function ChallengeTopicSelector({ onSelect, onClose }: ChallengeT
             <motion.button
               whileTap={{ scale: 0.95 }}
               onClick={onClose}
-              className="brutal-border bg-background p-2 rounded-full shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+              className="brutal-border bg-background p-2 rounded-full shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] flex items-center justify-center"
             >
               <X className="w-5 h-5" />
             </motion.button>

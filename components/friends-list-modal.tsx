@@ -69,7 +69,7 @@ export default function FriendsListModal({ user, onClose, onChallenge }: Friends
             <motion.button
               whileTap={{ scale: 0.95 }}
               onClick={onClose}
-              className="brutal-border bg-background p-2 rounded-full shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+              className="brutal-border bg-background p-2 rounded-full shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] flex items-center justify-center"
             >
               <X className="w-5 h-5" />
             </motion.button>

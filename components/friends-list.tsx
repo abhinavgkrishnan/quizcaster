@@ -340,7 +340,7 @@ export default function FriendsList({ user, onNavigate, currentScreen }: Friends
                     <motion.button
                       whileTap={{ scale: 0.95 }}
                       onClick={() => handleChallengeFriend(friend)}
-                      className="brutal-violet brutal-border p-2 rounded-lg shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] flex-shrink-0"
+                      className="brutal-violet brutal-border p-2.5 rounded-lg shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] flex-shrink-0 flex items-center justify-center w-10 h-10"
                     >
                       <Swords className="w-4 h-4" />
                     </motion.button>

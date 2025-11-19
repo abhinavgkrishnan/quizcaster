@@ -191,7 +191,7 @@ export default function MatchHistory({ user, onClose, onNavigate, currentScreen,
             <motion.button
               whileTap={{ scale: 0.95 }}
               onClick={() => setShowFilters(!showFilters)}
-              className="brutal-border bg-background p-2 rounded-lg shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+              className="brutal-border bg-background p-2.5 rounded-lg shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] flex items-center justify-center w-10 h-10"
             >
               <Filter className="w-4 h-4" />
             </motion.button>
@@ -199,7 +199,7 @@ export default function MatchHistory({ user, onClose, onNavigate, currentScreen,
               <motion.button
                 whileTap={{ scale: 0.95 }}
                 onClick={onClose}
-                className="brutal-border bg-background p-2 rounded-lg shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+                className="brutal-border bg-background p-2.5 rounded-lg shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] flex items-center justify-center w-10 h-10"
               >
                 <X className="w-4 h-4" />
               </motion.button>

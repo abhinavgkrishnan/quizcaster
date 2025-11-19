@@ -52,6 +52,10 @@ export interface ServerToClientEvents {
     isFinalQuestion: boolean; // Whether this is the last question (2x points)
   }) => void;
 
+  timer_start: (data: {
+    serverTime: number;
+  }) => void;
+
   timer_tick: (data: {
     remaining: number;
   }) => void;

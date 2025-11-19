@@ -179,6 +179,10 @@ export default function GameQuestion({
                       animation: shouldFlash ? 'flashCorrect 0.8s ease-in-out 2' : 'none',
                       touchAction: 'manipulation',
                       WebkitTapHighlightColor: 'transparent',
+                      transform: 'translate3d(0, 0, 0)',
+                      WebkitTransform: 'translate3d(0, 0, 0)',
+                      backfaceVisibility: 'hidden',
+                      WebkitBackfaceVisibility: 'hidden',
                     }}
                     className={`
                       relative ${hasImage ? 'h-full min-h-[60px]' : 'h-[60px]'} w-full ${hasImage ? 'p-3' : 'p-4'} rounded-2xl font-bold ${hasImage ? 'text-xs' : 'text-sm'} brutal-border transition-all duration-200 uppercase tracking-wide

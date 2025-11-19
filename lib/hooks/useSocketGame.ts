@@ -119,7 +119,8 @@ export function useSocketGame(
 
     // Question start
     socket.on('question_start', (data) => {
-      questionStartTimeRef.current = Date.now(); // Track when question started
+      // Don't set questionStartTimeRef yet - wait for timer_start event
+      // This prevents timing mismatch between client and server
 
       // Update scores at START of new question (shows results from previous question)
       const myScore = data.scores.find(s => s.fid === myPlayer.fid)?.score || 0;
@@ -137,6 +138,14 @@ export function useSocketGame(
         correctAnswer: null, // Clear previous correct answer
         lastAnswerResult: null, // Clear previous result
       }));
+    });
+
+    // Timer start - synchronized with server
+    socket.on('timer_start', (data) => {
+      // Set questionStartTime when server actually starts timing
+      // This ensures client and server timers are synchronized
+      questionStartTimeRef.current = Date.now();
+      console.log('[useSocketGame] Timer started - synchronized with server');
     });
 
     // Timer tick
