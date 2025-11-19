@@ -169,6 +169,7 @@ export default function Home() {
                 topic: topicDisplayName
               })
               setShowChallengeSent(true)
+              setCurrentScreen('challenges')
             }
           } catch (error) {
             console.error('Failed to fetch challenge data:', error)
@@ -849,6 +850,10 @@ export default function Home() {
               setShowChallengeSent(false)
               setChallengeSentData(null)
               setCurrentScreen('topics')
+            }}
+            onBack={() => {
+              setShowChallengeSent(false)
+              setChallengeSentData(null)
             }}
           />
         )}

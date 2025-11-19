@@ -1,7 +1,7 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { Home, Target, Clock, TrendingUp, RotateCcw } from "lucide-react"
+import { Home, Target, Clock, TrendingUp, RotateCcw, ArrowLeft } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { TEXT } from "@/lib/constants"
 
@@ -12,6 +12,7 @@ interface ChallengeSentScreenProps {
   topic: string
   onPlayAgain: () => void
   onGoHome: () => void
+  onBack?: () => void
 }
 
 export default function ChallengeSentScreen({
@@ -20,7 +21,8 @@ export default function ChallengeSentScreen({
   opponentName,
   topic,
   onPlayAgain,
-  onGoHome
+  onGoHome,
+  onBack
 }: ChallengeSentScreenProps) {
   const router = useRouter()
 
@@ -39,6 +41,19 @@ export default function ChallengeSentScreen({
         transition={{ type: "spring", stiffness: 200, damping: 20 }}
         className="w-full"
       >
+        {/* Back button */}
+        {onBack && (
+          <div className="mb-4">
+            <button
+              onClick={onBack}
+              className="flex items-center gap-2 text-foreground/70 hover:text-foreground text-sm font-semibold uppercase tracking-wide transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Back to Challenges
+            </button>
+          </div>
+        )}
+
         {/* Icon */}
         <div className="mb-3 text-center">
           <div className="w-16 h-16 rounded-full brutal-violet brutal-border flex items-center justify-center mx-auto shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] mb-3">
