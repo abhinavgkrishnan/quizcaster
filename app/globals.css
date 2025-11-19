@@ -161,21 +161,37 @@ body,
 }
 
 /* Touch-first optimizations - Remove 300ms delay and improve responsiveness */
+*,
+*::before,
+*::after {
+  touch-action: manipulation; /* Removes 300ms delay globally */
+  -webkit-tap-highlight-color: transparent; /* Removes blue flash on tap */
+}
+
 button,
 a,
 [role="button"],
-.clickable {
-  touch-action: manipulation; /* Removes 300ms delay on mobile */
-  -webkit-tap-highlight-color: transparent; /* Removes blue flash on tap */
+.clickable,
+input,
+textarea,
+select {
   -webkit-touch-callout: none; /* Prevents callout on long press */
+  -webkit-user-select: none;
+  -moz-user-select: none;
   user-select: none; /* Prevents text selection on tap */
+  cursor: pointer;
 }
 
-/* Allow text selection in specific elements */
+/* Re-enable text selection in text elements */
 p,
 span:not(.clickable),
-h1, h2, h3, h4, h5, h6 {
+h1, h2, h3, h4, h5, h6,
+input,
+textarea {
+  -webkit-user-select: text;
+  -moz-user-select: text;
   user-select: text;
+  cursor: auto;
 }
 
 /* Ensure minimum 44x44px touch targets for accessibility */
@@ -184,6 +200,16 @@ a:not(.no-min-touch),
 [role="button"]:not(.no-min-touch) {
   min-width: 44px;
   min-height: 44px;
+}
+
+/* Remove hover effects on touch devices - prevents double-tap */
+@media (hover: none) {
+  button:hover,
+  a:hover,
+  [role="button"]:hover {
+    /* Override any hover styles - they cause double-tap on mobile */
+    transform: none !important;
+  }
 }
 
 /* GPU acceleration for smoother animations on mobile */

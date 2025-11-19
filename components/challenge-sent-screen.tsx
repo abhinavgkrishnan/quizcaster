@@ -35,24 +35,25 @@ export default function ChallengeSentScreen({
 
   return (
     <div className="w-full max-w-md mx-auto h-screen flex flex-col items-center justify-center bg-card px-6">
+      {/* Back button - top left corner */}
+      {onBack && (
+        <div className="absolute top-4 left-4 z-10">
+          <motion.button
+            whileTap={{ scale: 0.95 }}
+            onClick={onBack}
+            className="brutal-border bg-background p-3 rounded-lg shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+          >
+            <ArrowLeft className="w-5 h-5 text-foreground" />
+          </motion.button>
+        </div>
+      )}
+
       <motion.div
         initial={{ scale: 0.8, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ type: "spring", stiffness: 200, damping: 20 }}
         className="w-full"
       >
-        {/* Back button */}
-        {onBack && (
-          <div className="mb-4">
-            <button
-              onClick={onBack}
-              className="flex items-center gap-2 text-foreground/70 hover:text-foreground text-sm font-semibold uppercase tracking-wide transition-colors"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Back to Challenges
-            </button>
-          </div>
-        )}
 
         {/* Icon */}
         <div className="mb-3 text-center">

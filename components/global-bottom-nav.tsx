@@ -15,12 +15,12 @@ const GLOBAL_MENU_ITEMS = [
 ]
 
 export default function GlobalBottomNav() {
-  const { currentScreen, setCurrentScreen } = useAppContext()
+  const { currentScreen, setCurrentScreen, isGameScreen: contextIsGameScreen } = useAppContext()
   const pathname = usePathname()
   const router = useRouter()
 
-  // Hide on game screens
-  const isGameScreen = pathname?.includes('/game') || currentScreen === 'game'
+  // Hide on game screens, matchmaking, and waiting screens
+  const isGameScreen = pathname?.includes('/game') || currentScreen === 'game' || contextIsGameScreen
   const isMatchmaking = currentScreen === 'matchmaking'
 
   if (isGameScreen || isMatchmaking) {

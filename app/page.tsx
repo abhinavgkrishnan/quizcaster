@@ -65,6 +65,15 @@ export default function Home() {
     return () => clearInterval(interval)
   }, [waitingForOpponent, shuffledTips.length])
 
+  // Hide nav bar when waiting for opponent or going async
+  useEffect(() => {
+    if (waitingForOpponent || goingAsync) {
+      setIsGameScreen(true)
+    } else if (currentScreen !== 'game') {
+      setIsGameScreen(false)
+    }
+  }, [waitingForOpponent, goingAsync, currentScreen])
+
   const handleChallengeNotification = async (challengeId: string) => {
     try {
       // Fetch challenge details

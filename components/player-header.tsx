@@ -104,12 +104,13 @@ export default function PlayerHeader({
       {/* Center Menu Button */}
       <button
         onClick={onMenuClick}
-        className="flex items-center justify-center w-10 h-10 rounded-full brutal-white brutal-border shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all active:shadow-none"
+        className="flex items-center justify-center w-12 h-12 rounded-full brutal-white brutal-border shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] transition-all active:scale-95 active:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]"
         style={{
           transform: 'translate3d(0, 0, 0)',
+          touchAction: 'manipulation',
         }}
       >
-        <Menu className="w-4 h-4 text-foreground" />
+        <Menu className="w-5 h-5 text-foreground" />
       </button>
 
       {/* Opponent */}
