@@ -42,6 +42,7 @@ export default function Home() {
   const [waitingForOpponent, setWaitingForOpponent] = useState(false)
   const [waitingType, setWaitingType] = useState<'join' | 'playing'>('join')
   const [goingAsync, setGoingAsync] = useState(false)
+  const [asyncCountdown, setAsyncCountdown] = useState(30)
   const [isAsyncChallenge, setIsAsyncChallenge] = useState(false)
   const [asyncQuestions, setAsyncQuestions] = useState<any[]>([])
   const [isEmulationMode, setIsEmulationMode] = useState(false)
@@ -65,6 +66,28 @@ export default function Home() {
     return () => clearInterval(interval)
   }, [waitingForOpponent, shuffledTips.length])
 
+  // Countdown timer for "Go Async" button (30 → 0)
+  useEffect(() => {
+    if (!waitingForOpponent || waitingType !== 'join') {
+      setAsyncCountdown(30) // Reset when not waiting
+      return
+    }
+
+    // Start countdown
+    setAsyncCountdown(30)
+    const countdownInterval = setInterval(() => {
+      setAsyncCountdown(prev => {
+        if (prev <= 1) {
+          clearInterval(countdownInterval)
+          return 0
+        }
+        return prev - 1
+      })
+    }, 1000)
+
+    return () => clearInterval(countdownInterval)
+  }, [waitingForOpponent, waitingType])
+
   // Hide nav bar when waiting for opponent or going async
   useEffect(() => {
     if (waitingForOpponent || goingAsync) {
@@ -73,6 +96,74 @@ export default function Home() {
       setIsGameScreen(false)
     }
   }, [waitingForOpponent, goingAsync, currentScreen])
+
+  // Function to trigger async mode (called by timeout OR "Go Async" button)
+  const triggerAsyncMode = async () => {
+    if (pollIntervalRef.current) clearInterval(pollIntervalRef.current)
+    if (asyncTimeoutRef.current) clearTimeout(asyncTimeoutRef.current)
+
+    setWaitingForOpponent(false)
+    setGoingAsync(true)
+
+    // Brief "going async" message, then start async game
+    setTimeout(async () => {
+      const challengeMatchId = pendingChallengeMatchId
+      if (!challengeMatchId || !user) return
+
+      // Fetch match data with questions
+      const response = await fetch(`/api/matches/${challengeMatchId}`)
+      const matchData = await response.json()
+
+      if (matchData && matchData.questions) {
+        const isPlayer1 = matchData.player1_fid === user.fid
+        const opponentFid = isPlayer1 ? matchData.player2_fid : matchData.player1_fid
+
+        // Fetch opponent data and flair
+        const [opponentRes, opponentFlairRes] = await Promise.all([
+          fetch(`/api/users/${opponentFid}`),
+          fetch(`/api/flairs?fid=${opponentFid}`)
+        ])
+        const opponentData = await opponentRes.json()
+        const opponentFlairData = await opponentFlairRes.json()
+
+        // Fetch my flair
+        const myFlairRes = await fetch(`/api/flairs?fid=${user.fid}`)
+        const myFlairData = await myFlairRes.json()
+
+        // Set async challenge mode
+        setIsAsyncChallenge(true)
+        setAsyncQuestions(matchData.questions)
+
+        setCurrentMatch({
+          match_id: challengeMatchId,
+          myPlayer: {
+            fid: user.fid,
+            username: user.username,
+            displayName: user.displayName,
+            pfpUrl: user.pfpUrl || '',
+            activeFlair: myFlairData.active_flair
+          },
+          opponent: {
+            fid: opponentData.fid,
+            username: opponentData.username,
+            displayName: opponentData.display_name,
+            pfpUrl: opponentData.pfp_url,
+            activeFlair: opponentFlairData.active_flair
+          }
+        })
+
+        // Show VS screen first, clear goingAsync before transition
+        sessionStorage.setItem('isChallenge', 'true')
+        setGoingAsync(false)
+        setCurrentScreen("matchFound")
+
+        setTimeout(() => {
+          setCurrentScreen("game")
+          sessionStorage.removeItem('isChallenge')
+        }, 3000)
+      }
+    }, 2000)
+  }
 
   const handleChallengeNotification = async (challengeId: string) => {
     try {
@@ -281,67 +372,8 @@ export default function Home() {
 
         // After 30 seconds, if opponent hasn't joined, go async
         asyncTimeoutRef.current = setTimeout(() => {
-          if (pollIntervalRef.current) clearInterval(pollIntervalRef.current)
-
           if (!hasJoined) {
-            setWaitingForOpponent(false)
-            setGoingAsync(true)
-
-            // Brief "going async" message, then start async game
-            setTimeout(async () => {
-              // Fetch match data with questions
-              const response = await fetch(`/api/matches/${challengeMatchId}`)
-              const matchData = await response.json()
-
-              if (matchData && matchData.questions) {
-                const isPlayer1 = matchData.player1_fid === currentUser.fid
-                const opponentFid = isPlayer1 ? matchData.player2_fid : matchData.player1_fid
-
-                // Fetch opponent data and flair
-                const [opponentRes, opponentFlairRes] = await Promise.all([
-                  fetch(`/api/users/${opponentFid}`),
-                  fetch(`/api/flairs?fid=${opponentFid}`)
-                ])
-                const opponentData = await opponentRes.json()
-                const opponentFlairData = await opponentFlairRes.json()
-
-                // Fetch my flair
-                const myFlairRes = await fetch(`/api/flairs?fid=${currentUser.fid}`)
-                const myFlairData = await myFlairRes.json()
-
-                // Set async challenge mode
-                setIsAsyncChallenge(true)
-                setAsyncQuestions(matchData.questions)
-
-                setCurrentMatch({
-                  match_id: challengeMatchId,
-                  myPlayer: {
-                    fid: currentUser.fid,
-                    username: currentUser.username,
-                    displayName: currentUser.displayName,
-                    pfpUrl: currentUser.pfpUrl || '',
-                    activeFlair: myFlairData.active_flair
-                  },
-                  opponent: {
-                    fid: opponentData.fid,
-                    username: opponentData.username,
-                    displayName: opponentData.display_name,
-                    pfpUrl: opponentData.pfp_url,
-                    activeFlair: opponentFlairData.active_flair
-                  }
-                })
-
-                // Show VS screen first, clear goingAsync before transition
-                sessionStorage.setItem('isChallenge', 'true')
-                setGoingAsync(false)
-                setCurrentScreen("matchFound")
-
-                setTimeout(() => {
-                  setCurrentScreen("game")
-                  sessionStorage.removeItem('isChallenge')
-                }, 3000)
-              }
-            }, 2000)
+            triggerAsyncMode()
           }
         }, 30000)
 
@@ -720,15 +752,38 @@ export default function Home() {
                 : "Waiting for them to finish their match..."}
             </p>
 
-            <motion.button
-              whileHover={{ y: -2 }}
-              whileTap={{ y: 2 }}
-              onClick={handleCancelChallenge}
-              className="mt-6 px-6 py-3 rounded-2xl brutal-border bg-background font-bold text-sm shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:shadow-none transition-all text-foreground uppercase tracking-wide flex items-center gap-2 mx-auto"
-            >
-              <XIcon className="w-4 h-4" />
-              Cancel
-            </motion.button>
+            {/* Buttons */}
+            <div className="space-y-2 w-full max-w-xs mx-auto">
+              {/* Go Async Button - Only show during challenge wait */}
+              {waitingType === 'join' && (
+                <button
+                  onPointerDown={() => {
+                    if (asyncCountdown <= 15) {
+                      triggerAsyncMode()
+                    }
+                  }}
+                  disabled={asyncCountdown > 15}
+                  className={`w-full px-6 py-3 rounded-xl brutal-border font-bold text-sm uppercase tracking-wider shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all ${
+                    asyncCountdown > 15
+                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed opacity-60'
+                      : 'brutal-violet text-foreground cursor-pointer active:scale-95'
+                  }`}
+                  style={{ cursor: asyncCountdown > 15 ? 'not-allowed' : 'pointer' }}
+                >
+                  GO ASYNC ({asyncCountdown})
+                </button>
+              )}
+
+              {/* Cancel Button */}
+              <button
+                onPointerDown={handleCancelChallenge}
+                className="w-full brutal-border bg-background px-6 py-3 rounded-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] font-bold text-sm uppercase tracking-wide flex items-center gap-2 justify-center active:scale-95 transition-transform"
+                style={{ cursor: 'pointer' }}
+              >
+                <XIcon className="w-4 h-4" />
+                Cancel
+              </button>
+            </div>
           </motion.div>
         </div>
       </main>
