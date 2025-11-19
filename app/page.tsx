@@ -99,6 +99,12 @@ export default function Home() {
 
   // Function to trigger async mode (called by timeout OR "Go Async" button)
   const triggerAsyncMode = async () => {
+    console.log('[Page] triggerAsyncMode called', {
+      pendingChallengeMatchId,
+      hasUser: !!user,
+      userFid: user?.fid
+    })
+
     if (pollIntervalRef.current) clearInterval(pollIntervalRef.current)
     if (asyncTimeoutRef.current) clearTimeout(asyncTimeoutRef.current)
 
@@ -108,7 +114,16 @@ export default function Home() {
     // Brief "going async" message, then start async game
     setTimeout(async () => {
       const challengeMatchId = pendingChallengeMatchId
-      if (!challengeMatchId || !user) return
+      console.log('[Page] Starting async game setup', { challengeMatchId, hasUser: !!user })
+
+      if (!challengeMatchId) {
+        console.error('[Page] No pending challenge match ID!')
+        return
+      }
+      if (!user) {
+        console.error('[Page] No user data!')
+        return
+      }
 
       // Fetch match data with questions
       const response = await fetch(`/api/matches/${challengeMatchId}`)
@@ -372,7 +387,9 @@ export default function Home() {
 
         // After 30 seconds, if opponent hasn't joined, go async
         asyncTimeoutRef.current = setTimeout(() => {
+          console.log('[Page] 30 second timeout reached, hasJoined:', hasJoined)
           if (!hasJoined) {
+            console.log('[Page] Triggering async mode via timeout')
             triggerAsyncMode()
           }
         }, 30000)
