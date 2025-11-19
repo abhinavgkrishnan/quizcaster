@@ -52,22 +52,28 @@ export default function BottomNav({
         const isFriends = item.key === "friends"
 
         return (
-          <motion.button
+          <button
             key={item.key}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => isFriends && onFriendsClick ? onFriendsClick() : onNavigate(item.screen)}
+            onClick={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              if (isFriends && onFriendsClick) {
+                onFriendsClick()
+              } else {
+                onNavigate(item.screen)
+              }
+            }}
             className={`flex flex-col items-center gap-1 px-1.5 py-2 rounded-xl transition-all min-w-0 touch-manipulation active:scale-95 active:opacity-80 ${
               isActive
                 ? 'text-foreground'
-                : 'text-muted-foreground hover:text-foreground'
+                : 'text-muted-foreground'
             }`}
           >
             <Icon className={`w-5 h-5 shrink-0 ${isActive ? 'stroke-[2.5]' : 'stroke-[2]'}`} />
             {isActive && (
               <div className="w-6 h-0.5 bg-foreground rounded-full mt-1" />
             )}
-          </motion.button>
+          </button>
         )
       })}
     </div>
