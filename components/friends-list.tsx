@@ -411,7 +411,7 @@ export default function FriendsList({ user, onNavigate, currentScreen }: Friends
       </div>
 
       {/* Followers/Contacts Section */}
-      <div className="flex-none bg-secondary border-t-2 border-black max-h-[40vh] flex flex-col">
+      <div className="flex-none bg-secondary border-t-2 border-black max-h-[40vh] flex flex-col relative z-10">
         <div className="px-4 pt-4 pb-2 flex items-center justify-between">
           <p className="text-sm font-bold uppercase tracking-wider text-foreground">
             {platform === 'world' ? 'Your Contacts' : 'People You Follow'}
@@ -428,7 +428,7 @@ export default function FriendsList({ user, onNavigate, currentScreen }: Friends
             </motion.button>
           )}
         </div>
-        <div className="flex-1 overflow-y-auto px-4 pb-28 space-y-2" style={{ WebkitOverflowScrolling: 'touch' }} onScroll={handleFollowersScroll}>
+        <div className="flex-1 overflow-y-auto px-4 pb-32 space-y-2" style={{ WebkitOverflowScrolling: 'touch', pointerEvents: 'auto' }} onScroll={handleFollowersScroll}>
         {platform === 'world' ? (
           // World App: Show contacts from Share Contacts
           worldContactsLoading ? (

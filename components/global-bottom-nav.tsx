@@ -35,12 +35,14 @@ export default function GlobalBottomNav() {
   }
 
   return (
-    <BottomNav
-      currentScreen={currentScreen}
-      onNavigate={handleNavigate}
-      menuItems={GLOBAL_MENU_ITEMS}
-      animated={false}
-      fixed={true}
-    />
+    <div style={{ pointerEvents: 'auto', position: 'relative', zIndex: 50 }}>
+      <BottomNav
+        currentScreen={currentScreen}
+        onNavigate={handleNavigate}
+        menuItems={GLOBAL_MENU_ITEMS}
+        animated={false}
+        fixed={true}
+      />
+    </div>
   )
 }

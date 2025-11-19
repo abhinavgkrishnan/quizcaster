@@ -52,8 +52,10 @@ export default function BottomNav({
         const isFriends = item.key === "friends"
 
         return (
-          <button
+          <motion.button
             key={item.key}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
             onClick={(e) => {
               e.preventDefault()
               e.stopPropagation()
@@ -63,17 +65,17 @@ export default function BottomNav({
                 onNavigate(item.screen)
               }
             }}
-            className={`flex flex-col items-center gap-1 px-1.5 py-2 rounded-xl transition-all min-w-0 touch-manipulation active:scale-95 active:opacity-80 ${
+            className={`flex flex-col items-center gap-1 px-1.5 py-2 rounded-xl transition-all min-w-0 touch-manipulation ${
               isActive
                 ? 'text-foreground'
-                : 'text-muted-foreground'
+                : 'text-muted-foreground hover:text-foreground'
             }`}
           >
             <Icon className={`w-5 h-5 shrink-0 ${isActive ? 'stroke-[2.5]' : 'stroke-[2]'}`} />
             {isActive && (
               <div className="w-6 h-0.5 bg-foreground rounded-full mt-1" />
             )}
-          </button>
+          </motion.button>
         )
       })}
     </div>
@@ -81,7 +83,7 @@ export default function BottomNav({
 
   if (fixed) {
     return (
-      <div className="fixed bottom-0 left-0 right-0 z-40 bg-secondary border-t-2 border-black">
+      <div className="fixed bottom-0 left-0 right-0 z-50 bg-secondary border-t-2 border-black" style={{ pointerEvents: 'auto' }}>
         {content}
       </div>
     )
