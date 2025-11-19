@@ -117,13 +117,16 @@ export default function FriendsListModal({ user, onClose, onChallenge }: Friends
                       <p className="text-[10px] text-foreground/60">@{friend.username}</p>
                     </div>
                   </div>
-                  <motion.button
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => onChallenge(friend)}
-                    className="brutal-violet brutal-border p-2 rounded-lg shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+                  <button
+                    onPointerDown={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      onChallenge(friend)
+                    }}
+                    className="brutal-violet brutal-border p-2.5 rounded-lg shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] flex items-center justify-center w-10 h-10"
                   >
                     <Swords className="w-4 h-4" />
-                  </motion.button>
+                  </button>
                 </div>
               </motion.div>
             ))

@@ -142,10 +142,14 @@ export function useSocketGame(
 
     // Timer start - synchronized with server
     socket.on('timer_start', (data) => {
-      // Set questionStartTime when server actually starts timing
-      // This ensures client and server timers are synchronized
-      questionStartTimeRef.current = Date.now();
-      console.log('[useSocketGame] Timer started - synchronized with server');
+      // Use server's timestamp to account for network latency
+      // Server sends when IT started, we use that as reference
+      questionStartTimeRef.current = data.serverTime;
+      console.log('[useSocketGame] Timer started - synchronized with server', {
+        serverTime: data.serverTime,
+        clientTime: Date.now(),
+        diff: Date.now() - data.serverTime
+      });
     });
 
     // Timer tick

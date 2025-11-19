@@ -98,11 +98,12 @@ export default function Home() {
   }, [waitingForOpponent, goingAsync, currentScreen])
 
   // Function to trigger async mode (called by timeout OR "Go Async" button)
-  const triggerAsyncMode = async () => {
+  // IMPORTANT: Pass matchId and currentUser as params to avoid stale closures
+  const triggerAsyncMode = async (matchId: string, currentUser: any) => {
     console.log('[Page] triggerAsyncMode called', {
-      pendingChallengeMatchId,
-      hasUser: !!user,
-      userFid: user?.fid
+      matchId,
+      hasUser: !!currentUser,
+      userFid: currentUser?.fid
     })
 
     if (pollIntervalRef.current) clearInterval(pollIntervalRef.current)
@@ -113,24 +114,23 @@ export default function Home() {
 
     // Brief "going async" message, then start async game
     setTimeout(async () => {
-      const challengeMatchId = pendingChallengeMatchId
-      console.log('[Page] Starting async game setup', { challengeMatchId, hasUser: !!user })
+      console.log('[Page] Starting async game setup', { matchId, hasUser: !!currentUser })
 
-      if (!challengeMatchId) {
-        console.error('[Page] No pending challenge match ID!')
+      if (!matchId) {
+        console.error('[Page] No match ID!')
         return
       }
-      if (!user) {
+      if (!currentUser) {
         console.error('[Page] No user data!')
         return
       }
 
       // Fetch match data with questions
-      const response = await fetch(`/api/matches/${challengeMatchId}`)
+      const response = await fetch(`/api/matches/${matchId}`)
       const matchData = await response.json()
 
       if (matchData && matchData.questions) {
-        const isPlayer1 = matchData.player1_fid === user.fid
+        const isPlayer1 = matchData.player1_fid === currentUser.fid
         const opponentFid = isPlayer1 ? matchData.player2_fid : matchData.player1_fid
 
         // Fetch opponent data and flair
@@ -142,7 +142,7 @@ export default function Home() {
         const opponentFlairData = await opponentFlairRes.json()
 
         // Fetch my flair
-        const myFlairRes = await fetch(`/api/flairs?fid=${user.fid}`)
+        const myFlairRes = await fetch(`/api/flairs?fid=${currentUser.fid}`)
         const myFlairData = await myFlairRes.json()
 
         // Set async challenge mode
@@ -150,12 +150,12 @@ export default function Home() {
         setAsyncQuestions(matchData.questions)
 
         setCurrentMatch({
-          match_id: challengeMatchId,
+          match_id: matchId,
           myPlayer: {
-            fid: user.fid,
-            username: user.username,
-            displayName: user.displayName,
-            pfpUrl: user.pfpUrl || '',
+            fid: currentUser.fid,
+            username: currentUser.username,
+            displayName: currentUser.displayName,
+            pfpUrl: currentUser.pfpUrl || '',
             activeFlair: myFlairData.active_flair
           },
           opponent: {
@@ -390,7 +390,7 @@ export default function Home() {
           console.log('[Page] 30 second timeout reached, hasJoined:', hasJoined)
           if (!hasJoined) {
             console.log('[Page] Triggering async mode via timeout')
-            triggerAsyncMode()
+            triggerAsyncMode(challengeMatchId, currentUser)
           }
         }, 30000)
 
@@ -775,8 +775,8 @@ export default function Home() {
               {waitingType === 'join' && (
                 <button
                   onPointerDown={() => {
-                    if (asyncCountdown <= 15) {
-                      triggerAsyncMode()
+                    if (asyncCountdown <= 15 && pendingChallengeMatchId && user) {
+                      triggerAsyncMode(pendingChallengeMatchId, user)
                     }
                   }}
                   disabled={asyncCountdown > 15}
