@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/utils/supabase'
+import { getPlayerResult } from '@/lib/utils/match-results'
+import { getUserByFid } from '@/lib/utils/user-cache'
 
 /**
  * GET /api/matches/[id]/details
@@ -42,29 +44,20 @@ export async function GET(
       console.error('Error fetching answers:', answersError)
     }
 
-    // Get opponent data
+    // Get opponent data using cache
     const opponentFid = match.player1_fid === fidNumber ? match.player2_fid : match.player1_fid
-    const { data: opponent } = opponentFid ? await supabase
-      .from('users')
-      .select('fid, username, display_name, pfp_url')
-      .eq('fid', opponentFid)
-      .single() : { data: null }
+    const opponent = opponentFid ? await getUserByFid(opponentFid) : null
 
     // Separate answers by player
     const myAnswers = answers?.filter(a => a.fid === fidNumber) || []
     const opponentAnswers = answers?.filter(a => a.fid === opponentFid) || []
 
-    // Determine scores and result
+    // Determine scores and result using utility
     const isPlayer1 = match.player1_fid === fidNumber
     const myScore = isPlayer1 ? match.player1_score : match.player2_score
     const opponentScore = isPlayer1 ? match.player2_score : match.player1_score
 
-    let result: 'win' | 'loss' | 'draw' = 'draw'
-    if (match.winner_fid === fidNumber) {
-      result = 'win'
-    } else if (match.winner_fid !== null && match.winner_fid !== fidNumber) {
-      result = 'loss'
-    }
+    const result = getPlayerResult(match.winner_fid, fidNumber, match.forfeited_by, fidNumber)
 
     return NextResponse.json({
       match_id: matchId,

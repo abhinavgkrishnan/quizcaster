@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/utils/supabase'
+import { formatMatchForHistory } from '@/lib/utils/match-results'
+import { getUsersByFids } from '@/lib/utils/user-cache'
 
 /**
  * GET /api/matches/history?fid=123&limit=50&offset=0&topic=biology&opponent_fid=456
@@ -57,53 +59,12 @@ export async function GET(request: NextRequest) {
       if (match.player2_fid) allFids.add(match.player2_fid)
     })
 
-    // Fetch all user data
-    const { data: users } = await supabase
-      .from('users')
-      .select('fid, username, display_name, pfp_url, active_flair')
-      .in('fid', Array.from(allFids))
+    // Batch fetch all user data using cache utility
+    const userMap = await getUsersByFids(Array.from(allFids))
 
-    const userMap = new Map(users?.map(u => [u.fid, u]) || [])
-
-    // Format matches
+    // Format matches using utility (fixes victory/defeat bug)
     const formattedMatches = matches?.map((match: any) => {
-      const isPlayer1 = match.player1_fid === fidNumber
-      const myScore = isPlayer1 ? match.player1_score : match.player2_score
-      const opponentScore = isPlayer1 ? match.player2_score : match.player1_score
-      const playerFid = fidNumber
-      const opponentFid = isPlayer1 ? match.player2_fid : match.player1_fid
-
-      const player = userMap.get(playerFid)
-      const opponent = userMap.get(opponentFid)
-
-      let result = 'draw'
-      if (match.winner_fid === fidNumber) result = 'win'
-      else if (match.winner_fid !== null) result = 'loss'
-
-      return {
-        id: match.id,
-        topic: match.topic,
-        my_score: myScore,
-        opponent_score: opponentScore,
-        result,
-        player: {
-          fid: player?.fid,
-          username: player?.username,
-          display_name: player?.display_name,
-          pfp_url: player?.pfp_url,
-          active_flair: player?.active_flair
-        },
-        opponent: {
-          fid: opponent?.fid,
-          username: opponent?.username,
-          display_name: opponent?.display_name,
-          pfp_url: opponent?.pfp_url,
-          active_flair: opponent?.active_flair
-        },
-        completed_at: match.completed_at,
-        is_async: match.is_async || false,
-        forfeited_by: match.forfeited_by || null
-      }
+      return formatMatchForHistory(match, fidNumber, userMap)
     }) || []
 
     // Get total count for pagination

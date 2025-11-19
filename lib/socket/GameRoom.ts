@@ -7,11 +7,11 @@
 import { Server, Socket } from 'socket.io';
 import { supabase } from '@/lib/utils/supabase';
 import { calculatePoints } from '@/lib/utils/scoring';
-import { updateUserStatsAfterMatch } from '@/lib/utils/stats';
 import { getGameState, updatePlayerScore, savePlayerAnswer, markPlayerCompleted, getPlayerAnswers, deleteGameSession } from '@/lib/redis/game-state';
 import { GAME_CONFIG, SCORING } from '@/lib/constants';
 import type { PlayerData, Question, PlayerScore, ServerToClientEvents } from './events';
-import type { TablesInsert } from '@/lib/database.types';
+import { saveMatchAnswers, finalizeMatch } from '@/lib/utils/match-data';
+import { determineWinner } from '@/lib/utils/match-results';
 
 export class GameRoom {
   private matchId: string;
@@ -318,67 +318,40 @@ export class GameRoom {
 
   /**
    * Save game results to Postgres
+   * Uses utility functions for consistency
    */
   private async saveToDatabase(): Promise<void> {
     try {
-      // Collect all answers
-      const allAnswers: TablesInsert<'match_answers'>[] = [];
-
+      // Collect all answers from both players
+      const allAnswers: any[] = [];
       for (const [fid, answersList] of this.answers.entries()) {
-        for (const answer of answersList) {
-          allAnswers.push({
-            match_id: this.matchId,
-            fid,
-            question_id: answer.question_id,
-            question_number: answer.question_number,
-            answer_given: answer.answer, // Map 'answer' to 'answer_given'
-            is_correct: answer.is_correct,
-            time_taken_ms: answer.time_taken_ms,
-            points_earned: answer.points_earned,
-            answered_at: new Date(answer.timestamp).toISOString(),
-          });
-        }
+        allAnswers.push(...answersList.map(a => ({ ...a, fid })));
       }
 
-      // Batch insert
-      if (allAnswers.length > 0) {
-        const { error } = await supabase.from('match_answers').insert(allAnswers);
-        if (error) console.error('[GameRoom] Error saving answers:', error);
-      }
+      // Save answers using utility
+      await saveMatchAnswers(this.matchId, allAnswers);
 
-      // Update match status
-      const scores = this.getScores();
-      const winnerFid = scores[0].score > scores[1].score ? scores[0].fid : scores[1].score > scores[0].score ? scores[1].fid : null;
-
-      const { error: matchUpdateError } = await supabase.from('matches').update({
-        status: 'completed',
-        completed_at: new Date().toISOString(),
-        winner_fid: winnerFid,
-        player1_score: scores.find(s => s.fid === Array.from(this.players.keys())[0])?.score || 0,
-        player2_score: scores.find(s => s.fid === Array.from(this.players.keys())[1])?.score || 0,
-      }).eq('id', this.matchId);
-
-      if (matchUpdateError) {
-        console.error('[GameRoom] Error updating match status:', matchUpdateError);
-      }
-
-      // Update user stats (including streaks)
+      // Get player FIDs and scores
       const [player1Fid, player2Fid] = Array.from(this.players.keys());
-      await updateUserStatsAfterMatch({
-        matchId: this.matchId,
-        topic: this.topic,
-        player1Fid,
-        player2Fid,
-        player1Score: scores.find(s => s.fid === player1Fid)?.score || 0,
-        player2Score: scores.find(s => s.fid === player2Fid)?.score || 0,
-        winnerFid,
-        player1Answers: this.answers.get(player1Fid) || [],
-        player2Answers: this.answers.get(player2Fid) || [],
-      });
+      const scores = this.getScores();
+      const player1Score = scores.find(s => s.fid === player1Fid)?.score || 0;
+      const player2Score = scores.find(s => s.fid === player2Fid)?.score || 0;
+
+      // Determine winner using utility
+      const winnerFid = determineWinner(player1Score, player2Score, player1Fid, player2Fid);
+
+      // Finalize match using utility (triggers DB stats update)
+      await finalizeMatch(this.matchId, winnerFid, player1Score, player2Score);
+
+      // NOTE: User stats are automatically updated by database trigger
+      // The trigger `update_user_stats_on_match_complete()` fires when match status → 'completed'
+      // It updates both user_stats_overall and user_stats_by_topic including streaks
+      // No need to manually update stats here (was causing duplicate updates)
 
       // Award flairs after stats update
       try {
         const port = process.env.PORT || 3000;
+        const [player1Fid, player2Fid] = Array.from(this.players.keys());
         await Promise.all([
           fetch(`http://localhost:${port}/api/flairs`, {
             method: 'POST',

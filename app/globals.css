@@ -160,6 +160,32 @@ body,
   }
 }
 
+/* Touch-first optimizations - Remove 300ms delay and improve responsiveness */
+button,
+a,
+[role="button"],
+.clickable {
+  touch-action: manipulation; /* Removes 300ms delay on mobile */
+  -webkit-tap-highlight-color: transparent; /* Removes blue flash on tap */
+  -webkit-touch-callout: none; /* Prevents callout on long press */
+  user-select: none; /* Prevents text selection on tap */
+}
+
+/* Allow text selection in specific elements */
+p,
+span:not(.clickable),
+h1, h2, h3, h4, h5, h6 {
+  user-select: text;
+}
+
+/* Ensure minimum 44x44px touch targets for accessibility */
+button:not(.no-min-touch),
+a:not(.no-min-touch),
+[role="button"]:not(.no-min-touch) {
+  min-width: 44px;
+  min-height: 44px;
+}
+
 /* GPU acceleration for smoother animations on mobile */
 .brutal-border,
 [class*="brutal-"] {

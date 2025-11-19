@@ -11,6 +11,7 @@ import Timer from "./timer"
 import { Check, X } from "lucide-react"
 import { GAME_CONFIG } from "@/lib/constants"
 import { useSounds } from "@/lib/hooks/useSounds"
+import { useTouchClick } from "@/lib/hooks/useTouchClick"
 
 interface GameQuestionProps {
   question: {
@@ -172,36 +173,16 @@ export default function GameQuestion({
                 return (
                   <button
                     key={`${question.id}-${option}-${index}`}
-                    style={{
-                      transform: 'translate3d(0, 0, 0)',
-                      WebkitTransform: 'translate3d(0, 0, 0)',
-                      animation: shouldFlash ? 'flashCorrect 0.8s ease-in-out 2' : 'none',
-                    }}
-                    onMouseEnter={(e) => {
-                      if (!isDisabled && !selectedAnswer) {
-                        e.currentTarget.style.transform = 'translate3d(0, -4px, 0)';
-                        e.currentTarget.style.boxShadow = '6px 6px 0px 0px rgba(0,0,0,1)';
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.transform = 'translate3d(0, 0, 0)';
-                      e.currentTarget.style.boxShadow = '4px 4px 0px 0px rgba(0,0,0,1)';
-                    }}
-                    onTouchStart={(e) => {
-                      if (!isDisabled && !selectedAnswer) {
-                        e.currentTarget.style.transform = 'translate3d(0, -2px, 0)';
-                        e.currentTarget.style.boxShadow = '6px 6px 0px 0px rgba(0,0,0,1)';
-                      }
-                    }}
-                    onTouchEnd={(e) => {
-                      e.currentTarget.style.transform = 'translate3d(0, 0, 0)';
-                      e.currentTarget.style.boxShadow = '4px 4px 0px 0px rgba(0,0,0,1)';
-                    }}
                     onClick={() => handleSelectAnswer(option)}
                     disabled={isDisabled || !!selectedAnswer}
+                    style={{
+                      animation: shouldFlash ? 'flashCorrect 0.8s ease-in-out 2' : 'none',
+                      touchAction: 'manipulation',
+                      WebkitTapHighlightColor: 'transparent',
+                    }}
                     className={`
                       relative ${hasImage ? 'h-full min-h-[60px]' : 'h-[60px]'} w-full ${hasImage ? 'p-3' : 'p-4'} rounded-2xl font-bold ${hasImage ? 'text-xs' : 'text-sm'} brutal-border transition-all duration-200 uppercase tracking-wide
-                      ${!selectedAnswer && !isDisabled && 'bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]'}
+                      ${!selectedAnswer && !isDisabled && 'bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:scale-[0.98]'}
                       ${isSelected && !showResult && 'bg-gray-100 animate-pulse shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]'}
                       ${isSelected && showResult && wasCorrect && 'brutal-violet shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]'}
                       ${isSelected && showResult && !wasCorrect && 'brutal-beige shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]'}
