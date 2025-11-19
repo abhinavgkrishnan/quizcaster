@@ -60,7 +60,7 @@ export const TEXT = {
   // Invitations
   INVITE: {
     MESSAGE: (username: string) =>
-      `yo @${username}! pvp quiz on farcaster just dropped! ready for a 🤺? or too 🐤 to try?`,
+      `yo @${username} pvp quiz on farcaster just dropped! ready for a 🤺? or too 🐤 to try?`,
   },
 
   // Challenge Messages

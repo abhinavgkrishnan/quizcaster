@@ -71,10 +71,7 @@ export async function GET(request: NextRequest) {
       }
     }).filter((u: any) => u && u.fid) // Filter out any invalid entries
 
-    console.log('[Followers API] Parsed ${following.length} following users')
-    if (following.length > 0) {
-      console.log('[Followers API] Sample parsed user:', following[0])
-    }
+    // Followers parsed successfully
 
     // Check which followers are in our database
     if (following.length > 0) {

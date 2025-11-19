@@ -106,12 +106,17 @@ export async function completeMatchForPlayer({
       throw new Error('Live match without Redis session - this should not happen')
     }
 
-    // Save this player's answers to Postgres
+    // Save this player's answers to Postgres (if not already saved)
     if (playerAnswers.length > 0) {
-      await saveMatchAnswers(matchId, playerAnswers.map(a => ({
+      const saveResult = await saveMatchAnswers(matchId, playerAnswers.map(a => ({
         ...a,
         fid
       })))
+
+      // Ignore duplicate key errors (answers already saved)
+      if (!saveResult.success && saveResult.error?.code !== '23505') {
+        console.error('[Match Completion] Error saving answers:', saveResult.error)
+      }
     }
 
     // Update match with this player's completion
@@ -145,10 +150,15 @@ export async function completeMatchForPlayer({
 
         if (opponentAnswers.length > 0) {
           // Save opponent's answers if not already saved
-          await saveMatchAnswers(matchId, opponentAnswers.map(a => ({
+          const saveResult = await saveMatchAnswers(matchId, opponentAnswers.map(a => ({
             ...a,
             fid: opponentFid
           })))
+
+          // Ignore duplicate key errors (answers already saved)
+          if (!saveResult.success && saveResult.error?.code !== '23505') {
+            console.error('[Match Completion] Error saving opponent answers:', saveResult.error)
+          }
         }
 
         player1Score = gameState.player1_score
