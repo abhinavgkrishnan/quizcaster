@@ -161,22 +161,11 @@ export async function POST(request: NextRequest) {
           .select('fid, username, display_name, notification_token, notification_url, notifications_enabled')
           .in('fid', [challenger_fid, challenged_fid])
 
-        console.log('[Challenge API] Notification users:', users)
-
         const challenger = users?.find(u => u.fid === challenger_fid)
         const challenged = users?.find(u => u.fid === challenged_fid)
 
-        console.log('[Challenge API] Challenged user:', {
-          fid: challenged?.fid,
-          notif_enabled: challenged?.notifications_enabled,
-          has_token: !!challenged?.notification_token,
-          has_url: !!challenged?.notification_url
-        })
-
         if (challenged?.notifications_enabled && challenged.notification_token && challenged.notification_url) {
           const challengerName = challenger?.display_name || challenger?.username || 'Someone'
-
-          console.log('[Challenge API] Sending notification to:', challenged.fid, 'from:', challengerName)
 
           await fetch(challenged.notification_url, {
             method: 'POST',

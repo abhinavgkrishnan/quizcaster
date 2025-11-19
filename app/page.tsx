@@ -129,27 +129,46 @@ export default function Home() {
       const viewChallengeMatchId = params.get('view_challenge')
 
       if (viewChallengeMatchId) {
-        // View challenge sent screen - fetch match data and show challenger's score
+        // View challenge sent screen - fetch player's answers from DB
         const fetchChallengeData = async () => {
           try {
-            const response = await fetch(`/api/matches/${viewChallengeMatchId}`)
-            const matchData = await response.json()
+            // Fetch match and answers from Supabase
+            const [matchRes, answersRes, topicsRes] = await Promise.all([
+              fetch(`/api/matches/${viewChallengeMatchId}`),
+              fetch(`/api/matches/${viewChallengeMatchId}/answers?fid=${user.fid}`),
+              fetch('/api/topics')
+            ])
 
-            console.log('[View Challenge] Match data:', matchData)
+            const matchData = await matchRes.json()
+            const answersData = await answersRes.json()
+            const topicsData = await topicsRes.json()
 
-            if (matchData && matchData.challenger_data) {
-              // Challenger is always player1 in async challenges
-              const opponentName = matchData.player2_display_name || matchData.player2_username || 'Opponent'
+            if (matchData && answersData.answers) {
+              // Get opponent info
+              const isPlayer1 = matchData.player1_fid === user.fid
+              const opponentName = isPlayer1
+                ? (matchData.player2_display_name || matchData.player2_username || 'Opponent')
+                : (matchData.player1_display_name || matchData.player1_username || 'Opponent')
+
+              // Get topic display name
+              const topic = topicsData.topics?.find((t: any) => t.slug === matchData.topic)
+              const topicDisplayName = topic?.display_name || matchData.topic
+
+              // Calculate score and format answers
+              const formattedAnswers = answersData.answers.map((a: any) => ({
+                isCorrect: a.is_correct,
+                timeTaken: a.time_taken_ms,
+                points: a.points_earned
+              }))
+              const score = answersData.answers.reduce((sum: number, a: any) => sum + a.points_earned, 0)
 
               setChallengeSentData({
-                playerScore: matchData.challenger_data.score,
-                playerAnswers: matchData.challenger_data.answers,
+                playerScore: score,
+                playerAnswers: formattedAnswers,
                 opponentName: opponentName,
-                topic: matchData.topic
+                topic: topicDisplayName
               })
               setShowChallengeSent(true)
-            } else {
-              console.error('[View Challenge] No challenger_data found in match')
             }
           } catch (error) {
             console.error('Failed to fetch challenge data:', error)
@@ -397,8 +416,6 @@ export default function Home() {
       // SCENARIO 3: Challenger finished (opponent accepts after challenger done)
       if (matchData.player1_completed_at && !matchData.player2_completed_at && !isPlayer1) {
         console.log('[fetchMatchAndStart] SCENARIO 3: Challenger finished! Starting emulation mode')
-        console.log('[fetchMatchAndStart] SCENARIO 3 - matchData.questions:', matchData.questions ? 'exists' : 'missing')
-        console.log('[fetchMatchAndStart] SCENARIO 3 - matchData.from_redis:', matchData.from_redis)
 
         // Fetch emulation data and flairs
         const [emulationRes, myFlairRes, challengerFlairRes] = await Promise.all([
@@ -409,9 +426,6 @@ export default function Home() {
         const emulationData = await emulationRes.json()
         const myFlairData = await myFlairRes.json()
         const challengerFlairData = await challengerFlairRes.json()
-
-        console.log('[fetchMatchAndStart] SCENARIO 3 - emulationData:', emulationData)
-        console.log('[fetchMatchAndStart] SCENARIO 3 - emulationData.error:', emulationData?.error)
 
         if (emulationData && !emulationData.error && matchData.questions) {
           setIsEmulationMode(true)
@@ -451,15 +465,6 @@ export default function Home() {
             setCurrentScreen("game")
             sessionStorage.removeItem('isChallenge')
           }, 3000)
-          return
-        } else {
-          console.error('[fetchMatchAndStart] SCENARIO 3 FAILED - Missing data:', {
-            hasEmulationData: !!emulationData,
-            hasError: !!emulationData?.error,
-            hasQuestions: !!matchData.questions
-          })
-          alert('Failed to load challenge data. Please try again.')
-          setCurrentScreen('challenges')
           return
         }
       }
