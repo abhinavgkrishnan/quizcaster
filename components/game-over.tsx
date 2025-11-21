@@ -5,6 +5,7 @@ import { motion } from "framer-motion"
 import confetti from "canvas-confetti"
 import { Trophy, Target, Zap, RotateCcw, Home, Swords, Share2, ArrowLeft } from "lucide-react"
 import { GAME_CONFIG, TEXT } from "@/lib/constants"
+import { useSounds } from "@/lib/hooks/useSounds"
 
 // Shuffle array helper
 const shuffleArray = <T,>(array: readonly T[]): T[] => {
@@ -56,6 +57,19 @@ export default function GameOver({ playerScore, opponentScore, playerAnswers, op
   const [challengeActive, setChallengeActive] = useState(false)
   const [isSharing, setIsSharing] = useState(false)
   const [topicDisplayName, setTopicDisplayName] = useState<string | undefined>(topic)
+
+  const { playVictory, playDefeat, playDraw } = useSounds()
+
+  // Play result sound on mount
+  useEffect(() => {
+    if (playerWon) {
+      playVictory()
+    } else if (isDraw) {
+      playDraw()
+    } else {
+      playDefeat()
+    }
+  }, [playerWon, isDraw, playVictory, playDefeat, playDraw])
 
   // Fetch topic display name from slug
   useEffect(() => {

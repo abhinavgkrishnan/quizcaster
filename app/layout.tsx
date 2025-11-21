@@ -5,7 +5,9 @@ import { FarcasterProvider } from "@/lib/farcaster-sdk";
 import { WorldProvider } from "@/lib/world-sdk";
 import { UnifiedAuthProvider } from "@/lib/contexts/UnifiedAuthContext";
 import { AppProvider } from "@/lib/contexts/AppContext";
+import { BackgroundMusicProvider } from "@/lib/contexts/BackgroundMusicContext";
 import GlobalBottomNav from "@/components/global-bottom-nav";
+import MusicControl from "@/components/music-control";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -64,10 +66,13 @@ export default function RootLayout({
           <WorldProvider>
             <UnifiedAuthProvider>
               <AppProvider>
-                <div className="relative">
-                  {children}
-                  <GlobalBottomNav />
-                </div>
+                <BackgroundMusicProvider>
+                  <div className="relative">
+                    {children}
+                    <MusicControl />
+                    <GlobalBottomNav />
+                  </div>
+                </BackgroundMusicProvider>
               </AppProvider>
             </UnifiedAuthProvider>
           </WorldProvider>

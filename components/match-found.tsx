@@ -4,6 +4,7 @@ import { useEffect } from "react"
 import { motion } from "framer-motion"
 import { Swords } from "lucide-react"
 import type { PlayerData } from "@/lib/socket/events"
+import { useSounds } from "@/lib/hooks/useSounds"
 
 interface MatchFoundProps {
   topic: string
@@ -14,14 +15,19 @@ interface MatchFoundProps {
 }
 
 export default function MatchFound({ topic, myPlayer, opponent, isChallenge = false, onAnimationComplete }: MatchFoundProps) {
+  const { playGameStart } = useSounds()
+
   useEffect(() => {
+    // Play game start sound
+    playGameStart()
+
     // Auto-transition after animation
     const timer = setTimeout(() => {
       onAnimationComplete?.()
     }, 3000) // 3 second display
 
     return () => clearTimeout(timer)
-  }, [onAnimationComplete])
+  }, [onAnimationComplete, playGameStart])
 
   return (
     <div className="w-full max-w-2xl mx-auto h-screen flex items-center justify-center bg-card p-6">

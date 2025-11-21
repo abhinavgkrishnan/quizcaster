@@ -1,7 +1,9 @@
 "use client"
 
+import { useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Zap } from "lucide-react"
+import { useSounds } from "@/lib/hooks/useSounds"
 
 interface QuestionCounterProps {
   questionNumber: number
@@ -14,6 +16,14 @@ export default function QuestionCounter({
   totalQuestions,
   isFinalQuestion = false
 }: QuestionCounterProps) {
+  const { play2X } = useSounds()
+
+  // Play 2X sound when final question appears
+  useEffect(() => {
+    if (isFinalQuestion) {
+      play2X()
+    }
+  }, [isFinalQuestion, play2X])
   return (
     <div className="relative z-10 text-center mb-1.5 flex-shrink-0">
       <div className="flex items-center justify-center gap-2">

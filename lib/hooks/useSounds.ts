@@ -17,8 +17,53 @@ export function useSounds() {
     }
   })
 
+  // 2X points sound (final question)
+  const [play2X] = useSound('/sounds/2X.mp3', {
+    volume: 0.5,
+    onError: (error: any) => {
+      console.error('[Sound] Error playing 2X sound:', error)
+    }
+  })
+
+  // Game start sound
+  const [playGameStart] = useSound('/sounds/Game-start.mp3', {
+    volume: 0.5,
+    onError: (error: any) => {
+      console.error('[Sound] Error playing game start sound:', error)
+    }
+  })
+
+  // Victory sound
+  const [playVictory] = useSound('/sounds/Victory.mp3', {
+    volume: 0.5,
+    onError: (error: any) => {
+      console.error('[Sound] Error playing victory sound:', error)
+    }
+  })
+
+  // Defeat sound
+  const [playDefeat] = useSound('/sounds/Defeat.mp3', {
+    volume: 0.5,
+    onError: (error: any) => {
+      console.error('[Sound] Error playing defeat sound:', error)
+    }
+  })
+
+  // Draw sound
+  const [playDraw] = useSound('/sounds/Draw.mp3', {
+    volume: 0.5,
+    onError: (error: any) => {
+      console.error('[Sound] Error playing draw sound:', error)
+    }
+  })
+
   return {
     playCorrect,
-    playWrong
+    playWrong,
+    play2X,
+    playGameStart,
+    playVictory,
+    playDefeat,
+    playDraw
   }
 }
