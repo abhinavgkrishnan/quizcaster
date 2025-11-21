@@ -156,13 +156,23 @@ export async function POST(request: NextRequest) {
       // Send Farcaster notification to challenged user
       try {
         const { TEXT } = await import('@/lib/constants/text')
-        const { data: users } = await supabase
-          .from('users')
-          .select('fid, username, display_name, notification_token, notification_url, notifications_enabled')
-          .in('fid', [challenger_fid, challenged_fid])
 
-        const challenger = users?.find(u => u.fid === challenger_fid)
-        const challenged = users?.find(u => u.fid === challenged_fid)
+        // Fetch user data and topic display name
+        const [usersResponse, topicResponse] = await Promise.all([
+          supabase
+            .from('users')
+            .select('fid, username, display_name, notification_token, notification_url, notifications_enabled')
+            .in('fid', [challenger_fid, challenged_fid]),
+          supabase
+            .from('topics')
+            .select('slug, display_name')
+            .eq('slug', topic)
+            .single()
+        ])
+
+        const challenger = usersResponse.data?.find(u => u.fid === challenger_fid)
+        const challenged = usersResponse.data?.find(u => u.fid === challenged_fid)
+        const topicDisplayName = topicResponse.data?.display_name || topic
 
         if (challenged?.notifications_enabled && challenged.notification_token && challenged.notification_url) {
           const challengerName = challenger?.display_name || challenger?.username || 'Someone'
@@ -176,7 +186,7 @@ export async function POST(request: NextRequest) {
             body: JSON.stringify({
               notificationId: crypto.randomUUID(),
               title: TEXT.CHALLENGE.NOTIF_NEW_TITLE,
-              body: TEXT.CHALLENGE.NOTIF_NEW_BODY(challengerName, topic),
+              body: TEXT.CHALLENGE.NOTIF_NEW_BODY(challengerName, topicDisplayName),
               targetUrl: `${process.env.NEXT_PUBLIC_APP_URL}/?challenge_notif=${challenge.id}`,
               tokens: [challenged.notification_token]
             })
