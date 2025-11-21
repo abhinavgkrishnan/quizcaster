@@ -21,6 +21,7 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
   const currentTrackRef = useRef<'menu' | 'queue' | null>(null)
   const fadeTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const hasInteractedRef = useRef(false)
+  const audioPrimedRef = useRef(false)
 
   // Initialize audio elements once on mount
   useEffect(() => {
@@ -75,40 +76,37 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
     return null
   }
 
-  // Handle first user interaction - prime BOTH audio elements
+  // Handle first user interaction - prime BOTH audio elements ONCE
   useEffect(() => {
     const handleFirstInteraction = () => {
       if (hasInteractedRef.current) return
       hasInteractedRef.current = true
       console.log('[BgMusic] First user interaction detected, priming audio elements')
 
-      // Prime both audio elements by playing them at volume 0
-      if (menuAudioRef.current && queueAudioRef.current) {
+      // Prime both audio elements ONCE
+      if (!audioPrimedRef.current && menuAudioRef.current && queueAudioRef.current) {
+        audioPrimedRef.current = true
+
         const menuAudio = menuAudioRef.current
         const queueAudio = queueAudioRef.current
 
-        // Play both at 0 volume to get browser permission
-        menuAudio.volume = 0
-        queueAudio.volume = 0
+        // Prime both tracks by attempting to play them at volume 0
+        // Don't pause them here - let the main effect handle that
+        menuAudio.play().catch(err => {
+          console.log('[BgMusic] Menu audio prime failed:', err)
+        })
 
-        // Try to play both to prime them
-        menuAudio.play().then(() => {
-          console.log('[BgMusic] Menu audio primed')
-          // Keep playing if it's the active track, otherwise pause
-          const activeTrack = getActiveTrack()
-          if (activeTrack !== 'menu') {
-            menuAudio.pause()
-          }
-        }).catch(err => console.log('[BgMusic] Menu audio prime failed:', err))
+        queueAudio.play().catch(err => {
+          console.log('[BgMusic] Queue audio prime failed:', err)
+        })
 
-        queueAudio.play().then(() => {
-          console.log('[BgMusic] Queue audio primed')
-          // Keep playing if it's the active track, otherwise pause
-          const activeTrack = getActiveTrack()
-          if (activeTrack !== 'queue') {
-            queueAudio.pause()
-          }
-        }).catch(err => console.log('[BgMusic] Queue audio prime failed:', err))
+        // Pause both immediately after priming
+        // The main effect will handle which one should actually play
+        setTimeout(() => {
+          menuAudio.pause()
+          queueAudio.pause()
+          console.log('[BgMusic] Audio elements primed and paused')
+        }, 100)
       }
     }
 
@@ -123,7 +121,7 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
         document.removeEventListener(event, handleFirstInteraction)
       })
     }
-  }, [currentScreen]) // Include currentScreen to check active track
+  }, []) // No dependencies - run only once
 
   // Toggle mute function
   const toggleMute = () => {
@@ -209,6 +207,12 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
       return
     }
 
+    // Wait a bit for audio to be primed
+    if (!audioPrimedRef.current) {
+      console.log('[BgMusic] Waiting for audio to be primed...')
+      return
+    }
+
     if (!menuAudioRef.current || !queueAudioRef.current) {
       console.log('[BgMusic] Audio elements not initialized')
       return
@@ -230,71 +234,95 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
     // Handle no active track (game screens)
     if (!activeTrack) {
       currentTrackRef.current = null
-      // Fade out both
-      fadeAudio(menuAudio, 0, 200, () => {
-        menuAudio.pause()
-        menuAudio.currentTime = 0
-      })
-      fadeAudio(queueAudio, 0, 200, () => {
-        queueAudio.pause()
-        queueAudio.currentTime = 0
-      })
+      // Fade out and pause both
+      if (!menuAudio.paused || menuAudio.volume > 0) {
+        fadeAudio(menuAudio, 0, 200, () => {
+          menuAudio.pause()
+          menuAudio.currentTime = 0
+        })
+      }
+      if (!queueAudio.paused || queueAudio.volume > 0) {
+        fadeAudio(queueAudio, 0, 200, () => {
+          queueAudio.pause()
+          queueAudio.currentTime = 0
+        })
+      }
       return
     }
 
-    // Switch to menu track
-    if (activeTrack === 'menu' && currentTrackRef.current !== 'menu') {
-      currentTrackRef.current = 'menu'
+    // Track change logic
+    if (activeTrack !== currentTrackRef.current) {
+      // Store the new track immediately to prevent double-switching
+      const previousTrack = currentTrackRef.current
+      currentTrackRef.current = activeTrack
 
-      // Fade out queue and stop it
-      fadeAudio(queueAudio, 0, 200, () => {
-        queueAudio.pause()
-        queueAudio.currentTime = 0
-      })
+      // Stop the previous track
+      if (previousTrack === 'menu' && (!menuAudio.paused || menuAudio.volume > 0)) {
+        fadeAudio(menuAudio, 0, 200, () => {
+          menuAudio.pause()
+          menuAudio.currentTime = 0
+        })
+      } else if (previousTrack === 'queue' && (!queueAudio.paused || queueAudio.volume > 0)) {
+        fadeAudio(queueAudio, 0, 200, () => {
+          queueAudio.pause()
+          queueAudio.currentTime = 0
+        })
+      }
 
-      // Start menu music
-      if (menuAudio.paused) {
-        menuAudio.volume = 0
-        menuAudio.play()
-          .then(() => {
-            console.log('[BgMusic] Started menu music')
-            fadeAudio(menuAudio, targetVolume, 300)
-          })
-          .catch(err => console.error('[BgMusic] Failed to start menu music:', err))
-      } else {
-        fadeAudio(menuAudio, targetVolume, 300)
+      // Start the new track
+      if (activeTrack === 'menu') {
+        // Ensure queue is stopped
+        if (!queueAudio.paused) {
+          queueAudio.pause()
+          queueAudio.currentTime = 0
+          queueAudio.volume = 0
+        }
+
+        // Start menu music
+        if (menuAudio.paused) {
+          menuAudio.volume = 0
+          menuAudio.play()
+            .then(() => {
+              console.log('[BgMusic] Started menu music')
+              fadeAudio(menuAudio, targetVolume, 300)
+            })
+            .catch(err => {
+              console.error('[BgMusic] Failed to start menu music:', err)
+              currentTrackRef.current = null
+            })
+        } else {
+          fadeAudio(menuAudio, targetVolume, 300)
+        }
+      } else if (activeTrack === 'queue') {
+        // Ensure menu is stopped
+        if (!menuAudio.paused) {
+          menuAudio.pause()
+          menuAudio.currentTime = 0
+          menuAudio.volume = 0
+        }
+
+        // Start queue music
+        if (queueAudio.paused) {
+          queueAudio.volume = 0
+          queueAudio.play()
+            .then(() => {
+              console.log('[BgMusic] Started queue music')
+              fadeAudio(queueAudio, targetVolume, 300)
+            })
+            .catch(err => {
+              console.error('[BgMusic] Failed to start queue music:', err)
+              currentTrackRef.current = null
+            })
+        } else {
+          fadeAudio(queueAudio, targetVolume, 300)
+        }
       }
     }
-
-    // Switch to queue track
-    else if (activeTrack === 'queue' && currentTrackRef.current !== 'queue') {
-      currentTrackRef.current = 'queue'
-
-      // Fade out menu and stop it
-      fadeAudio(menuAudio, 0, 200, () => {
-        menuAudio.pause()
-        menuAudio.currentTime = 0
-      })
-
-      // Start queue music
-      if (queueAudio.paused) {
-        queueAudio.volume = 0
-        queueAudio.play()
-          .then(() => {
-            console.log('[BgMusic] Started queue music')
-            fadeAudio(queueAudio, targetVolume, 300)
-          })
-          .catch(err => console.error('[BgMusic] Failed to start queue music:', err))
-      } else {
-        fadeAudio(queueAudio, targetVolume, 300)
-      }
-    }
-
     // Just update volume if track hasn't changed
     else if (activeTrack === currentTrackRef.current) {
-      if (activeTrack === 'menu') {
+      if (activeTrack === 'menu' && !menuAudio.paused) {
         fadeAudio(menuAudio, targetVolume, 200)
-      } else if (activeTrack === 'queue') {
+      } else if (activeTrack === 'queue' && !queueAudio.paused) {
         fadeAudio(queueAudio, targetVolume, 200)
       }
     }
