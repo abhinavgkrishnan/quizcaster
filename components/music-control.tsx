@@ -38,7 +38,8 @@ export default function MusicControl() {
   return (
     <motion.button
       whileTap={{ scale: 0.9 }}
-      onPointerDown={handleToggle}
+      onClick={handleToggle}
+      onTouchEnd={handleToggle}
       className="fixed top-4 right-4 z-50 w-12 h-12 brutal-white brutal-border rounded-full shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] flex items-center justify-center bg-card hover:bg-secondary transition-colors active:bg-secondary touch-manipulation"
       aria-label={isMuted ? "Unmute background music" : "Mute background music"}
     >

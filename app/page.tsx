@@ -568,7 +568,7 @@ export default function Home() {
 
   // Update game screen state
   useEffect(() => {
-    setIsGameScreen(currentScreen === "game" || currentScreen === "matchmaking")
+    setIsGameScreen(currentScreen === "game")
   }, [currentScreen, setIsGameScreen])
 
 
