@@ -38,7 +38,7 @@ export default function Home() {
   const { isSDKLoaded, user, isAuthenticated, signIn, platform } = useUnifiedAuth()
   const isDevMode = process.env.NEXT_PUBLIC_DEV_MODE === 'true'
 
-  const { currentScreen, setCurrentScreen, setIsGameScreen } = appContext
+  const { currentScreen, setCurrentScreen, setIsGameScreen, setIsWaitingScreen } = appContext
   const [waitingForOpponent, setWaitingForOpponent] = useState(false)
   const [waitingType, setWaitingType] = useState<'join' | 'playing'>('join')
   const [goingAsync, setGoingAsync] = useState(false)
@@ -92,10 +92,12 @@ export default function Home() {
   useEffect(() => {
     if (waitingForOpponent || goingAsync) {
       setIsGameScreen(true)
+      setIsWaitingScreen(waitingForOpponent) // Set waiting flag for music
     } else if (currentScreen !== 'game') {
       setIsGameScreen(false)
+      setIsWaitingScreen(false)
     }
-  }, [waitingForOpponent, goingAsync, currentScreen])
+  }, [waitingForOpponent, goingAsync, currentScreen, setIsWaitingScreen])
 
   // Function to trigger async mode (called by timeout OR "Go Async" button)
   // IMPORTANT: Pass matchId and currentUser as params to avoid stale closures

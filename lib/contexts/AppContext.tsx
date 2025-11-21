@@ -8,6 +8,8 @@ interface AppContextType {
   setCurrentScreen: (screen: AppScreen) => void
   isGameScreen: boolean
   setIsGameScreen: (isGame: boolean) => void
+  isWaitingScreen: boolean
+  setIsWaitingScreen: (isWaiting: boolean) => void
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined)
@@ -15,6 +17,7 @@ const AppContext = createContext<AppContextType | undefined>(undefined)
 export function AppProvider({ children }: { children: ReactNode }) {
   const [currentScreen, setCurrentScreen] = useState<AppScreen>("topics")
   const [isGameScreen, setIsGameScreen] = useState(false)
+  const [isWaitingScreen, setIsWaitingScreen] = useState(false)
 
   return (
     <AppContext.Provider
@@ -22,7 +25,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
         currentScreen,
         setCurrentScreen,
         isGameScreen,
-        setIsGameScreen
+        setIsGameScreen,
+        isWaitingScreen,
+        setIsWaitingScreen
       }}
     >
       {children}
