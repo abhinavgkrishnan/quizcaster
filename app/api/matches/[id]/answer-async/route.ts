@@ -74,33 +74,34 @@ export async function POST(
       points
     )
 
-    // In emulation mode, update opponent score with their recorded answer for this question
+    // In emulation mode, calculate opponent's cumulative score up to this question
     const { data: match } = await supabase
       .from('matches')
       .select('match_type, player1_fid, player2_fid')
       .eq('id', matchId)
       .single()
 
-    let finalOpponentScore = opponentScore
+    let finalOpponentScore = 0
 
     if (match?.match_type === 'async_challenge') {
-      // Get opponent's recorded answer for this question number
+      // Get opponent's FID (the challenger who already completed)
       const opponentFid = isPlayer1 ? match.player2_fid : match.player1_fid
 
       if (opponentFid) {
-        const { data: opponentAnswer } = await supabase
+        // Get ALL opponent's answers up to and including current question number
+        // This simulates them playing live - reveal their score progressively
+        const { data: opponentAnswers } = await supabase
           .from('match_answers')
           .select('points_earned')
           .eq('match_id', matchId)
           .eq('fid', opponentFid)
-          .eq('question_number', question_number)
-          .single()
+          .lte('question_number', question_number) // Up to current question
+          .order('question_number')
 
-        if (opponentAnswer) {
-          // Update opponent score in Redis with their recorded points for this question
-          const { updatePlayerScore: updateScore } = await import('@/lib/redis/game-state')
-          await updateScore(matchId, opponentFid, opponentAnswer.points_earned)
-          finalOpponentScore = opponentScore + opponentAnswer.points_earned
+        if (opponentAnswers && opponentAnswers.length > 0) {
+          // Sum up opponent's points for questions answered so far
+          finalOpponentScore = opponentAnswers.reduce((sum, ans) => sum + ans.points_earned, 0)
+          console.log(`[Answer Async] Emulation mode - opponent score up to Q${question_number}:`, finalOpponentScore)
         }
       }
     }

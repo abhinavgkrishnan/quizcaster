@@ -78,22 +78,52 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
     return null
   }
 
+  // Helper to completely stop a track
+  const stopTrack = (audio: HTMLAudioElement) => {
+    // Clear any fade interval first
+    if (fadeIntervalRef.current) {
+      clearInterval(fadeIntervalRef.current)
+      fadeIntervalRef.current = null
+    }
+
+    if (!audio.paused) {
+      audio.pause()
+    }
+    audio.currentTime = 0
+    audio.volume = 0.4 // Reset volume for next play
+
+    const currentSrc = audio.src
+    if (currentSrc) {
+      audio.src = ''
+      audio.load()
+      audio.dataset.originalSrc = currentSrc
+    }
+
+    // Clear Media Session metadata when stopping
+    if ('mediaSession' in navigator) {
+      navigator.mediaSession.metadata = null
+    }
+
+    console.log('[BgMusic] Track completely stopped and cleared from media controls')
+  }
+
   // Helper to switch between tracks
   const switchTrack = async (newTrack: 'menu' | 'queue' | null) => {
     if (newTrack === currentTrackRef.current) return
 
     console.log('[BgMusic] Switching track:', currentTrackRef.current, '->', newTrack)
 
-    // Fade out current track if playing
-    if (currentTrackRef.current === 'menu' && menuAudioRef.current && !menuAudioRef.current.paused) {
-      fadeOut(menuAudioRef.current)
-    } else if (currentTrackRef.current === 'queue' && queueAudioRef.current && !queueAudioRef.current.paused) {
-      fadeOut(queueAudioRef.current)
+    // SAFETY: Stop BOTH tracks to prevent overlap (defensive programming)
+    if (menuAudioRef.current) {
+      stopTrack(menuAudioRef.current)
+    }
+    if (queueAudioRef.current) {
+      stopTrack(queueAudioRef.current)
     }
 
     currentTrackRef.current = newTrack
 
-    // Fade in new track if not muted and has interacted
+    // Start new track if not muted and has interacted
     if (newTrack && !isMuted && hasInteractedRef.current) {
       const audio = newTrack === 'menu' ? menuAudioRef.current : queueAudioRef.current
       if (audio) {
@@ -102,14 +132,21 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
           audio.src = audio.dataset.originalSrc
           audio.load()
         }
+
+        // Start playing
         const playPromise = audio.play()
         if (playPromise !== undefined) {
           playPromise
-            .then(() => fadeIn(audio))
+            .then(() => {
+              console.log('[BgMusic] Track started:', newTrack)
+              fadeIn(audio)
+            })
             .catch(err => console.error('[BgMusic] Track switch play failed:', err))
         }
       }
     }
+
+    console.log('[BgMusic] Track switch complete')
   }
 
   // Handle first user interaction to start audio (autoplay policy)
@@ -173,24 +210,39 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
       const newMutedState = !prev
       localStorage.setItem('bgMusicMuted', String(newMutedState))
 
-      const activeAudio = getActiveAudio()
-
       console.log('[BgMusic] Toggle mute:', {
         from: prev,
         to: newMutedState,
-        activeAudioType: activeAudio === menuAudioRef.current ? 'menu' : activeAudio === queueAudioRef.current ? 'queue' : 'none',
+        currentTrack: currentTrackRef.current,
         currentScreen,
         isGameScreen
       })
 
-      if (activeAudio) {
-        if (newMutedState) {
-          // Mute: pause active audio
-          console.log('[BgMusic] Muting audio')
-          fadeOut(activeAudio)
-        } else {
-          // Unmute: play active audio
-          console.log('[BgMusic] Unmuting')
+      if (newMutedState) {
+        // Mute: STOP ALL tracks completely (safety measure)
+        console.log('[BgMusic] Muting - stopping all tracks')
+
+        if (menuAudioRef.current) {
+          stopTrack(menuAudioRef.current)
+        }
+        if (queueAudioRef.current) {
+          stopTrack(queueAudioRef.current)
+        }
+
+        // Clear Media Session metadata
+        if ('mediaSession' in navigator) {
+          navigator.mediaSession.metadata = null
+        }
+
+        currentTrackRef.current = null
+      } else {
+        // Unmute: play appropriate track for current screen
+        console.log('[BgMusic] Unmuting')
+
+        const activeAudio = getActiveAudio()
+        if (activeAudio) {
+          const trackType = activeAudio === menuAudioRef.current ? 'menu' : 'queue'
+          currentTrackRef.current = trackType
 
           // Restore source if it was cleared
           if (!activeAudio.src && activeAudio.dataset.originalSrc) {
@@ -215,51 +267,10 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
     })
   }
 
-  // Fade out helper
+  // Fade out helper - no longer used, replaced by stopTrack
+  // Kept for compatibility but simplified
   const fadeOut = (audio: HTMLAudioElement) => {
-    if (fadeIntervalRef.current) {
-      clearInterval(fadeIntervalRef.current)
-      fadeIntervalRef.current = null
-    }
-
-    const startVolume = audio.volume
-    const step = startVolume / 10 // 10 steps
-
-    fadeIntervalRef.current = setInterval(() => {
-      if (!audio || audio.paused) {
-        if (fadeIntervalRef.current) clearInterval(fadeIntervalRef.current)
-        return
-      }
-
-      if (audio.volume > step) {
-        audio.volume = Math.max(0, audio.volume - step)
-      } else {
-        audio.volume = 0
-        audio.pause()
-        audio.currentTime = 0
-
-        // CRITICAL: Clear audio source to fully stop and remove from phone media controls
-        // This removes the audio from iOS/Android lock screen and notification media controls
-        const currentSrc = audio.src
-        audio.src = ''
-        audio.load()
-
-        // Store the original source so we can restore it later
-        audio.dataset.originalSrc = currentSrc
-
-        // Clear Media Session metadata to remove from lock screen controls
-        if ('mediaSession' in navigator) {
-          navigator.mediaSession.metadata = null
-        }
-
-        if (fadeIntervalRef.current) {
-          clearInterval(fadeIntervalRef.current)
-          fadeIntervalRef.current = null
-        }
-
-        console.log('[BgMusic] Audio fully stopped and cleared from media controls')
-      }
-    }, 50) // 500ms total fade
+    stopTrack(audio)
   }
 
   // Fade in helper
@@ -319,13 +330,15 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
     })
 
     // Only proceed if user has interacted (autoplay policy)
-    if (!hasInteractedRef.current && targetTrack) {
-      console.log('[BgMusic] Waiting for first interaction')
+    // Note: clicking a topic or button to reach matchmaking counts as interaction
+    if (!hasInteractedRef.current) {
+      console.log('[BgMusic] Waiting for first interaction before playing music')
       return
     }
 
     // Switch tracks if needed
     if (targetTrack !== currentTrackRef.current) {
+      console.log('[BgMusic] Switching from', currentTrackRef.current, 'to', targetTrack)
       switchTrack(targetTrack)
     }
   }, [isGameScreen, currentScreen, isMuted, isWaitingScreen])
