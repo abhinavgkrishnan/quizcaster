@@ -17,281 +17,59 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
   const queueAudioRef = useRef<HTMLAudioElement | null>(null)
   const fadeIntervalRef = useRef<NodeJS.Timeout | null>(null)
   const hasInteractedRef = useRef(false)
-  const currentTrackRef = useRef<'menu' | 'queue' | null>(null)
 
-  // Initialize both audio tracks and load mute preference
+  // Initialize audio elements once
   useEffect(() => {
-    // Create menu music audio element
     const menuAudio = new Audio('/sounds/rivalries1.mp3')
     menuAudio.loop = true
-    menuAudio.volume = 0.4
-    menuAudio.dataset.originalSrc = '/sounds/rivalries1.mp3'
+    menuAudio.volume = 0
     menuAudioRef.current = menuAudio
 
-    // Create queue music audio element
     const queueAudio = new Audio('/sounds/match-queue.mp3')
     queueAudio.loop = true
-    queueAudio.volume = 0.4
-    queueAudio.dataset.originalSrc = '/sounds/match-queue.mp3'
+    queueAudio.volume = 0
     queueAudioRef.current = queueAudio
 
-    // Load mute preference from localStorage
+    // Load mute preference
     const savedMutedState = localStorage.getItem('bgMusicMuted')
-    const shouldBeMuted = savedMutedState === 'true'
-    setIsMuted(shouldBeMuted)
+    setIsMuted(savedMutedState === 'true')
 
     return () => {
       if (fadeIntervalRef.current) {
         clearInterval(fadeIntervalRef.current)
       }
-      // Clean up both audio tracks
-      if (menuAudioRef.current) {
-        menuAudioRef.current.pause()
-        menuAudioRef.current.currentTime = 0
-        menuAudioRef.current.src = ''
-        menuAudioRef.current.load()
-      }
-      if (queueAudioRef.current) {
-        queueAudioRef.current.pause()
-        queueAudioRef.current.currentTime = 0
-        queueAudioRef.current.src = ''
-        queueAudioRef.current.load()
-      }
-      // Clear Media Session metadata to remove from phone controls
-      if ('mediaSession' in navigator) {
-        navigator.mediaSession.metadata = null
-      }
+      menuAudio.pause()
+      queueAudio.pause()
     }
   }, [])
 
-  // Helper to determine which track should play based on current screen
-  const getActiveAudio = (): HTMLAudioElement | null => {
-    // Queue music for matchmaking screen and waiting screens
-    if (currentScreen === 'matchmaking' || isWaitingScreen) {
-      return queueAudioRef.current
-    }
-    // Menu music for menu screens
+  // Determine which track should be active
+  const getActiveTrack = (): 'menu' | 'queue' | null => {
+    if (isGameScreen) return null
+    if (currentScreen === 'matchmaking' || isWaitingScreen) return 'queue'
+
     const menuScreens = ['topics', 'profile', 'leaderboard', 'friends', 'challenges']
-    if (menuScreens.includes(currentScreen) && !isGameScreen) {
-      return menuAudioRef.current
-    }
+    if (menuScreens.includes(currentScreen)) return 'menu'
+
     return null
   }
 
-  // Helper to completely stop a track
-  const stopTrack = (audio: HTMLAudioElement) => {
-    // Clear any fade interval first
-    if (fadeIntervalRef.current) {
-      clearInterval(fadeIntervalRef.current)
-      fadeIntervalRef.current = null
-    }
-
-    if (!audio.paused) {
-      audio.pause()
-    }
-    audio.currentTime = 0
-    audio.volume = 0.4 // Reset volume for next play
-
-    const currentSrc = audio.src
-    if (currentSrc) {
-      audio.src = ''
-      audio.load()
-      audio.dataset.originalSrc = currentSrc
-    }
-
-    // Clear Media Session metadata when stopping
-    if ('mediaSession' in navigator) {
-      navigator.mediaSession.metadata = null
-    }
-
-    console.log('[BgMusic] Track completely stopped and cleared from media controls')
-  }
-
-  // Helper to switch between tracks
-  const switchTrack = async (newTrack: 'menu' | 'queue' | null) => {
-    if (newTrack === currentTrackRef.current) return
-
-    console.log('[BgMusic] Switching track:', currentTrackRef.current, '->', newTrack)
-
-    // SAFETY: Stop BOTH tracks to prevent overlap (defensive programming)
-    if (menuAudioRef.current) {
-      stopTrack(menuAudioRef.current)
-    }
-    if (queueAudioRef.current) {
-      stopTrack(queueAudioRef.current)
-    }
-
-    currentTrackRef.current = newTrack
-
-    // Start new track if not muted and has interacted
-    if (newTrack && !isMuted && hasInteractedRef.current) {
-      const audio = newTrack === 'menu' ? menuAudioRef.current : queueAudioRef.current
-      if (audio) {
-        // Restore source if needed
-        if (!audio.src && audio.dataset.originalSrc) {
-          audio.src = audio.dataset.originalSrc
-          audio.load()
-        }
-
-        // Start playing
-        const playPromise = audio.play()
-        if (playPromise !== undefined) {
-          playPromise
-            .then(() => {
-              console.log('[BgMusic] Track started:', newTrack)
-              fadeIn(audio)
-            })
-            .catch(err => console.error('[BgMusic] Track switch play failed:', err))
-        }
-      }
-    }
-
-    console.log('[BgMusic] Track switch complete')
-  }
-
-  // Handle first user interaction to start audio (autoplay policy)
-  useEffect(() => {
-    const handleFirstInteraction = () => {
-      if (!hasInteractedRef.current) {
-        hasInteractedRef.current = true
-        console.log('[BgMusic] First interaction detected, isMuted:', isMuted)
-
-        const activeAudio = getActiveAudio()
-        const shouldBePlaying = !!activeAudio && !isMuted
-
-        console.log('[BgMusic] First interaction check:', {
-          currentScreen,
-          isGameScreen,
-          isMuted,
-          shouldBePlaying,
-          activeAudioType: activeAudio === menuAudioRef.current ? 'menu' : activeAudio === queueAudioRef.current ? 'queue' : 'none'
-        })
-
-        if (shouldBePlaying && activeAudio) {
-          // Determine which track
-          const trackType = activeAudio === menuAudioRef.current ? 'menu' : 'queue'
-          currentTrackRef.current = trackType
-
-          // Restore source if it was cleared
-          if (!activeAudio.src && activeAudio.dataset.originalSrc) {
-            console.log('[BgMusic] Restoring audio source')
-            activeAudio.src = activeAudio.dataset.originalSrc
-            activeAudio.load()
-          }
-
-          const playPromise = activeAudio.play()
-          if (playPromise !== undefined) {
-            playPromise
-              .then(() => console.log('[BgMusic] Started playing on first interaction'))
-              .catch(err => console.error('[BgMusic] Play on interaction failed:', err))
-          }
-        }
-      }
-    }
-
-    // Listen for any user interaction
-    document.addEventListener('click', handleFirstInteraction)
-    document.addEventListener('touchend', handleFirstInteraction) // Changed from touchstart to touchend
-    document.addEventListener('keydown', handleFirstInteraction)
-
-    return () => {
-      document.removeEventListener('click', handleFirstInteraction)
-      document.removeEventListener('touchend', handleFirstInteraction)
-      document.removeEventListener('keydown', handleFirstInteraction)
-    }
-  }, [currentScreen, isGameScreen, isMuted])
-
-  // Handle mute/unmute
-  const toggleMute = () => {
-    hasInteractedRef.current = true // Mark interaction happened
-    console.log('[BgMusic] toggleMute called')
-
-    setIsMuted(prev => {
-      const newMutedState = !prev
-      localStorage.setItem('bgMusicMuted', String(newMutedState))
-
-      console.log('[BgMusic] Toggle mute:', {
-        from: prev,
-        to: newMutedState,
-        currentTrack: currentTrackRef.current,
-        currentScreen,
-        isGameScreen
-      })
-
-      if (newMutedState) {
-        // Mute: STOP ALL tracks completely (safety measure)
-        console.log('[BgMusic] Muting - stopping all tracks')
-
-        if (menuAudioRef.current) {
-          stopTrack(menuAudioRef.current)
-        }
-        if (queueAudioRef.current) {
-          stopTrack(queueAudioRef.current)
-        }
-
-        // Clear Media Session metadata
-        if ('mediaSession' in navigator) {
-          navigator.mediaSession.metadata = null
-        }
-
-        currentTrackRef.current = null
-      } else {
-        // Unmute: play appropriate track for current screen
-        console.log('[BgMusic] Unmuting')
-
-        const activeAudio = getActiveAudio()
-        if (activeAudio) {
-          const trackType = activeAudio === menuAudioRef.current ? 'menu' : 'queue'
-          currentTrackRef.current = trackType
-
-          // Restore source if it was cleared
-          if (!activeAudio.src && activeAudio.dataset.originalSrc) {
-            console.log('[BgMusic] Restoring audio source')
-            activeAudio.src = activeAudio.dataset.originalSrc
-            activeAudio.load()
-          }
-
-          const playPromise = activeAudio.play()
-          if (playPromise !== undefined) {
-            playPromise
-              .then(() => {
-                console.log('[BgMusic] Unmute play succeeded')
-                fadeIn(activeAudio)
-              })
-              .catch(err => console.error('[BgMusic] Unmute play failed:', err))
-          }
-        }
-      }
-
-      return newMutedState
-    })
-  }
-
-  // Fade out helper - no longer used, replaced by stopTrack
-  // Kept for compatibility but simplified
-  const fadeOut = (audio: HTMLAudioElement) => {
-    stopTrack(audio)
-  }
-
-  // Fade in helper
+  // Fade in a track
   const fadeIn = (audio: HTMLAudioElement) => {
     if (fadeIntervalRef.current) {
       clearInterval(fadeIntervalRef.current)
-      fadeIntervalRef.current = null
     }
 
-    audio.volume = 0
     const targetVolume = 0.4
-    const step = targetVolume / 10 // 10 steps
+    const steps = 20
+    const stepSize = targetVolume / steps
+    const stepDuration = 25 // 500ms total
+
+    audio.volume = 0
 
     fadeIntervalRef.current = setInterval(() => {
-      if (!audio || audio.paused) {
-        if (fadeIntervalRef.current) clearInterval(fadeIntervalRef.current)
-        return
-      }
-
-      if (audio.volume < targetVolume - step) {
-        audio.volume = Math.min(targetVolume, audio.volume + step)
+      if (audio.volume < targetVolume - stepSize) {
+        audio.volume = Math.min(targetVolume, audio.volume + stepSize)
       } else {
         audio.volume = targetVolume
         if (fadeIntervalRef.current) {
@@ -299,49 +77,139 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
           fadeIntervalRef.current = null
         }
       }
-    }, 50) // 500ms total fade
+    }, stepDuration)
   }
 
-  // Auto-pause/resume based on screen and switch tracks
-  useEffect(() => {
-    if (!menuAudioRef.current || !queueAudioRef.current) return
-
-    // Determine which track should play
-    let targetTrack: 'menu' | 'queue' | null = null
-
-    // Queue music for matchmaking and waiting screens
-    if ((currentScreen === 'matchmaking' || isWaitingScreen) && !isMuted) {
-      targetTrack = 'queue'
-    } else {
-      const menuScreens = ['topics', 'profile', 'leaderboard', 'friends', 'challenges']
-      if (menuScreens.includes(currentScreen) && !isGameScreen && !isMuted) {
-        targetTrack = 'menu'
-      }
+  // Fade out a track
+  const fadeOut = (audio: HTMLAudioElement, onComplete?: () => void) => {
+    if (fadeIntervalRef.current) {
+      clearInterval(fadeIntervalRef.current)
     }
 
-    console.log('[BgMusic] Screen change:', {
+    const steps = 20
+    const stepSize = audio.volume / steps
+    const stepDuration = 25 // 500ms total
+
+    fadeIntervalRef.current = setInterval(() => {
+      if (audio.volume > stepSize) {
+        audio.volume = Math.max(0, audio.volume - stepSize)
+      } else {
+        audio.volume = 0
+        audio.pause()
+        if (fadeIntervalRef.current) {
+          clearInterval(fadeIntervalRef.current)
+          fadeIntervalRef.current = null
+        }
+        onComplete?.()
+      }
+    }, stepDuration)
+  }
+
+  // Handle first user interaction
+  useEffect(() => {
+    const handleFirstInteraction = () => {
+      if (hasInteractedRef.current) return
+      hasInteractedRef.current = true
+      console.log('[BgMusic] First interaction detected')
+    }
+
+    document.addEventListener('click', handleFirstInteraction, { once: true })
+    document.addEventListener('touchend', handleFirstInteraction, { once: true })
+    document.addEventListener('keydown', handleFirstInteraction, { once: true })
+
+    return () => {
+      document.removeEventListener('click', handleFirstInteraction)
+      document.removeEventListener('touchend', handleFirstInteraction)
+      document.removeEventListener('keydown', handleFirstInteraction)
+    }
+  }, [])
+
+  // Toggle mute
+  const toggleMute = () => {
+    hasInteractedRef.current = true
+
+    setIsMuted(prev => {
+      const newMuted = !prev
+      localStorage.setItem('bgMusicMuted', String(newMuted))
+      console.log('[BgMusic] Mute toggled:', newMuted)
+      return newMuted
+    })
+  }
+
+  // Main music control effect
+  useEffect(() => {
+    if (!hasInteractedRef.current || !menuAudioRef.current || !queueAudioRef.current) {
+      return
+    }
+
+    const menuAudio = menuAudioRef.current
+    const queueAudio = queueAudioRef.current
+    const activeTrack = getActiveTrack()
+
+    console.log('[BgMusic] State:', {
       currentScreen,
       isGameScreen,
       isWaitingScreen,
       isMuted,
-      currentTrack: currentTrackRef.current,
-      targetTrack,
-      hasInteracted: hasInteractedRef.current
+      activeTrack,
+      menuPlaying: !menuAudio.paused,
+      queuePlaying: !queueAudio.paused
     })
 
-    // Only proceed if user has interacted (autoplay policy)
-    // Note: clicking a topic or button to reach matchmaking counts as interaction
-    if (!hasInteractedRef.current) {
-      console.log('[BgMusic] Waiting for first interaction before playing music')
+    // If muted, stop everything
+    if (isMuted) {
+      if (!menuAudio.paused) {
+        fadeOut(menuAudio)
+      }
+      if (!queueAudio.paused) {
+        fadeOut(queueAudio)
+      }
       return
     }
 
-    // Switch tracks if needed
-    if (targetTrack !== currentTrackRef.current) {
-      console.log('[BgMusic] Switching from', currentTrackRef.current, 'to', targetTrack)
-      switchTrack(targetTrack)
+    // If no active track (e.g., in game), stop both
+    if (!activeTrack) {
+      if (!menuAudio.paused) {
+        fadeOut(menuAudio)
+      }
+      if (!queueAudio.paused) {
+        fadeOut(queueAudio)
+      }
+      return
     }
-  }, [isGameScreen, currentScreen, isMuted, isWaitingScreen])
+
+    // Play the correct track
+    const shouldPlayMenu = activeTrack === 'menu'
+    const shouldPlayQueue = activeTrack === 'queue'
+
+    // Handle menu audio
+    if (shouldPlayMenu) {
+      if (menuAudio.paused) {
+        menuAudio.play().then(() => {
+          console.log('[BgMusic] Menu music started')
+          fadeIn(menuAudio)
+        }).catch(err => console.error('[BgMusic] Menu play failed:', err))
+      }
+    } else {
+      if (!menuAudio.paused) {
+        fadeOut(menuAudio)
+      }
+    }
+
+    // Handle queue audio
+    if (shouldPlayQueue) {
+      if (queueAudio.paused) {
+        queueAudio.play().then(() => {
+          console.log('[BgMusic] Queue music started')
+          fadeIn(queueAudio)
+        }).catch(err => console.error('[BgMusic] Queue play failed:', err))
+      }
+    } else {
+      if (!queueAudio.paused) {
+        fadeOut(queueAudio)
+      }
+    }
+  }, [currentScreen, isGameScreen, isWaitingScreen, isMuted])
 
   return (
     <BackgroundMusicContext.Provider value={{ isMuted, toggleMute }}>

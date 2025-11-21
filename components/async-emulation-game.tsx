@@ -132,6 +132,33 @@ export default function AsyncEmulationGame({
     }
   }
 
+  const handleSendChallenge = async () => {
+    try {
+      const response = await fetch('/api/challenges', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'create',
+          challenger_fid: myPlayer.fid,
+          challenged_fid: challenger.fid,
+          topic
+        })
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        // Navigate to the new async game
+        window.location.href = `/?challenge=${data.match_id}&topic=${topic}&opponent=${challenger.fid}`
+      } else {
+        alert(data.error || 'Failed to send challenge')
+      }
+    } catch (error) {
+      console.error('Failed to send challenge:', error)
+      alert('Failed to send challenge')
+    }
+  }
+
   if (gameComplete) {
     const finalChallengerScore = challengerAnswers.reduce((sum, a) => sum + a.points, 0)
 
@@ -147,7 +174,7 @@ export default function AsyncEmulationGame({
           myFid={myPlayer.fid}
           onPlayAgain={() => {}}
           onGoHome={onGameEnd}
-          onChallenge={() => {}}
+          onChallenge={handleSendChallenge}
         />
       </div>
     )
