@@ -17,10 +17,17 @@ export default function MusicControl() {
     return null
   }
 
-  const handleClick = (e: React.MouseEvent | React.TouchEvent) => {
+  const handleClick = (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
     console.log('[MusicControl] Button clicked')
+    toggleMute()
+  }
+
+  const handleTouch = (e: React.TouchEvent) => {
+    e.preventDefault() // Prevents synthetic click from firing
+    e.stopPropagation()
+    console.log('[MusicControl] Button touched')
     toggleMute()
   }
 
@@ -28,7 +35,7 @@ export default function MusicControl() {
     <motion.button
       whileTap={{ scale: 0.9 }}
       onClick={handleClick}
-      onTouchEnd={handleClick}
+      onTouchEnd={handleTouch}
       className="fixed top-4 right-4 z-50 w-12 h-12 brutal-white brutal-border rounded-full shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] flex items-center justify-center bg-card hover:bg-secondary transition-colors active:bg-secondary"
       aria-label={isMuted ? "Unmute background music" : "Mute background music"}
     >
