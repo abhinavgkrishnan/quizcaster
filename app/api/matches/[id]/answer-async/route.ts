@@ -46,6 +46,27 @@ export async function POST(
 
     await savePlayerAnswer(matchId, fid, answerData)
 
+    // CRITICAL: Also save to Postgres immediately for async matches
+    // This ensures data persists even if Redis session is cleared
+    const { error: insertError } = await supabase
+      .from('match_answers')
+      .insert({
+        match_id: matchId,
+        fid,
+        question_id,
+        question_number,
+        answer_given: answer,
+        is_correct: isCorrect,
+        time_taken_ms,
+        points_earned: points,
+        answered_at: new Date(answerData.timestamp).toISOString()
+      })
+
+    // Ignore duplicate key errors (answer already saved)
+    if (insertError && insertError.code !== '23505') {
+      console.error('[Answer Async] Error saving to Postgres:', insertError)
+    }
+
     // Update player score in Redis
     const { playerScore, opponentScore, isPlayer1 } = await updatePlayerScore(
       matchId,

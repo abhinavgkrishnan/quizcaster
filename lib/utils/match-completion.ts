@@ -76,7 +76,7 @@ export async function completeMatchForPlayer({
     if (isAsync) {
       console.log('[Match Completion] Async match - using Postgres timestamps')
 
-      // Get answers from database if available
+      // Try to get answers from Postgres first (primary source)
       const { data: answers } = await supabase
         .from('match_answers')
         .select('*')
@@ -93,6 +93,17 @@ export async function completeMatchForPlayer({
         points_earned: a.points_earned,
         timestamp: new Date(a.answered_at).getTime()
       }))
+
+      // FALLBACK: If no answers in Postgres but Redis session exists, try Redis
+      // This handles edge cases where Postgres insert failed but Redis has data
+      if (playerAnswers.length === 0 && gameState) {
+        console.log('[Match Completion] No answers in Postgres, checking Redis as fallback')
+        const redisAnswers = await getPlayerAnswers(matchId, fid)
+        if (redisAnswers.length > 0) {
+          playerAnswers = redisAnswers
+          console.log('[Match Completion] Using Redis answers:', redisAnswers.length)
+        }
+      }
 
       score = playerAnswers.reduce((sum, a) => sum + a.points_earned, 0)
 
