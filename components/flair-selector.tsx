@@ -115,13 +115,22 @@ export default function FlairSelector({ fid, onClose, onFlairSelected, onNavigat
     .filter(f => !earnedFlairIds.has(f.id))
     .filter(f => !filterTopic || f.topic === filterTopic)
 
-  // Sort locked flairs by how close they are to unlocking (smallest gap first)
+  // Sort locked flairs
   const lockedFlairs = filteredLockedFlairs.sort((a, b) => {
     const winsA = currentWins[a.topic || ''] || 0
     const winsB = currentWins[b.topic || ''] || 0
-    const gapA = a.requirement.count - winsA // How many wins needed
-    const gapB = b.requirement.count - winsB
-    return gapA - gapB // Smallest gap (closest to unlock) first
+
+    if (filterTopic) {
+      // When filtering by specific topic: sort by gap (closest to unlock first)
+      const gapA = a.requirement.count - winsA
+      const gapB = b.requirement.count - winsB
+      return gapA - gapB
+    } else {
+      // When showing all topics: sort by progress percentage (highest progress first)
+      const progressA = (winsA / a.requirement.count) * 100
+      const progressB = (winsB / b.requirement.count) * 100
+      return progressB - progressA // Descending order (highest first)
+    }
   })
 
   // Filter earned flairs by topic
@@ -273,7 +282,7 @@ export default function FlairSelector({ fid, onClose, onFlairSelected, onNavigat
                           <p className="text-xs text-foreground/60">{flair.description}</p>
                           {flair.topic && (
                             <p className="text-[10px] text-foreground/50 uppercase tracking-wider mt-1">
-                              {flair.topic}
+                              {topics.find(t => t.slug === flair.topic)?.display_name || flair.topic}
                             </p>
                           )}
                         </div>
@@ -319,7 +328,7 @@ export default function FlairSelector({ fid, onClose, onFlairSelected, onNavigat
                           <p className="text-xs text-foreground/50">{flair.description}</p>
                           <div className="flex items-center gap-2 mt-1">
                             <p className="text-[10px] text-foreground/40 uppercase tracking-wider">
-                              {flair.topic}
+                              {topics.find(t => t.slug === flair.topic)?.display_name || flair.topic}
                             </p>
                             <span className="text-[10px] text-foreground/40">•</span>
                             <p className="text-[10px] font-bold text-foreground/60">

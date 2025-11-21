@@ -71,15 +71,12 @@ export async function completeMatchForPlayer({
     let playerAnswers: any[] = []
     let score = 0
 
-    if (gameState) {
-      // Redis session exists - use it
-      const completionResult = await markPlayerCompleted(matchId, fid)
-      bothCompleted = completionResult.bothCompleted
-      playerAnswers = await getPlayerAnswers(matchId, fid)
-      score = gameState.player1_fid === fid ? gameState.player1_score : gameState.player2_score
-    } else if (isAsync) {
-      // No Redis session (async case) - calculate from Postgres
-      console.log('[Match Completion] No Redis session, using Postgres data')
+    // For async matches, ALWAYS use Postgres timestamps to determine completion
+    // (Redis sessions can be overwritten when Player 2 starts playing)
+    if (isAsync) {
+      console.log('[Match Completion] Async match - using Postgres timestamps')
+
+      // Get answers from database if available
       const { data: answers } = await supabase
         .from('match_answers')
         .select('*')
@@ -99,10 +96,15 @@ export async function completeMatchForPlayer({
 
       score = playerAnswers.reduce((sum, a) => sum + a.points_earned, 0)
 
-      // For async: Check if OTHER player already completed
-      // After we update this player's timestamp, BOTH will be done if other is already done
+      // For async: Check if OTHER player already completed BEFORE we update this player
       const otherPlayerCompleted = isPlayer1 ? match.player2_completed_at : match.player1_completed_at
       bothCompleted = !!otherPlayerCompleted
+    } else if (gameState) {
+      // Live match with Redis session - use Redis completion flags
+      const completionResult = await markPlayerCompleted(matchId, fid)
+      bothCompleted = completionResult.bothCompleted
+      playerAnswers = await getPlayerAnswers(matchId, fid)
+      score = gameState.player1_fid === fid ? gameState.player1_score : gameState.player2_score
     } else {
       throw new Error('Live match without Redis session - this should not happen')
     }
@@ -139,23 +141,42 @@ export async function completeMatchForPlayer({
       )
     }
 
-    // Now both players are completed if bothCompleted was true
-    // (we just updated this player's timestamp, and other was already done)
-    if (bothCompleted) {
-      // Get final scores - use what we already know
-      let player1Score = isPlayer1 ? score : match.player1_score || 0
-      let player2Score = isPlayer1 ? match.player2_score || 0 : score
+    // For async matches, re-check if both completed after updating this player's timestamp
+    if (isAsync) {
+      const { data: updatedMatch } = await supabase
+        .from('matches')
+        .select('player1_completed_at, player2_completed_at')
+        .eq('id', matchId)
+        .single()
 
-      // If we don't have opponent's score yet, get it from DB
-      if (player1Score === 0 || player2Score === 0) {
-        if (gameState) {
-          player1Score = gameState.player1_score
-          player2Score = gameState.player2_score
-        } else if (match.player2_fid) {
-          const scores = await getScoresFromAnswers(matchId, match.player1_fid, match.player2_fid)
-          player1Score = scores.player1Score
-          player2Score = scores.player2Score
-        }
+      // Both completed if BOTH timestamps exist
+      bothCompleted = !!(updatedMatch?.player1_completed_at && updatedMatch?.player2_completed_at)
+      console.log('[Match Completion] After update - bothCompleted:', bothCompleted, {
+        player1_completed_at: updatedMatch?.player1_completed_at,
+        player2_completed_at: updatedMatch?.player2_completed_at
+      })
+    }
+
+    // Now both players are completed if bothCompleted is true
+    if (bothCompleted) {
+      // Get final scores
+      let player1Score: number
+      let player2Score: number
+
+      if (isAsync) {
+        // For async matches, always calculate from database answers
+        const scores = await getScoresFromAnswers(matchId, match.player1_fid, match.player2_fid!)
+        player1Score = scores.player1Score
+        player2Score = scores.player2Score
+        console.log('[Match Completion] Async scores from DB:', { player1Score, player2Score })
+      } else if (gameState) {
+        // For live matches, use Redis scores
+        player1Score = gameState.player1_score
+        player2Score = gameState.player2_score
+      } else {
+        // Fallback: use match scores or current scores
+        player1Score = isPlayer1 ? score : match.player1_score || 0
+        player2Score = isPlayer1 ? match.player2_score || 0 : score
       }
 
       console.log('[Match Completion] Finalizing match:', {
@@ -244,8 +265,16 @@ export async function completeMatchForPlayer({
       }
 
       // Cleanup Redis if session exists
-      if (gameState) {
-        await deleteGameSession(matchId)
+      // For async matches, clean up regardless of whether gameState was found
+      // (might have been created by either player)
+      if (gameState || isAsync) {
+        try {
+          await deleteGameSession(matchId)
+          console.log('[Match Completion] Cleaned up Redis session')
+        } catch (cleanupError) {
+          console.error('[Match Completion] Error cleaning up Redis:', cleanupError)
+          // Don't fail the completion if cleanup fails
+        }
       }
 
       // Determine result for this player

@@ -9,6 +9,7 @@ import type { GameState, PlayerAnswer } from './types';
 
 /**
  * Create a new game session in Redis
+ * For async matches, preserves existing completion flags if session already exists
  */
 export async function createGameSession(
   matchId: string,
@@ -19,18 +20,33 @@ export async function createGameSession(
   const redis = await getRedis();
   const gameKey = `${GAME_CONFIG.REDIS_PREFIX.GAME}${matchId}`;
 
+  // Check if session already exists
+  const existingState = await redis.hGetAll(gameKey);
+  const sessionExists = existingState && Object.keys(existingState).length > 0;
+
   const gameState: Record<string, string | number> = {
     player1_fid: player1Fid,
     player2_fid: player2Fid,
-    player1_score: 0,
-    player2_score: 0,
+    // Preserve scores if session already exists (for async matches)
+    player1_score: sessionExists ? (parseInt(existingState.player1_score) || 0) : 0,
+    player2_score: sessionExists ? (parseInt(existingState.player2_score) || 0) : 0,
     current_question: 1,
     questions: JSON.stringify(questionIds),
-    started_at: Date.now(),
+    started_at: sessionExists ? existingState.started_at : Date.now(),
     status: 'active',
-    player1_completed: 0,
-    player2_completed: 0,
+    // Preserve completion flags if session already exists (for async matches)
+    player1_completed: sessionExists ? (existingState.player1_completed || 0) : 0,
+    player2_completed: sessionExists ? (existingState.player2_completed || 0) : 0,
   };
+
+  if (sessionExists) {
+    console.log('[Redis] Session exists, preserving state:', {
+      player1_score: gameState.player1_score,
+      player2_score: gameState.player2_score,
+      player1_completed: gameState.player1_completed,
+      player2_completed: gameState.player2_completed
+    });
+  }
 
   await redis.hSet(gameKey, gameState);
   await redis.expire(gameKey, GAME_CONFIG.MATCH_TTL);
