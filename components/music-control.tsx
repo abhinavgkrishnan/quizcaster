@@ -3,9 +3,19 @@
 import { motion } from "framer-motion"
 import { Volume2, VolumeX } from "lucide-react"
 import { useBackgroundMusic } from "@/lib/contexts/BackgroundMusicContext"
+import { useAppContext } from "@/lib/contexts/AppContext"
 
 export default function MusicControl() {
   const { isMuted, toggleMute } = useBackgroundMusic()
+  const { isGameScreen, currentScreen } = useAppContext()
+
+  // Only show button on menu screens where music plays
+  const menuScreens = ['topics', 'profile', 'leaderboard', 'friends', 'challenges']
+  const shouldShowButton = menuScreens.includes(currentScreen) && !isGameScreen
+
+  if (!shouldShowButton) {
+    return null
+  }
 
   return (
     <motion.button
