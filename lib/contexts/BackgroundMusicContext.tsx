@@ -211,11 +211,6 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
         console.log('[BgMusic] Pausing with fade - not on menu screen or muted')
         fadeOut(audioRef.current)
       }
-      // Extra safeguard: force pause immediately if in game (critical for mobile)
-      if (isGameScreen && !audioRef.current.paused) {
-        console.log('[BgMusic] Force pausing - in game screen')
-        audioRef.current.pause()
-      }
     } else {
       // Resume music (we're on a menu screen, not muted, user interacted)
       if (audioRef.current.paused && hasInteractedRef.current) {

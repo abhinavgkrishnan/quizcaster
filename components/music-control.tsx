@@ -1,5 +1,6 @@
 "use client"
 
+import { useRef } from "react"
 import { motion } from "framer-motion"
 import { Volume2, VolumeX } from "lucide-react"
 import { useBackgroundMusic } from "@/lib/contexts/BackgroundMusicContext"
@@ -8,6 +9,7 @@ import { useAppContext } from "@/lib/contexts/AppContext"
 export default function MusicControl() {
   const { isMuted, toggleMute } = useBackgroundMusic()
   const { isGameScreen, currentScreen } = useAppContext()
+  const lastToggleRef = useRef<number>(0)
 
   // Only show button on menu screens where music plays
   const menuScreens = ['topics', 'profile', 'leaderboard', 'friends', 'challenges']
@@ -17,26 +19,27 @@ export default function MusicControl() {
     return null
   }
 
-  const handleClick = (e: React.MouseEvent) => {
+  const handleToggle = (e: React.MouseEvent | React.TouchEvent) => {
     e.preventDefault()
     e.stopPropagation()
-    console.log('[MusicControl] Button clicked')
-    toggleMute()
-  }
 
-  const handleTouch = (e: React.TouchEvent) => {
-    e.preventDefault() // Prevents synthetic click from firing
-    e.stopPropagation()
-    console.log('[MusicControl] Button touched')
+    // Debounce rapid clicks/touches to prevent double-firing
+    const now = Date.now()
+    if (now - lastToggleRef.current < 300) {
+      console.log('[MusicControl] Ignoring rapid toggle')
+      return
+    }
+    lastToggleRef.current = now
+
+    console.log('[MusicControl] Toggling mute')
     toggleMute()
   }
 
   return (
     <motion.button
       whileTap={{ scale: 0.9 }}
-      onClick={handleClick}
-      onTouchEnd={handleTouch}
-      className="fixed top-4 right-4 z-50 w-12 h-12 brutal-white brutal-border rounded-full shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] flex items-center justify-center bg-card hover:bg-secondary transition-colors active:bg-secondary"
+      onPointerDown={handleToggle}
+      className="fixed top-4 right-4 z-50 w-12 h-12 brutal-white brutal-border rounded-full shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] flex items-center justify-center bg-card hover:bg-secondary transition-colors active:bg-secondary touch-manipulation"
       aria-label={isMuted ? "Unmute background music" : "Mute background music"}
     >
       {isMuted ? (
