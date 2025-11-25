@@ -17,10 +17,7 @@ export default function MusicControl() {
     return null
   }
 
-  const handleToggle = (e: React.MouseEvent | React.TouchEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-
+  const handleToggle = () => {
     console.log('[MusicControl] Toggle clicked')
     toggleMute()
   }
@@ -41,11 +38,10 @@ export default function MusicControl() {
     <motion.button
       whileTap={{ scale: 0.9 }}
       onClick={handleToggle}
-      className={`fixed top-4 right-4 z-50 w-12 h-12 brutal-white brutal-border rounded-full shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] flex items-center justify-center transition-all duration-200 touch-manipulation ${
-        isMusicActive
+      className={`fixed top-4 right-4 z-50 w-12 h-12 brutal-white brutal-border rounded-full shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] flex items-center justify-center transition-all duration-200 touch-manipulation ${isMusicActive
           ? 'bg-card hover:bg-secondary active:bg-secondary'
           : 'bg-gray-100 hover:bg-gray-200 active:bg-gray-200 opacity-60'
-      }`}
+        }`}
       aria-label={isMuted ? "Unmute background music" : "Mute background music"}
       title={isMuted ? "Unmute background music" : "Mute background music"}
     >

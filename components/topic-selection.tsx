@@ -80,8 +80,16 @@ export default function TopicSelection({ onSelectTopic, onNavigate, user }: Topi
         ) : (
           <div className="grid grid-cols-3 gap-4 p-2">
             {topics.map((topic, index) => {
-              // Get icon from lucide-react by name
-              const IconComponent = topic.icon_name ? (Icons as any)[topic.icon_name] : Icons.HelpCircle
+              // Get icon from lucide-react by name - with better fallback
+              let IconComponent = Icons.HelpCircle // Default fallback
+              if (topic.icon_name) {
+                const icon = (Icons as any)[topic.icon_name]
+                if (icon) {
+                  IconComponent = icon
+                } else {
+                  console.warn(`Icon "${topic.icon_name}" not found in lucide-react, using default`)
+                }
+              }
               const bgColor = topic.color_class ? `#${topic.color_class.replace('#', '')}` : '#CFB8FF' // Ensure # prefix
 
               return (
