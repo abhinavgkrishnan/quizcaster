@@ -7,11 +7,11 @@ import { useAppContext } from "@/lib/contexts/AppContext"
 
 export default function MusicControl() {
   const { isMuted, toggleMute } = useBackgroundMusic()
-  const { isGameScreen, currentScreen, isWaitingScreen } = useAppContext()
+  const { isGameScreen, currentScreen, isWaitingScreen, isOverlayOpen } = useAppContext()
 
   // Show button on all screens where music can play
-  // Hide only during actual gameplay
-  const shouldShowButton = !isGameScreen
+  // Hide during actual gameplay AND when overlays are open (e.g. flair selector)
+  const shouldShowButton = !isGameScreen && !isOverlayOpen
 
   if (!shouldShowButton) {
     return null
@@ -27,7 +27,7 @@ export default function MusicControl() {
     if (currentScreen === 'matchmaking' || isWaitingScreen) {
       return true // Queue music screens
     }
-    const menuScreens = ['topics', 'leaderboard', 'friends']
+    const menuScreens = ['topics', 'leaderboard', 'friends', 'profile', 'challenges']
     if (menuScreens.includes(currentScreen)) {
       return true // Menu music screens
     }

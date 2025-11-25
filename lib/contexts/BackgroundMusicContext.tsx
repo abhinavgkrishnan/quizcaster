@@ -68,12 +68,13 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
 
   // Determine if music should play
   const shouldPlayMusic = (): boolean => {
-    // Play music everywhere EXCEPT game screens
-    // BUT if we are waiting for opponent, we are technically in "game" mode for nav hiding,
-    // but we still want music.
+    // Explicitly allow music on known menu/queue screens
+    if (currentScreen === 'matchmaking') return true
     if (isWaitingScreen) return true
 
-    return !isGameScreen
+    // For other screens, rely on isGameScreen (which should be true ONLY for actual game)
+    // We check currentScreen !== 'game' as a safety backup
+    return !isGameScreen && currentScreen !== 'game'
   }
 
   // Handle first user interaction - CRITICAL for mobile audio
@@ -238,9 +239,12 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
     // If muted, we should NOT play, regardless of screen
     const actuallyPlay = shouldPlay && !isMuted
 
+    console.log(`[BgMusic] Effect: screen=${currentScreen}, isGame=${isGameScreen}, isWaiting=${isWaitingScreen}, shouldPlay=${shouldPlay}, isMuted=${isMuted}, actuallyPlay=${actuallyPlay}`)
+
     if (actuallyPlay) {
       if (audio.paused) {
         // Start playing
+        console.log('[BgMusic] Starting playback...')
         const startVol = 0.01
         audio.volume = startVol
 
@@ -264,6 +268,7 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
     } else {
       // Should NOT play (either game screen OR muted)
       if (!audio.paused) {
+        console.log('[BgMusic] Stopping playback because actuallyPlay is false')
         // Stop playing
         // If we are just muting, we might want a quick fade out?
         // But toggleMute handles the click. This effect handles screen changes.

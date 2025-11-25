@@ -7,6 +7,8 @@ import type { UnifiedUser, AppScreen } from "@/lib/types"
 import FlairSelector from "./flair-selector"
 import MatchHistory from "./match-history"
 
+import { useAppContext } from "@/lib/contexts/AppContext"
+
 interface ProfileProps {
   user: UnifiedUser | null
   onNavigate?: (screen: AppScreen) => void
@@ -34,12 +36,19 @@ interface UserStats {
 // MENU_ITEMS removed - using global BottomNav from layout
 
 export default function Profile({ user, onNavigate }: ProfileProps) {
+  const { setIsOverlayOpen } = useAppContext()
   const [stats, setStats] = useState<UserStats | null>(null)
   const [loading, setLoading] = useState(true)
   const [showFlairSelector, setShowFlairSelector] = useState(false)
   const [showMatchHistory, setShowMatchHistory] = useState(false)
   const [activeFlair, setActiveFlair] = useState<any>(null)
   const [topics, setTopics] = useState<any[]>([])
+
+  // Sync overlay state with AppContext to hide mute button
+  useEffect(() => {
+    setIsOverlayOpen(showFlairSelector || showMatchHistory)
+    return () => setIsOverlayOpen(false)
+  }, [showFlairSelector, showMatchHistory, setIsOverlayOpen])
 
   useEffect(() => {
     const fetchStats = async () => {
