@@ -68,12 +68,8 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
 
   // Determine if music should play
   const shouldPlayMusic = (): boolean => {
-    // No music during game screens
-    if (isGameScreen) return false
-
-    // Play music for menu screens and matchmaking/waiting
-    const musicScreens = ['topics', 'profile', 'leaderboard', 'friends', 'challenges', 'matchmaking']
-    return musicScreens.includes(currentScreen) || isWaitingScreen
+    // Play music everywhere EXCEPT game screens
+    return !isGameScreen
   }
 
   // Handle first user interaction - CRITICAL for mobile audio
@@ -81,7 +77,7 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
     const handleFirstInteraction = async () => {
       if (hasInteractedRef.current) {
         // Even if we already interacted, check if audio is suspended or paused when it shouldn't be
-        if (audioRef.current && shouldPlayMusic() && audioRef.current.paused) {
+        if (audioRef.current && shouldPlayMusic() && !isMutedRef.current && audioRef.current.paused) {
           try {
             await audioRef.current.play()
             isPlayingRef.current = true
@@ -95,14 +91,13 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
 
       console.log('[BgMusic] First user interaction detected')
 
-      // Try to start audio immediately if we're on a music screen
-      if (audioRef.current && shouldPlayMusic()) {
+      // Try to start audio immediately if we're on a music screen and NOT muted
+      if (audioRef.current && shouldPlayMusic() && !isMutedRef.current) {
         const audio = audioRef.current
-        const targetVolume = isMutedRef.current ? 0 : volumeRef.current
+        const targetVolume = volumeRef.current
 
         // IMPORTANT: Set volume to non-zero before playing to prevent iOS from suspending "silent" audio
-        // We'll fade it in properly after it starts
-        audio.volume = isMutedRef.current ? 0 : 0.01
+        audio.volume = 0.01
 
         try {
           await audio.play()
@@ -110,20 +105,15 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
           hasInteractedRef.current = true // Only mark as interacted if play succeeded
           isPlayingRef.current = true
 
-          if (!isMutedRef.current) {
-            // Smooth fade in
-            fadeAudio(audio, targetVolume, 500)
-          }
+          // Smooth fade in
+          fadeAudio(audio, targetVolume, 500)
         } catch (err) {
           // If it fails (e.g. NotAllowedError), we don't set hasInteractedRef to true
           // so we try again on the next click/tap
           console.log('[BgMusic] Failed to start audio (will retry):', err)
         }
       } else {
-        // If we shouldn't play music yet, just mark as interacted so we can play later without gesture
-        // However, on some browsers we MUST play sound during the gesture to unlock the context.
-        // So we might want to play and immediately pause? 
-        // For now, let's just mark it.
+        // If muted or shouldn't play, just mark interaction so we can play later
         hasInteractedRef.current = true
       }
     }
@@ -141,7 +131,7 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
         document.removeEventListener(event, handleFirstInteraction, true)
       })
     }
-  }, [currentScreen, isWaitingScreen, isGameScreen]) // Re-bind if screen changes to ensure fresh closure if needed
+  }, [currentScreen, isWaitingScreen, isGameScreen])
 
   // Toggle mute function
   const toggleMute = () => {
@@ -150,24 +140,20 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('bgMusicMuted', String(newMuted))
     console.log('[BgMusic] Mute toggled:', newMuted)
 
-    // Immediately update audio volume
     const audio = audioRef.current
     if (audio) {
       if (newMuted) {
-        // Mute: fade out quickly then set to 0
-        fadeAudio(audio, 0, 200)
+        // Mute: PAUSE the audio completely
+        // This stops the "playing" state in control center
+        audio.pause()
+        isPlayingRef.current = false
       } else {
-        // Unmute: set to low volume then fade up
+        // Unmute: Play and fade in
         audio.volume = 0.01
-        if (isPlayingRef.current) {
+        audio.play().then(() => {
+          isPlayingRef.current = true
           fadeAudio(audio, volume, 300)
-        } else {
-          // If not playing, try to play
-          audio.play().then(() => {
-            isPlayingRef.current = true
-            fadeAudio(audio, volume, 300)
-          }).catch(e => console.error("Failed to play on unmute", e))
-        }
+        }).catch(e => console.error("Failed to play on unmute", e))
       }
     }
   }
@@ -178,7 +164,7 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
     setVolume(clampedVolume)
     localStorage.setItem('bgMusicVolume', String(clampedVolume))
 
-    // Update audio volume immediately if not muted
+    // Update audio volume immediately if not muted and playing
     if (audioRef.current && !isMuted && isPlayingRef.current) {
       audioRef.current.volume = clampedVolume
     }
@@ -235,7 +221,7 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
   // Main music control effect
   useEffect(() => {
     // Don't do anything until user has interacted (unless we are just updating volume/mute)
-    if (!hasInteractedRef.current && shouldPlayMusic()) {
+    if (!hasInteractedRef.current && shouldPlayMusic() && !isMuted) {
       console.log('[BgMusic] Waiting for first user interaction to start music...')
       return
     }
@@ -244,14 +230,14 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
 
     const audio = audioRef.current
     const shouldPlay = shouldPlayMusic()
-    const targetVolume = isMuted ? 0 : volume
 
-    // Start or stop music based on screen
-    if (shouldPlay) {
-      if (!isPlayingRef.current || audio.paused) {
+    // If muted, we should NOT play, regardless of screen
+    const actuallyPlay = shouldPlay && !isMuted
+
+    if (actuallyPlay) {
+      if (audio.paused) {
         // Start playing
-        // If we haven't interacted yet, this play() might fail, but that's handled by the interaction listener
-        const startVol = isMuted ? 0 : 0.01
+        const startVol = 0.01
         audio.volume = startVol
 
         const playPromise = audio.play()
@@ -260,24 +246,24 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
           playPromise.then(() => {
             console.log('[BgMusic] Started background music')
             isPlayingRef.current = true
-            if (!isMuted) {
-              fadeAudio(audio, targetVolume, 500)
-            }
+            fadeAudio(audio, volume, 500)
           }).catch(err => {
             console.error('[BgMusic] Failed to start music (likely autoplay policy):', err)
-            // We don't update isPlayingRef here so we can try again
           })
         }
       } else {
-        // Already playing, just update volume if needed (e.g. screen change kept music on)
-        if (!isMuted && Math.abs(audio.volume - targetVolume) > 0.05) {
-          fadeAudio(audio, targetVolume, 300)
+        // Already playing, just update volume if needed
+        if (Math.abs(audio.volume - volume) > 0.05) {
+          fadeAudio(audio, volume, 300)
         }
       }
     } else {
-      // Should NOT play
-      if (isPlayingRef.current || !audio.paused) {
+      // Should NOT play (either game screen OR muted)
+      if (!audio.paused) {
         // Stop playing
+        // If we are just muting, we might want a quick fade out?
+        // But toggleMute handles the click. This effect handles screen changes.
+        // If we enter game screen, we fade out.
         fadeAudio(audio, 0, 200, () => {
           audio.pause()
           isPlayingRef.current = false
