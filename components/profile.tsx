@@ -39,6 +39,7 @@ export default function Profile({ user, onNavigate }: ProfileProps) {
   const [showFlairSelector, setShowFlairSelector] = useState(false)
   const [showMatchHistory, setShowMatchHistory] = useState(false)
   const [activeFlair, setActiveFlair] = useState<any>(null)
+  const [topics, setTopics] = useState<any[]>([])
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -48,16 +49,21 @@ export default function Profile({ user, onNavigate }: ProfileProps) {
       }
 
       try {
-        const response = await fetch(`/api/stats/${user.fid}`)
-        const data = await response.json()
-        setStats(data)
+        const [statsRes, flairRes, topicsRes] = await Promise.all([
+          fetch(`/api/stats/${user.fid}`),
+          fetch(`/api/flairs?fid=${user.fid}`),
+          fetch('/api/topics')
+        ])
 
-        // Fetch active flair
-        const flairResponse = await fetch(`/api/flairs?fid=${user.fid}`)
-        const flairData = await flairResponse.json()
+        const statsData = await statsRes.json()
+        const flairData = await flairRes.json()
+        const topicsData = await topicsRes.json()
+
+        setStats(statsData)
         setActiveFlair(flairData.active_flair)
+        setTopics(topicsData.topics || [])
       } catch (error) {
-        console.error('Failed to fetch stats:', error)
+        console.error('Failed to fetch profile data:', error)
       } finally {
         setLoading(false)
       }
@@ -299,16 +305,21 @@ export default function Profile({ user, onNavigate }: ProfileProps) {
             >
               <p className="text-xs font-bold uppercase tracking-wide text-foreground mb-3">Most Played Topics</p>
               <div className="space-y-2">
-                {stats.top_topics.map((topic, idx) => (
-                  <div key={topic.topic} className="flex justify-between items-center">
-                    <span className="text-foreground/70 text-xs uppercase tracking-wide font-semibold">
-                      {idx + 1}. {topic.topic}
-                    </span>
-                    <span className="font-bold text-foreground text-sm">
-                      {topic.matches_played} games
-                    </span>
-                  </div>
-                ))}
+                {stats.top_topics.map((topic, idx) => {
+                  const topicInfo = topics.find(t => t.slug === topic.topic)
+                  const displayName = topicInfo?.display_name || topic.topic
+
+                  return (
+                    <div key={topic.topic} className="flex justify-between items-center">
+                      <span className="text-foreground/70 text-xs uppercase tracking-wide font-semibold">
+                        {idx + 1}. {displayName}
+                      </span>
+                      <span className="font-bold text-foreground text-sm">
+                        {topic.matches_played} games
+                      </span>
+                    </div>
+                  )
+                })}
               </div>
             </motion.div>
           )}

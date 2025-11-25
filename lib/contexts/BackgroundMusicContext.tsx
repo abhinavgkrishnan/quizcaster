@@ -69,6 +69,10 @@ export function BackgroundMusicProvider({ children }: { children: ReactNode }) {
   // Determine if music should play
   const shouldPlayMusic = (): boolean => {
     // Play music everywhere EXCEPT game screens
+    // BUT if we are waiting for opponent, we are technically in "game" mode for nav hiding,
+    // but we still want music.
+    if (isWaitingScreen) return true
+
     return !isGameScreen
   }
 
